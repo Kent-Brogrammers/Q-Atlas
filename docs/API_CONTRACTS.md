@@ -24,8 +24,11 @@ OpenAPI precisely records required keys, enums, defaults, and numeric bounds.
 | POST `/api/materials/run` | `MaterialsRequest` | `MaterialsResult` | Developer 1 |
 
 Health returns `{"status":"ok","service":"q-atlas","backend":"aer_simulator","experiments_ready":false}`.
-This signals API readiness, not simulator execution or feature readiness. All five POST
-operations validate first, then return **HTTP 501**, never a fake HTTP 200 measurement:
+This signals API readiness, not simulator execution or feature readiness. Compiler
+analysis now returns supported/rejected results; see [compiler behavior](COMPILER.md).
+Compiler benchmarking revalidates source and returns 422 for rejected source or 501
+while shared runners are unavailable. The other experiment POST operations validate
+first, then return **HTTP 501**, never a fake HTTP 200 measurement:
 
 ```json
 {"status":"error","error":{"code":"NOT_IMPLEMENTED","message":"Search benchmark is not implemented. Developer 4 owns this feature.","diagnostics":[]}}
@@ -33,8 +36,9 @@ operations validate first, then return **HTTP 501**, never a fake HTTP 200 measu
 
 Invalid payloads return **422** with the same envelope and `VALIDATION_ERROR`.
 Routing/method errors return `NOT_FOUND`/`METHOD_NOT_ALLOWED` (404/405); unexpected
-exceptions return sanitized `INTERNAL_ERROR` (500). `TIMEOUT` is reserved for an
-owner's future bounded runner (HTTP 504). `HTTP_ERROR` covers other HTTP failures.
+exceptions return sanitized `INTERNAL_ERROR` (500). Compiler runner `TimeoutError`
+maps to `TIMEOUT` (HTTP 504); real execution remains unavailable. `HTTP_ERROR` covers
+other HTTP failures.
 Errors expose no stack traces or submitted field values. Each diagnostic has required
 `code`, `message`, `severity` (`error|warning|info`), and optional nullable one-based
 `line` and `column`. Validation diagnostic messages identify a field path.
@@ -102,10 +106,11 @@ Never use an integer conversion that discards leading zeros or silently reverse 
 `QAOAConfig` adds `p=1` (1–8 layers), `optimizer=COBYLA` (only initial optimizer),
 `max_iterations=100` (1–1000). Counts and seeds are unitless; timeouts are **seconds**.
 
-These are validated interface limits, not runtime isolation. Stubs do no expensive work.
-Future owners must enforce deadlines throughout their work, including native simulator
-calls, rather than wrapping a blocking call in a timer that cannot cancel it. The compiler
-owner must add AST node/depth limits along with the parser; no parser exists here.
+These are validated interface limits, not runtime isolation. Shared solver stubs do no
+expensive work. Future owners must enforce deadlines throughout their work, including
+native simulator calls, rather than wrapping a blocking call in a timer that cannot
+cancel it. The compiler parser enforces source/node/depth limits and supports 1–6 bits
+with exhaustive verification; see [the compiler guide](COMPILER.md).
 There is no asynchronous job API, request-body transport limiter, or hardware execution.
 
 ## Analysis response
