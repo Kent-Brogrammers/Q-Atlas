@@ -24,8 +24,9 @@ OpenAPI precisely records required keys, enums, defaults, and numeric bounds.
 | POST `/api/materials/run` | `MaterialsRequest` | `MaterialsResult` | Developer 1 |
 
 Health returns `{"status":"ok","service":"q-atlas","backend":"aer_simulator","experiments_ready":false}`.
-This signals API readiness, not simulator execution or feature readiness. All five POST
-operations validate first, then return **HTTP 501**, never a fake HTTP 200 measurement:
+This signals API readiness, not readiness of all experiments. Materials now returns
+real simulation results with **HTTP 200**; compiler, optimization, and search POST
+operations still validate first and return **HTTP 501**:
 
 ```json
 {"status":"error","error":{"code":"NOT_IMPLEMENTED","message":"Search benchmark is not implemented. Developer 4 owns this feature.","diagnostics":[]}}
@@ -33,8 +34,9 @@ operations validate first, then return **HTTP 501**, never a fake HTTP 200 measu
 
 Invalid payloads return **422** with the same envelope and `VALIDATION_ERROR`.
 Routing/method errors return `NOT_FOUND`/`METHOD_NOT_ALLOWED` (404/405); unexpected
-exceptions return sanitized `INTERNAL_ERROR` (500). `TIMEOUT` is reserved for an
-owner's future bounded runner (HTTP 504). `HTTP_ERROR` covers other HTTP failures.
+exceptions return sanitized `INTERNAL_ERROR` (500). Materials returns `TIMEOUT` (504)
+when its bounded worker exceeds the budget and `HTTP_ERROR` (503) when its optional
+quantum dependencies are missing. `HTTP_ERROR` also covers other HTTP failures.
 Errors expose no stack traces or submitted field values. Each diagnostic has required
 `code`, `message`, `severity` (`error|warning|info`), and optional nullable one-based
 `line` and `column`. Validation diagnostic messages identify a field path.
@@ -94,15 +96,26 @@ Never use an integer conversion that discards leading zeros or silently reverse 
   default null delegates iteration selection to the future owner), and default run config.
 - `MaterialsRequest`: defaults `model=ising` (`ising|heisenberg`), `num_spins=2` (2–8),
   `coupling=1`, `field=0.5`, `boundary=open` (`open|periodic`), `observable=energy`
-  (`energy|magnetization`), and run config. Coupling/field use the Hamiltonian's declared
-  energy unit. The actual Hamiltonian/units must be agreed before implementation.
+  (`energy|magnetization`), and materials run config. These original fields remain intact.
+  The implemented route supports **Ising, open boundaries, 2–4 spins, and coupling/field
+  in [-10,10]**; other scaffold options receive explicit HTTP 422 diagnostics.
+  New optional fields default to `evolution_time=1` (0–10 dimensionless time),
+  `trotter_steps=20` (1–256), and `time_samples=1` (1–21). A single sample evaluates
+  the terminal time; a sweep includes both zero and the terminal time, which must be
+  positive for sweeps. Work limits: `time_samples*trotter_steps <= 2048` and
+  `2*time_samples*config.shots <= 1,000,000`.
+  `MaterialsRunConfig` preserves shared defaults but additionally accepts `seed=null`.
+  Coupling, field, energy, and evolution time use dimensionless units with hbar=1.
 
 `RunConfig` defaults: `backend=aer_simulator` (only allowed backend), `shots=1024`
 (1–100,000), `seed=42` (unsigned 32-bit integer), `timeout_seconds=30` (>0, ≤60 seconds).
 `QAOAConfig` adds `p=1` (1–8 layers), `optimizer=COBYLA` (only initial optimizer),
 `max_iterations=100` (1–1000). Counts and seeds are unitless; timeouts are **seconds**.
 
-These are validated interface limits, not runtime isolation. Stubs do no expensive work.
+For compiler, optimization, and search these are validated limits, not runtime isolation.
+Their stubs do no expensive work. Materials runs in a spawned process that is terminated
+and reaped on timeout, including during native simulator work; startup/import time counts
+against that wall-clock budget, but not the benchmark's numerical timings.
 Future owners must enforce deadlines throughout their work, including native simulator
 calls, rather than wrapping a blocking call in a timer that cannot cancel it. The compiler
 owner must add AST node/depth limits along with the parser; no parser exists here.
@@ -154,7 +167,11 @@ after transpilation; record the gate basis/backend), `shots` (sample count). Exp
   `quantum_oracle_queries` (count), `classical_expected_queries` (nonnegative expectation),
   `classical_worst_case_queries` (count). These are query counts, never milliseconds.
 - Materials: `classical_observable`, `quantum_observable`, `absolute_error`; units come
-  from metadata. Energy uses the Hamiltonian unit; magnetization normalization must be declared.
+  from metadata. These summarize the terminal time's selected observable; quantum means
+  shot-based. New optional metrics: `ideal_observable`, `trotter_absolute_error`,
+  `sampling_absolute_error`, `total_shots`, and `time_series` (default empty for legacy
+  fixtures; populated by the implementation). Magnetization is mean Pauli Z per spin;
+  energy is total reduced energy. Shots count **per basis per time**, with two bases.
 
 Common metadata requires nullable `seed`, `timing_scope` (`end_to_end|solver_only`), and
 `simulation_method` (`statevector|matrix_product_state|density_matrix`). Defaults:
@@ -164,7 +181,20 @@ Owners must populate versions for reproducibility. Additional required provenanc
 - Optimization/compiler: normalized `qubo` and effective `config`.
 - Search: effective `parameters: SearchRequest` and nonempty `oracle_assumptions`.
 - Materials: effective `parameters: MaterialsRequest`, nonempty `hamiltonian_convention`,
-  `energy_unit`, and `observable_unit`.
+  `energy_unit`, and `observable_unit`. Additive optional fields describe `initial_state`,
+  `trotter_order` (default 2), `execution_methods`, `measurement_bases`, `transpilation_basis`,
+  `circuit_depth_scope`, `ideal_elapsed_ms`, and `sampling_seed_policy`.
+
+Each materials time-series point has required `time`, `exact`, `ideal`, `measured`,
+`trotter_error`, `sampling_error`, `total_error`, `state_fidelity` (0–1), `circuit_depth`,
+and `shots_per_basis`. All three observable objects contain `per_spin_z`, `per_spin_x`,
+`magnetization_z`, `zz_correlations`, and `energy`, with optional nullable `state_norm`
+(L2 norm; null for shot results). Arrays use increasing spin index; bond i joins i and i+1.
+Each error object contains nonnegative absolute differences for `magnetization_z`,
+`zz_correlations`, and `energy`: ideal/exact, measured/ideal, and measured/exact respectively.
+The errors need not add. No new field is required from an existing request or legacy
+result fixture. See [the materials guide](MATERIALS.md) for equations, timing scope,
+seed derivation, depth interpretation, and a tested request example.
 
 Null fields are explicitly not applicable/unmeasured. Synthetic test fixtures exercise
 serialization only and must never appear in the UI as experimental evidence.
