@@ -85,6 +85,19 @@ Never use an integer conversion that discards leading zeros or silently reverse 
 
 - `CompilerAnalyzeRequest`: required `source`, 1–20,000 characters. The decorator marker
   remains text. Analysis never imports, evaluates, or executes it.
+  The marked function may contain a leading docstring, up to 64 source assignments
+  (including numeric `+=`, `-=`, `*=`), fixed literal-range loops, and one final return.
+  Loop ranges must be nonempty with 1–64 iterations, bounds/step within ±64, no shadowed
+  range/index variables, no else, and nesting at most two levels. Expansion is limited
+  to 256 assignments and 8,192 AST nodes. Sequential local reassignment is supported; undefined local
+  reads produce `UNDEFINED_NAME` and invalid targets produce `INVALID_ASSIGNMENT`.
+  The source subset remains limited to 1–6 bits and binary quadratics. Indices are
+  literals or substituted loop indices with bounded integer +/- offsets. Invalid
+  loop forms produce `INVALID_LOOP`; all source is still parsed/interpreted without execution.
+  Squared allowlisted expressions with literal exponent 2 are supported, including
+  named/loop-built linear penalties. Expansion involving more than two distinct bits
+  in a monomial is rejected as `HIGHER_ORDER`; overflow is rejected as
+  `NONFINITE_COEFFICIENT`. There is no automatic penalty-weight selection or constraint schema.
 - `CompilerBenchmarkRequest`: same `source`, plus default `config: QAOAConfig`.
   Benchmarking must revalidate/extract source on the server; no trusted client-extracted objective.
 - `OptimizationRequest`: required discriminated `problem`, plus default QAOA config.
@@ -117,9 +130,21 @@ There is no asynchronous job API, request-body transport limiter, or hardware ex
 
 `CompilerAnalyzeResult` requires `status` (`supported|rejected`) and `diagnostics`.
 `qubo` and `circuit` default null. `supported` requires a normalized QUBO; `rejected`
-cannot include a QUBO or circuit. Circuit metadata has required `num_qubits` and
-optional nullable `depth`, plus default backend `aer_simulator`. Circuit metadata is
-a preview description, not proof of execution or a benchmark.
+cannot include a QUBO or circuit. Supported analyses include a `CircuitPreview` for
+one QAOA layer. It retains `num_qubits` and backend `aer_simulator` (the intended
+execution target), and adds:
+
+- `kind=qaoa_logical_preview`, `executed=false`, `p=1` for analysis responses.
+- `parameters` in explicit `gamma_0, beta_0, ...` order.
+- `gates`: ordered `h|rz|cp|rx` operations with qubit indices. Angles are either null
+  for H, or `{parameter, coefficient}` meaning radians = coefficient × parameter.
+- `global_phase`: parameter-scaled phase terms, including constant objective offsets.
+- `logical_depth`: parallel layers of the symbolic gates before any transpilation.
+
+`depth` remains null: logical depth is not measured backend/transpiled depth. The
+preview contains no measurements, samples, optimization results, or execution timing.
+Rejected analysis still returns `circuit=null`. See
+[the Developer 3 handoff](DEVELOPER_3_HANDOFF.md) for gate/sign conventions and shared helpers.
 
 ## Shared benchmark results
 
@@ -190,4 +215,10 @@ them after safe AST validation/extraction. Inputs are canonical, outputs include
 timings and full objective offsets. Runners raise `TimeoutError` on budget expiry;
 future API owners map it to HTTP 504 `TIMEOUT`. Validation stays at the shared boundary.
 Source parsing, graph conversion, HTTP handling, and hardware execution do not belong
-inside the shared QAOA runner. Preview circuit helpers must be coordinated, not duplicated.
+inside the shared QAOA runner. Circuit construction is now shared via
+`app.quantum.circuits.build_qaoa_preview(qubo, p=1) -> CircuitPreview`; objective checking
+is shared via `app.quantum.qubo.evaluate_qubo(qubo, bitstring) -> float`. These pure
+helpers execute no jobs. Developer 3 should consume the plan instead of duplicating
+gate mapping. The compiler validates solver objective/assignment consistency and
+QAOA qubit/shot metrics before returning a completed comparison. Invalid shared
+results return sanitized HTTP 500, never an invented completed measurement.

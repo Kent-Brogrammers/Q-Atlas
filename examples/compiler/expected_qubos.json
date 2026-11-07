@@ -1,0 +1,69 @@
+{
+  "minimize_three_bits.py": {
+    "num_variables": 3,
+    "constant": 5,
+    "linear": [-2, 0, 0],
+    "quadratic": [{"i": 0, "j": 2, "coefficient": 3}],
+    "sense": "minimize",
+    "original_sense": "minimize"
+  },
+  "maximize_three_bits.py": {
+    "num_variables": 3,
+    "constant": -5,
+    "linear": [2, 0, 0],
+    "quadratic": [{"i": 1, "j": 2, "coefficient": -1}],
+    "sense": "minimize",
+    "original_sense": "maximize"
+  },
+  "repeated_terms.py": {
+    "num_variables": 3,
+    "constant": 2,
+    "linear": [-2, 0, 0],
+    "quadratic": [{"i": 0, "j": 1, "coefficient": 1}],
+    "sense": "minimize",
+    "original_sense": "minimize"
+  },
+  "six_bits.py": {
+    "num_variables": 6,
+    "constant": 9,
+    "linear": [-1, -2, -3, -4, -5, -6],
+    "quadratic": [
+      {"i": 0, "j": 5, "coefficient": 2},
+      {"i": 1, "j": 4, "coefficient": 1}
+    ],
+    "sense": "minimize",
+    "original_sense": "minimize"
+  },
+  "bounded_loops.py": {
+    "num_variables": 4,
+    "constant": 5,
+    "linear": [-1, -2, -3, -4],
+    "quadratic": [
+      {"i": 0, "j": 1, "coefficient": 2},
+      {"i": 1, "j": 2, "coefficient": 2},
+      {"i": 2, "j": 3, "coefficient": 2}
+    ],
+    "sense": "minimize",
+    "original_sense": "minimize"
+  },
+  "exactly_one.py": {
+    "num_variables": 3,
+    "constant": 10,
+    "linear": [-11, -12, -13],
+    "quadratic": [
+      {"i": 0, "j": 1, "coefficient": 20},
+      {"i": 0, "j": 2, "coefficient": 20},
+      {"i": 1, "j": 2, "coefficient": 20}
+    ],
+    "sense": "minimize",
+    "original_sense": "minimize"
+  },
+  "local_assignments.py": {
+    "num_variables": 3,
+    "constant": 5,
+    "linear": [-2, -1, 0],
+    "quadratic": [{"i": 0, "j": 2, "coefficient": 3}],
+    "sense": "minimize",
+    "original_sense": "minimize"
+  }
+}

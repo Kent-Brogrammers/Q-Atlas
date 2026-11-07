@@ -9,18 +9,30 @@ from importlib.metadata import PackageNotFoundError, version
 from app.compiler.analysis import analyze_source
 from app.experiments.optimization import solvers
 from app.quantum import qaoa
+from app.quantum.qubo import evaluate_qubo
 from app.schemas.contracts import (
     QUBO,
     CompilerBenchmarkResult,
     Diagnostic,
     OptimizationMetadata,
     QAOAConfig,
+    SolverResult,
 )
 
 
 class CompilationError(Exception):
     def __init__(self, diagnostics: list[Diagnostic]):
         self.diagnostics = diagnostics
+
+
+def _validate_solution(qubo: QUBO, result: SolverResult) -> None:
+    if result.best_bitstring is None or result.objective is None:
+        raise ValueError(
+            "compiler comparisons require an assignment and objective from each solver"
+        )
+    actual = evaluate_qubo(qubo, result.best_bitstring)
+    if not math.isclose(actual, result.objective, rel_tol=1e-9, abs_tol=1e-9):
+        raise ValueError("shared solver objective does not match its assignment")
 
 
 def benchmark_qubo(qubo: QUBO, config: QAOAConfig) -> CompilerBenchmarkResult:
@@ -31,11 +43,17 @@ def benchmark_qubo(qubo: QUBO, config: QAOAConfig) -> CompilerBenchmarkResult:
     Source analysis is outside both solvers' reported end-to-end timers.
     """
     classical = solvers.run_classical(qubo, config)
+    _validate_solution(qubo, classical)
     quantum = qaoa.run_qaoa(qubo, config)
+    _validate_solution(qubo, quantum)
+    if quantum.metrics.num_qubits != qubo.num_variables or quantum.metrics.shots != config.shots:
+        raise ValueError("shared QAOA metrics do not match the problem and requested shots")
     metrics = quantum.metrics.model_copy(deep=True)
     metrics.optimality_gap = None
     if classical.algorithm == "brute_force" and classical.objective is not None:
         gap = quantum.objective - classical.objective
+        if gap < 0 and not math.isclose(gap, 0, abs_tol=1e-9):
+            raise ValueError("QAOA result is below the claimed exact classical optimum")
         if math.isfinite(gap):
             metrics.optimality_gap = max(0.0, gap)
     # No general approximation ratio is meaningful for signed QUBO objectives.
