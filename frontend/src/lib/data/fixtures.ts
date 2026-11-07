@@ -1,4 +1,5 @@
-import type { BenchmarkResult, Qubo } from '../types/contracts.ts';
+import type { ExampleComparison } from '../types/examples.ts';
+import type { Qubo } from '../types/contracts.ts';
 
 export interface GraphFixture {
   id: string;
@@ -8,7 +9,7 @@ export interface GraphFixture {
   edges: [number, number][];
   assignment: number[];
   optimumCut: number;
-  qubo: Qubo;
+  qubo: Required<Qubo>;
 }
 
 // Hand-authored UI examples. No graph generator, optimizer, or quantum execution is used.
@@ -53,7 +54,8 @@ export const graphs: GraphFixture[] = [
         { i: 3, j: 5, coefficient: 2 },
         { i: 4, j: 5, coefficient: 2 }
       ],
-      sense: 'minimize'
+      sense: 'minimize',
+      original_sense: 'minimize'
     }
   },
   {
@@ -104,7 +106,8 @@ export const graphs: GraphFixture[] = [
         { i: 5, j: 6, coefficient: 2 },
         { i: 6, j: 7, coefficient: 2 }
       ],
-      sense: 'minimize'
+      sense: 'minimize',
+      original_sense: 'minimize'
     }
   },
   {
@@ -135,13 +138,14 @@ export const graphs: GraphFixture[] = [
         { i: 1, j: 2, coefficient: 2 },
         { i: 2, j: 3, coefficient: 2 }
       ],
-      sense: 'minimize'
+      sense: 'minimize',
+      original_sense: 'minimize'
     }
   }
 ];
 
 export interface ExampleRun {
-  benchmark: BenchmarkResult;
+  comparison: ExampleComparison;
   expected: number[];
   bestSampled: number[];
   histogram: { cut: number; count: number }[];
@@ -149,19 +153,12 @@ export interface ExampleRun {
 
 export const exampleRuns: Record<string, ExampleRun> = {
   prism: {
-    benchmark: {
-      experiment: 'optimization',
+    comparison: {
+      kind: 'ui_example',
       problem_id: 'ui-example-prism',
-      backend: 'ui_example',
       classical: { algorithm: 'brute_force', elapsed_ms: null, objective: -7 },
       quantum: { algorithm: 'qaoa', elapsed_ms: null, objective: -7 },
-      metrics: { num_qubits: null, circuit_depth: null, shots: null, optimizer_evaluations: null },
-      metadata: {
-        seed: null,
-        timing_scope: null,
-        simulated: null,
-        ui_fixture: true
-      }
+      metrics: { num_qubits: null, circuit_depth: null, shots: null, optimizer_evaluations: null }
     },
     expected: [
       -3.15, -3.62, -3.45, -4.1, -4.48, -4.32, -4.9, -5.0, -4.97, -5.15, -5.3, -5.32, -5.34, -5.38,
@@ -178,19 +175,12 @@ export const exampleRuns: Record<string, ExampleRun> = {
     ]
   },
   cube: {
-    benchmark: {
-      experiment: 'optimization',
+    comparison: {
+      kind: 'ui_example',
       problem_id: 'ui-example-cube',
-      backend: 'ui_example',
       classical: { algorithm: 'brute_force', elapsed_ms: null, objective: -12 },
       quantum: { algorithm: 'qaoa', elapsed_ms: null, objective: -12 },
-      metrics: { num_qubits: null, circuit_depth: null, shots: null, optimizer_evaluations: null },
-      metadata: {
-        seed: null,
-        timing_scope: null,
-        simulated: null,
-        ui_fixture: true
-      }
+      metrics: { num_qubits: null, circuit_depth: null, shots: null, optimizer_evaluations: null }
     },
     expected: [
       -5.1, -5.8, -5.65, -6.75, -7.3, -7.1, -8.4, -8.8, -8.62, -9.0, -9.2, -9.35, -9.48, -9.56,
@@ -206,19 +196,12 @@ export const exampleRuns: Record<string, ExampleRun> = {
     ]
   },
   cycle: {
-    benchmark: {
-      experiment: 'optimization',
+    comparison: {
+      kind: 'ui_example',
       problem_id: 'ui-example-cycle',
-      backend: 'ui_example',
       classical: { algorithm: 'brute_force', elapsed_ms: null, objective: -4 },
       quantum: { algorithm: 'qaoa', elapsed_ms: null, objective: -4 },
-      metrics: { num_qubits: null, circuit_depth: null, shots: null, optimizer_evaluations: null },
-      metadata: {
-        seed: null,
-        timing_scope: null,
-        simulated: null,
-        ui_fixture: true
-      }
+      metrics: { num_qubits: null, circuit_depth: null, shots: null, optimizer_evaluations: null }
     },
     expected: [
       -1.8, -2.1, -2.05, -2.4, -2.65, -2.55, -2.9, -3.0, -2.95, -3.1, -3.15, -3.2, -3.23, -3.27,

@@ -1,6 +1,14 @@
-"""Reserved home of the shared QAOA runner; no algorithm is implemented yet.
+"""Agreed synchronous, in-process interface; implementation belongs to Developer 3."""
 
-The spec names run_qaoa(qubo, config). Developers 2 and 3 must agree on the shared
-QUBO model, config/result types, bit order, limits, and timing definitions before
-adding that callable. The compiler will reuse this runner and circuit helpers.
-"""
+from app.schemas.contracts import QUBO, QAOAConfig, QAOAResult
+
+
+def run_qaoa(qubo: QUBO, config: QAOAConfig) -> QAOAResult:
+    """Solve a canonical minimization QUBO within config.timeout_seconds.
+
+    Return x[0] first in best_bitstring, the canonical objective including its constant,
+    and measured timings. Raise TimeoutError if the budget is exceeded; never return
+    invented values. Caller maps timeouts to the shared TIMEOUT HTTP error.
+    No hardware, graph conversion, source parsing, or HTTP dependencies belong here.
+    """
+    raise NotImplementedError("Developer 3 must implement the shared QAOA runner")

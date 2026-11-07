@@ -1,93 +1,68 @@
-# Developer 3: optimization setup
+# Developer 3: optimization workspace
 
-The source of truth is [the project spec](../Q-Atlas_Codex_Project_Spec.md),
-especially sections 6, 7, 9, 12, and 15. The initial repository contained only
-that spec and the license; no shared schema, QAOA implementation, or backend
-configuration existed.
+The source of truth is [the project specification](../docs/Project_Spec.md).
+Shared runtime contracts are in `app/schemas/contracts.py`; the agreed request,
+result, bit-order, and timing conventions are documented in
+[API contracts](../docs/API_CONTRACTS.md).
 
 ## Environment and checks
 
-Run from the repository root with Python 3.12 and `uv` installed:
+Use Python **3.12** for Developer 3 work; `backend/.python-version` selects it.
+The shared API still supports the Python versions declared in `pyproject.toml`.
+From the repository root:
 
 ```sh
-uv sync --project backend --python python3.12 --locked
-uv run --project backend --locked pytest -c backend/pyproject.toml backend/tests
-uv run --project backend --locked ruff check backend
-uv run --project backend --locked ruff format --check backend
+uv sync --project backend --all-extras --locked --python 3.12
+uv run --project backend --all-extras --locked pytest
+uv run --project backend --all-extras --locked ruff check backend
+uv run --project backend --all-extras --locked ruff format --check backend
 ```
 
-The virtual environment lives at `backend/.venv`. `uv.lock` pins the resolved
-dependencies; `pyproject.toml` lists supported ranges. The environment includes
-NetworkX, NumPy, SciPy, Qiskit, Qiskit Aer, pytest, and Ruff. It has no IBM
-credentials or hardware dependency.
+Quantum dependencies remain an optional extra so API-only contributors do not
+need Qiskit. Developer 3 uses `--all-extras` to retain NetworkX, NumPy, SciPy,
+Qiskit, and Qiskit Aer. The virtual environment is `backend/.venv`; the lockfile
+pins both API and quantum dependencies.
+The Aer smoke test skips explicitly in API-only environments without the extra.
 
-This machine's initial Homebrew Python had a broken Expat library link. A
-working Python 3.12 interpreter was installed locally at `backend/.python/`
-(ignored by Git) for the environment. On another machine, the commands above
-use its available Python 3.12; `uv` can download one if needed. No system
-Python installation is modified.
+This machine uses a working Python 3.12 interpreter under ignored `backend/.python/`
+because the initial Homebrew Python had a broken Expat link. Other machines can
+use their own Python 3.12 or let uv download it. No system Python is modified.
+No IBM credentials or hardware are required.
 
-To run only classical correctness tests:
-
-```sh
-uv run --project backend --locked pytest backend/tests/optimization
-```
-
-The quantum environment test executes a one-qubit circuit using
-[`qiskit_aer.primitives.SamplerV2`](https://qiskit.github.io/qiskit-aer/stubs/qiskit_aer.primitives.SamplerV2.html).
-It checks local installation and the V2 result API; it is not a QAOA or
-performance test. QAOA should use the current
-[Qiskit primitives](https://quantum.cloud.ibm.com/docs/en/api/qiskit/primitives).
-
-## Files and ownership
+## Module responsibilities
 
 | Path | Responsibility |
 | --- | --- |
-| `app/experiments/optimization/classical.py` | Evaluate a single assignment for the canonical QUBO in spec section 6.1. |
-| `app/quantum/qaoa.py` | Reserved shared runner location for Developers 2 and 3; currently documentation only. |
-| `tests/optimization/conftest.py` | Reusable canonical QUBO fixture. |
-| `tests/optimization/test_classical.py` | Known objective values, offsets, coefficient signs, assignment indexing, and input guards. |
-| `tests/quantum/test_environment.py` | Local Aer V2 sampler smoke test. |
+| `app/schemas/contracts.py` | Team-owned canonical Pydantic models and normalization. |
+| `app/experiments/optimization/classical.py` | Evaluate one binary assignment, including the objective constant. |
+| `app/experiments/optimization/solvers.py` | Agreed `run_classical(qubo, config)` stub shared with the compiler. |
+| `app/quantum/qaoa.py` | Agreed synchronous `run_qaoa(qubo, config)` stub shared with the compiler. |
+| `app/api/optimization.py` | Validated optimization route; currently returns structured HTTP 501. |
+| `tests/optimization/test_classical.py` | Hand-calculated values, input guards, and shared-model integration. |
+| `tests/optimization/test_shared_interface.py` | Shared runner boundaries remain explicit stubs. |
+| `tests/quantum/test_environment.py` | One-qubit local Aer `SamplerV2` installation smoke test. |
 
-The `__init__.py` files make these directories importable packages. Future
-Max-Cut conversion belongs in `app/experiments/optimization/maxcut.py`;
-classical solvers can extend `classical.py`. Add benchmark instrumentation only
-after agreeing on the shared result schema. No compiler, API, frontend,
-materials, or search modules are created in this setup.
+`evaluate_qubo` accepts the shared `QUBO` model or a mapping validated through that
+model. Duplicate normalization, finite coefficients, and pair-index rules come
+from the shared schema. Assignment entry `i` means `x[i]`; strings are rejected.
+This is objective evaluation, not optimization. It does not call either runner.
 
-## Existing contract and coordination
-
-The spec establishes the JSON QUBO fields and cost formula. `evaluate_qubo`
-consumes that mapping directly, without introducing a second model. It expects
-an already validated, normalized minimization payload, including finite
-coefficients, valid pair indices with `i < j`, and one linear coefficient per
-variable. It checks the objective sense and assignment values/length, but is
-not a schema validator or normalizer. Assignment entry `i` means `x[i]`;
-measurement strings are rejected. This helper evaluates cost, not an optimum.
-
-Before compiler/QAOA integration, coordinate with Developer 2 on:
-
-- One shared Pydantic QUBO model under `app/schemas/`, including duplicate-term
-  normalization, binary-square folding, finite-value/index validation, and
-  original objective-sense metadata. No shared model exists yet.
-- The spec's `run_qaoa(qubo, config)` entry point at `app/quantum/qaoa.py`:
-  concrete input/output types, `p`, shots, seed, optimizer/backend selection,
-  limits, and error behavior. No callable or config/result classes exist yet.
-- Variable-to-qubit mapping and conversion between Qiskit count strings and
-  assignment lists. No public measurement-bitstring convention is chosen here.
-- Shared circuit-preview helpers so the compiler reuses the same cost layers.
-- With the other backend owners and Developer 5, result/status/error fields,
-  quality metrics, and timing boundaries (including simulator versus total
-  optimization time). No benchmark result schema is implemented here.
+API bitstrings are `x[0]x[1]...x[n-1]`, left to right, with leading zeros preserved.
+Qiskit count strings must be converted at the sampler boundary. Preserve the
+canonical minimization sense and objective constant in all future results.
 
 ## Your next implementation steps
 
-1. Agree on the shared models and bit order with Developer 2.
-2. Implement a size-limited brute-force baseline and tiny known-optimum tests.
-3. Add NetworkX Max-Cut conversion and verify cut values against QUBO costs.
-4. Work through the cost and mixer layers yourself, testing tiny cost-unitary
-   phases before adding the optimizer loop and configurable shared runner.
-5. Add the heuristic, timing breakdown, and comparable benchmark results later.
+1. Implement a size-limited brute-force baseline behind the agreed `run_classical`
+   interface, with known-optimum tests and measured timing.
+2. Add NetworkX Max-Cut conversion and verify cut values against QUBO costs.
+3. Work through cost/mixer layers and tiny phase tests before implementing the
+   shared QAOA runner yourself. Reuse `QAOAConfig` and `QAOAResult`.
+4. Enforce `timeout_seconds` throughout execution and populate the shared timing
+   flags and measured durations. Do not invent unavailable measurements.
+5. Coordinate circuit-preview helpers with Developer 2, baseline/quality formulas
+   with backend owners, and result displays with Developer 5.
 
-QAOA, brute force, heuristics, Max-Cut conversion, and benchmark execution are
-deliberately left for that work. This setup makes no performance claims.
+No QAOA, brute-force solver, heuristic, Max-Cut converter, or benchmark execution
+is implemented here. Existing API/schema scaffolding and other owners' modules
+are retained from main.

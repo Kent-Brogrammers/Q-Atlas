@@ -1,1 +1,1 @@
-"""Developer 3's classical optimization and Max-Cut experiment code."""
+"""Developer 3: Max-Cut conversion, baselines, QAOA integration; tests/optimization/."""

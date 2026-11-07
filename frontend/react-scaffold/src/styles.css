@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+@layer base {
+  body { @apply m-0 bg-slate-50 text-slate-900 antialiased; }
+  button { @apply cursor-pointer rounded-md bg-indigo-700 px-4 py-2 font-medium text-white hover:bg-indigo-800 disabled:cursor-wait disabled:opacity-50; }
+  textarea { @apply mt-2 block w-full rounded-md border border-slate-300 bg-white p-3 font-mono text-sm; }
+  :focus-visible { @apply outline-2 outline-offset-2 outline-indigo-600; }
+}

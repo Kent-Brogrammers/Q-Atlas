@@ -5,6 +5,7 @@ from copy import deepcopy
 import pytest
 
 from app.experiments.optimization.classical import evaluate_qubo
+from app.schemas.contracts import QUBO
 
 
 @pytest.mark.parametrize(
@@ -74,3 +75,21 @@ def test_rejects_noncanonical_objective_sense(mixed_qubo):
     mixed_qubo["sense"] = "maximize"
     with pytest.raises(ValueError, match="minimize"):
         evaluate_qubo(mixed_qubo, [0, 0, 0])
+
+
+def test_accepts_the_shared_qubo_model(mixed_qubo):
+    model = QUBO.model_validate(mixed_qubo)
+    assert evaluate_qubo(model, [1, 0, 1]) == pytest.approx(-3.75)
+
+
+def test_mapping_uses_shared_duplicate_normalization():
+    payload = {
+        "num_variables": 2,
+        "constant": 1,
+        "linear": [-1, 2],
+        "quadratic": [
+            {"i": 0, "j": 1, "coefficient": 5},
+            {"i": 0, "j": 1, "coefficient": -3},
+        ],
+    }
+    assert evaluate_qubo(payload, [1, 1]) == pytest.approx(4)

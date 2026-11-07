@@ -232,7 +232,7 @@
           >{/each}
       </div>
       <p class="state-note">
-        State-label illustration. Measurement bit ordering remains an integration decision.
+        State-label illustration. API bitstrings use x[0] first; Qiskit counts require conversion.
       </p></Panel
     >
   </div>

@@ -1,39 +1,39 @@
 [build-system]
-requires = ["setuptools>=77"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "q-atlas-backend"
 version = "0.1.0"
-description = "Q-Atlas backend: initial Developer 3 optimization workspace"
-requires-python = ">=3.12,<3.13"
-dependencies = [
-    "networkx>=3.5,<4",
+description = "Shared contracts and local API for Q-Atlas"
+requires-python = ">=3.11"
+dependencies = ["fastapi", "pydantic>=2,<3", "uvicorn"]
+
+[project.optional-dependencies]
+quantum = [
     "numpy>=2.2,<3",
     "scipy>=1.15,<2",
     "qiskit>=2.2,<3",
     "qiskit-aer>=0.17.2,<0.19",
+    "networkx>=3.5,<4",
 ]
 
 [dependency-groups]
-dev = [
-    "pytest>=8.4,<10",
-    "ruff>=0.14,<1",
-]
+dev = ["pytest", "httpx2", "ruff"]
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["app", "app.*"]
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--strict-config --strict-markers"
+pythonpath = ["."]
+addopts = "-ra --import-mode=importlib --strict-config --strict-markers"
 markers = [
     "environment: local Qiskit Aer installation smoke tests (no hardware)",
 ]
 
 [tool.ruff]
-target-version = "py312"
+target-version = "py311"
 line-length = 100
 
 [tool.ruff.lint]
