@@ -1,1 +1,1 @@
-"""Shared quantum execution code owned by Developer 3 for compiler integration."""
+"""Developer 3 owns shared execution; coordinate circuit helpers with Developer 2."""

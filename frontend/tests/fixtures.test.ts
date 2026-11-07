@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { graphs, getExampleRun } from '../src/lib/data/fixtures.ts';
-import { parseBenchmark } from '../src/lib/api/client.ts';
 
 for (const graph of graphs) {
   test(`${graph.name}: QUBO matches the displayed graph and reference assignment`, () => {
@@ -31,17 +30,18 @@ for (const graph of graphs) {
 
   test(`${graph.name}: example data is labeled, internally consistent, and has no fabricated run measurements`, () => {
     const run = getExampleRun(graph.id);
-    assert.equal(parseBenchmark(run.benchmark).metadata.ui_fixture, true);
-    assert.equal(run.benchmark.backend, 'ui_example');
-    assert.equal(run.benchmark.metadata.timing_scope, null);
-    assert.equal(run.benchmark.metadata.seed, null);
-    assert.equal(run.benchmark.metadata.simulated, null);
-    assert.equal(run.benchmark.classical?.elapsed_ms, null);
-    assert.equal(run.benchmark.quantum?.elapsed_ms, null);
-    for (const field of ['num_qubits', 'circuit_depth', 'shots', 'optimizer_evaluations']) {
-      assert.equal(run.benchmark.metrics[field], null);
+    assert.equal(run.comparison.kind, 'ui_example');
+    assert.equal(run.comparison.classical?.elapsed_ms, null);
+    assert.equal(run.comparison.quantum?.elapsed_ms, null);
+    for (const field of [
+      'num_qubits',
+      'circuit_depth',
+      'shots',
+      'optimizer_evaluations'
+    ] as const) {
+      assert.equal(run.comparison.metrics[field], null);
     }
-    assert.equal(run.benchmark.classical?.objective, -graph.optimumCut);
+    assert.equal(run.comparison.classical?.objective, -graph.optimumCut);
     const exampleCount = run.histogram.reduce((sum, bin) => sum + bin.count, 0);
     assert.ok(exampleCount > 0);
     assert.equal(run.expected.length, run.bestSampled.length);
@@ -58,13 +58,13 @@ for (const graph of graphs) {
   });
 }
 
-test('loading a fixture returns an independent copy', () => {
+test('loading example data returns an independent copy', () => {
   const first = getExampleRun('prism');
   first.histogram[0].count = 0;
-  first.benchmark.metadata.ui_fixture = false;
+  first.comparison.problem_id = 'changed';
   const second = getExampleRun('prism');
   assert.equal(second.histogram[0].count, 316);
-  assert.equal(second.benchmark.metadata.ui_fixture, true);
+  assert.equal(second.comparison.problem_id, 'ui-example-prism');
 });
 
 test('an unknown fixture fails explicitly', () => {

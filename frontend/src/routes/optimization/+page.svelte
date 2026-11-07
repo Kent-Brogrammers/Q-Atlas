@@ -1,6 +1,7 @@
 <script lang="ts">
   import { fade } from 'svelte/transition';
   import { prefersReducedMotion } from 'svelte/motion';
+  import type { OptimizationRequest } from '#lib/types/contracts.ts';
   import { graphs, getExampleRun } from '#lib/data/fixtures.ts';
   import Panel from '#lib/components/Panel.svelte';
   import Icon from '#lib/components/Icon.svelte';
@@ -17,7 +18,7 @@
   let layers = $state(2);
   let shots = $state(1024);
   let seed = $state<number | undefined>(42);
-  let optimizer = $state('COBYLA');
+  const optimizer = 'COBYLA' as const;
   let run = $state(getExampleRun('prism'));
   let graph = $derived(graphs.find((item) => item.id === loadedId)!);
   let graphTab = $state<'graph' | 'qubo'>('graph');
@@ -27,7 +28,7 @@
   let revision = $state(0);
   let copyLabel = $state('Copy QUBO');
   let gap = $derived(
-    (run.benchmark.quantum?.objective ?? 0) - (run.benchmark.classical?.objective ?? 0)
+    (run.comparison.quantum?.objective ?? 0) - (run.comparison.classical?.objective ?? 0)
   );
 
   function loadExample(event?: SubmitEvent) {
@@ -44,7 +45,6 @@
     layers = 2;
     shots = 1024;
     seed = 42;
-    optimizer = 'COBYLA';
     graphTab = 'graph';
     chartTab = 'expected';
     selectGraph();
@@ -71,19 +71,17 @@
 
   function exportExample() {
     const data = {
-      ...run.benchmark,
+      kind: 'ui_example',
+      example_comparison: run.comparison,
       example_chart_data: {
         expected: run.expected,
         best_sampled: run.bestSampled,
         histogram: run.histogram
       },
-      ui_controls_preview: {
-        graphPreset: selectedId,
-        p: layers,
-        shots,
-        seed: seed ?? null,
-        optimizer
-      },
+      request_preview: {
+        problem: { kind: 'qubo', qubo: graph.qubo },
+        config: { p: layers, shots, seed: seed ?? 42, optimizer }
+      } satisfies OptimizationRequest,
       notice:
         'Illustrative UI example. No experiment was executed. Controls do not change example values.'
     };
@@ -139,7 +137,7 @@
       ? 'Example data · not measured results'
       : 'No benchmark results available'}
   >
-    <SolverComparison result={showExample ? run.benchmark : null} optimum={graph.optimumCut} />
+    <SolverComparison result={showExample ? run.comparison : null} optimum={graph.optimumCut} />
   </Panel>
 </div>
 
@@ -204,9 +202,8 @@
             >{/each}
         </div>
       </fieldset>
-      <label for="optimizer">Classical optimizer</label><select
-        id="optimizer"
-        bind:value={optimizer}><option>COBYLA</option><option>SPSA</option></select
+      <label for="optimizer">Classical optimizer</label><select id="optimizer" value={optimizer}
+        ><option>COBYLA</option><option disabled>SPSA (not supported by the API)</option></select
       >
       <label for="seed">Random seed</label><input
         id="seed"
@@ -257,8 +254,8 @@
         </div>
         <pre class="code-block">{JSON.stringify(graph.qubo, null, 2)}</pre>
         <p>
-          Assignment index i means x[i]. Measurement bit ordering awaits the shared integration
-          agreement.
+          Assignment index i means x[i]. API bitstrings list x[0] first; Qiskit count strings must
+          be converted at the sampler boundary.
         </p>
       </div>{/if}
     <div class="objective-strip">
@@ -284,7 +281,7 @@
           </div>
           <p class="solver-method">Brute force</p>
           <p class="solver-objective cyan-text">
-            {showExample ? run.benchmark.classical?.objective?.toFixed(2) : '—'}<span
+            {showExample ? run.comparison.classical?.objective?.toFixed(2) : '—'}<span
               >{showExample ? 'example objective' : 'No result'}</span
             >
           </p>
@@ -297,7 +294,7 @@
           </div>
           <p class="solver-method">Quantum simulator integration pending</p>
           <p class="solver-objective violet-text">
-            {showExample ? run.benchmark.quantum?.objective?.toFixed(2) : '—'}<span
+            {showExample ? run.comparison.quantum?.objective?.toFixed(2) : '—'}<span
               >{showExample ? 'example best sample' : 'No result'}</span
             >
           </p>
@@ -383,8 +380,9 @@
         unavailable. Control values preview a request; they are not a run record.
       </p>
       <p>
-        Backend integration must agree on request validation, result status/errors, measurement bit
-        order, and explicit timing scopes. No timing decomposition or speedup is inferred here.
+        The shared API contracts define request validation, structured errors, x[0]-first
+        bitstrings, and explicit timing scopes. Solver execution remains unimplemented; no timing
+        decomposition or speedup is inferred here.
       </p>
       {#if showExample}<div class="table-scroll">
           <table>

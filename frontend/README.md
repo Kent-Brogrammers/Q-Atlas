@@ -1,13 +1,13 @@
 # Q-Atlas frontend
 
-The ongoing SvelteKit + TypeScript + Tailwind CSS frontend, built on `chris-dev3` for Developer 5
-and the rest of the team to continue. The root project specification is unchanged;
-its React recommendation still needs team alignment before the spec is updated.
-There was no existing frontend to migrate or replace.
+The ongoing SvelteKit + TypeScript + Tailwind CSS frontend. The shared project
+specification is preserved at `docs/Project_Spec.md`; its React recommendation
+has not been rewritten. Main's React scaffold is retained as a separately runnable
+reference in `react-scaffold/` for Developer 5 to review.
 
 ## Run locally
 
-Use Node **22.17+** (Node 24 LTS recommended) and npm:
+Use Node **22.17+** and npm:
 
 ```sh
 cd frontend
@@ -15,102 +15,107 @@ npm ci
 npm run dev
 ```
 
-Open the Local URL printed by Vite, normally `http://127.0.0.1:5173`.
-Fonts are bundled locally; no external font request is needed.
+Open Vite's local URL, normally `http://127.0.0.1:5173`. Fonts are bundled locally.
+The SvelteKit views do not send live experiment requests. FastAPI can be started
+independently using the root README; its experiment routes return HTTP 501 until
+the owners implement the algorithms.
 
 ```sh
 npm run check
 npm test
 npm run format:check
+npm run types:check
 npm run build
 npm run preview
 ```
 
-`check` includes TypeScript and Svelte accessibility/compiler warnings. Tests use
-Node's built-in runner and cover API failures, response shape, and fixture
-consistency. `build` prerenders all five views into `build/`; a static server must
-serve directory `index.html` files. No Node server or Python process is required
-for the current UI.
+`check` includes TypeScript and Svelte accessibility/compiler warnings. Tests cover
+shared request serialization, canonical error envelopes, cancellation, and graph /
+example-data consistency. `build` prerenders all five views into `build/`.
 
 ## Structure
 
-- `src/routes/`: Overview, Compiler, Materials, Optimization, Search, and the
-  persistent navigation shell. All experiments have distinct shareable URLs.
-- `src/lib/components/`: reusable panels, badges, measurements, accessible
-  controls, graph/chart renderers, and the lighter experiment views.
-- `src/lib/types/contracts.ts`: TypeScript mirrors of spec §6.1 and §6.2.
-- `src/lib/api/client.ts`: a fetch client for the documented benchmark endpoints,
-  runtime response checks, cancellation, timeout, and explicit errors.
-- `src/lib/data/`: navigation metadata, static graph/QUBO fixtures, and labeled
-  example benchmark data. There are no solvers in this directory.
-- `src/app.css`: common design tokens, responsive shell, controls, and typography;
-  individual views/components own their remaining styles.
-- `tests/`: API boundary and fixture correctness tests.
+- `src/routes/`: Overview, Compiler, Materials, Optimization, Search, and navigation.
+- `src/lib/components/`: reusable panels, controls, SVG diagrams, and example displays.
+- `src/types/api.generated.ts`: the canonical types generated from FastAPI OpenAPI.
+- `src/types/index.ts`: named exports used by both frontends.
+- `src/api/client.ts`: the shared typed fetch client, with structured errors,
+  cancellation, and a 65-second transport timeout for the API's 60-second run limit.
+- `src/lib/api/client.ts` and `src/lib/types/contracts.ts`: compatibility re-exports,
+  with no parallel transport implementation or manually copied API schema.
+- `src/lib/types/examples.ts`: presentation-only example values, explicitly distinct
+  from measured backend result contracts.
+- `src/lib/data/`: fixed mathematical graph/QUBO presets and labeled chart examples.
+- `tools/api-types/`: OpenAPI generator workspace. It uses TypeScript 5 for the
+  generator's peer range; SvelteKit uses its required TypeScript 6 independently.
+- `react-scaffold/`: preserved React source with an independent package/build,
+  importing the same shared client and generated types.
 
-SvelteKit 3 config lives in `vite.config.ts`; `#lib/*` imports are declared in
-`package.json`. This follows the current
-[SvelteKit configuration](https://svelte.dev/docs/kit/migrating-to-sveltekit-3).
-Tailwind CSS 4 is integrated through its Vite plugin and provides layout utilities.
-Shared design tokens and scoped CSS handle the application shell and scientific
-visualizations. Charts use SVG without an additional charting runtime.
-
-`FeatureBanner.svelte`, `LibraryOverview.svelte`, and `SolverComparison.svelte`
-provide the shared blue introduction card, unmeasured execution status, and
-interactive quality/time comparison. The existing light workspace, navy navigation,
-blue feature panels, experiment cards, and analytics column are preserved.
-IBM Plex Sans handles UI text; Plex Mono handles code, numbers, and technical metadata.
-Cards use 4–6px corners, controls use minimal rounding, and solid backgrounds and
-borders define the hierarchy without decorative shadows or gradients.
+SvelteKit 3 configuration lives in `vite.config.ts`; `#lib/*` imports are declared
+in `package.json`. Tailwind CSS 4 is integrated through its Vite plugin. IBM Plex
+Sans handles UI text; Plex Mono handles code, numbers, and technical metadata.
+The light workspace, navy navigation, blue feature panels, 4–6px card corners,
+and minimally rounded controls preserve the current design.
 
 ## Current behavior and data provenance
 
-Overview and Optimization are the developed workspaces. Optimization supports
-graph presets, manual partition changes, graph zoom/reset, QUBO inspection/copy,
-trace switching, optional example-data loading, and labeled JSON export. Results and
-charts start empty. The **Load example data** action reveals the existing
-illustrative cost traces and counts, labeled as **example data, not measured
-results**. These examples are not attributed to a backend or a seeded optimizer
-run. Execution times, circuit depth, measurement shots, qubit count, and optimizer
-evaluation count remain `null` in the example benchmark payloads. No elapsed-time
-comparison is fabricated.
+Optimization supports graph presets, manual partition changes, zoom/reset, QUBO
+inspection/copy, trace switching, optional example loading, and labeled JSON export.
+Results and charts start empty. **Load example data** reveals illustrative cost
+traces and counts, explicitly labeled as examples rather than measured output.
+No backend, seed, or optimizer run is attributed to those examples. Execution
+measurements remain unavailable.
 
-Setup controls preview future requests. Changing the graph selects its graph/QUBO
-preset and clears the example result displays. Changing layers/shots/seed/optimizer
-does not compute new results or change example chart values. The interactive graph
-counts edges in a user-selected partition; it does not optimize that partition.
-Known reference cuts and graph sizes describe the built-in mathematical problems,
-not measured experiment activity.
+Example comparisons are UI-only data; they are not cast to `BenchmarkResult`.
+Exports separate `example_comparison` / `example_chart_data` from a generated-type
+checked `request_preview`. The shared backend requires recorded solver time and
+timing inclusion flags when a solver result exists. No placeholder measurement
+is fabricated to satisfy that contract.
 
-Compiler has an editable local source area and a bundled static QUBO example;
-editing source clears the example output. It never executes or analyzes source.
-Materials and Search have lightweight controls and conceptual visualizations.
-They do not calculate physical observables or Grover probabilities.
+Setup controls preview future requests. Changing the graph clears example displays;
+changing settings does not compute results. Only COBYLA is supported by the current
+shared API; SPSA is visibly disabled. The graph counts a selected partition's edges,
+not an optimized solution. Reference cuts describe the mathematical presets.
 
-## Backend handoff
+Compiler edits stay local, invalidate the bundled example QUBO, and are never
+executed or analyzed. Materials and Search controls update conceptual diagrams;
+they do not compute observables or Grover probabilities.
 
-The app currently makes **no live experiment requests**. The API client is an
-independent integration boundary, with no silent fallback from errors to mocks.
-Pass a base URL and the team's approved request payload when connecting a view.
-Benchmark response fields retain the documented names and nullable measurements;
-`metrics` and `metadata` permit experiment-specific JSON. This frontend does not
-replace backend validation or establish new public request envelopes.
+## API types and integration
 
-Coordinate with the backend owners before wiring requests:
+After backend environment setup, run:
 
-1. Confirm graph/QUBO request envelopes, QAOA configuration, limits, and structured
-   status/error responses; these have not been implemented in the backend.
-2. Confirm variable-to-qubit and measurement bit order. Current QUBO/partition
-   indexing uses `x[i]`, and search ket labels are illustrations only.
-3. Agree on timing boundaries, simulator-only time, quality/gap fields, and
-   repeated-run metrics. Missing measurements must stay unavailable.
-4. Configure FastAPI CORS or a same-origin `/api` proxy when the backend exists.
-   Prerendered static hosting and FastAPI can remain separate services.
+```sh
+npm run types:generate
+npm run types:check
+```
 
-SvelteKit replaces React components/hooks and React routing with Svelte
-components, runes, snippets, and file routing. The JSON API contracts and Python
-algorithms do not depend on that choice. Developer 5 should review that framework
-decision and the shared component boundaries before broad integration.
+The first command exports FastAPI's actual schema and regenerates the committed
+TypeScript. The second checks for drift. Never hand-edit generated types. A normal
+frontend build uses committed types and needs no running Python server.
 
-Design uses an original Q-Atlas mark, locally bundled IBM Plex typefaces, and
-restrained scientific diagrams. White and light-gray workspaces contrast with
-deep navy navigation and blue feature cards. No IBM logo or affiliation is implied.
+Both frontends use `createApiClient()` / `api` from `src/api/client.ts`. The default
+API base URL is `http://127.0.0.1:8000/api`; `VITE_API_BASE_URL` overrides it. It is
+public browser configuration, never a place for credentials. TypeScript enforces
+endpoint/request/result types; FastAPI owns runtime model validation. Failed live
+requests never fall back to example data.
+
+Request envelopes, x[0]-first API bitstrings, and timing fields are established in
+[API contracts](../docs/API_CONTRACTS.md). Reuse them when wiring the Svelte views.
+Keep structured 501/422 errors visible, preserve nullable measurements, and do not
+change shared contracts without coordinating with the affected owners.
+
+## Preserved React scaffold
+
+```sh
+cd frontend/react-scaffold  # from the repository root
+npm ci
+npm run typecheck
+npm run build
+npm run dev
+```
+
+This reference runs at `http://127.0.0.1:5174`. It retains main's original React
+pages, request panels, health check, and live API error display. It shares API types
+and transport with SvelteKit rather than forking contracts. Generate types from
+the parent frontend first if contracts change; see `react-scaffold/README.md`.

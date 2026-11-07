@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { BenchmarkResult } from '../types/contracts.ts';
-  let { result, optimum }: { result: BenchmarkResult | null; optimum: number } = $props();
+  import type { ExampleComparison } from '../types/examples.ts';
+  let { result, optimum }: { result: ExampleComparison | null; optimum: number } = $props();
   let metric = $state<'quality' | 'time'>('quality');
   let rows = $derived([
     {

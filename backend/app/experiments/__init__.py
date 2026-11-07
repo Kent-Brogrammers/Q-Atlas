@@ -1,1 +1,1 @@
-"""Experiment implementations, grouped by team ownership."""
+"""Experiment owners assemble results using shared schemas and benchmark conventions."""

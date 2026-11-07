@@ -1,18 +1,24 @@
-# Local Python environments, caches, and build output.
-.venv/
-.python/
-__pycache__/
-*.py[cod]
-.pytest_cache/
-.ruff_cache/
-.cache/
-*.egg-info/
-build/
-dist/
-.coverage
-htmlcov/
-
-# Local credentials and environment settings.
+.DS_Store
 .env
 .env.*
 !.env.example
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+frontend/openapi.json
+coverage/
+.coverage
+htmlcov/
+# Local Python environments, caches, and build output.
+.python/
+.cache/
+
+# Local credentials and environment settings.
