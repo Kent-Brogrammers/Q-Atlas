@@ -1,4 +1,4 @@
-"""Developer 2 workspace: AST validation, polynomial IR, QUBO extraction, diagnostics.
+"""Developer 2: safe AST analysis and integration with the shared solver interfaces.
 
-Start tests in tests/compiler/. Consume app.quantum.qaoa.run_qaoa; never fork a solver.
+Submitted source is never executed. Solver measurements are never synthesized here.
 """

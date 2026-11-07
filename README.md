@@ -5,9 +5,14 @@ scientifically honest comparisons with classical methods. It combines a restrict
 Python optimization compiler, small spin-system experiments, QAOA optimization, and
 Grover search in one React application.
 
-**Current state: runnable development foundation.** Health works; all five experiment
-operations validate input and return HTTP 501 with `NOT_IMPLEMENTED`. There are no
-compiler, circuit, solver, or simulation implementations and no experimental measurements.
+**Current state: compiler analysis plus development foundation.** Health and safe
+Python-to-QUBO analysis work. Compiler benchmarking is wired to the shared runner
+interfaces, which remain Developer 3 stubs; supported benchmark requests and the
+other experiment routes return HTTP 501. Execution is mocked in compiler tests only.
+There are no circuit/solver implementations or experimental measurements.
+
+See [the compiler guide](docs/COMPILER.md) for supported syntax, diagnostics, limits,
+and the mocked QUBO-to-QAOA handoff.
 
 Read [the original specification](docs/Project_Spec.md) completely before implementing
 features. The original file and its casing are preserved.
@@ -81,8 +86,9 @@ npm run dev
 Open <http://127.0.0.1:5173>. Backend docs are at <http://127.0.0.1:8000/docs>;
 health is <http://127.0.0.1:8000/api/health>. Start either server independently.
 The frontend serves `/`, `/compiler`, `/materials`, `/optimization`, and `/search`.
-Use **Check API health** on the overview to test the connection. Experiment pages
-show real 501 responses; their sample inputs contain no measured results.
+Use **Check API health** on the overview to test the connection. Compiler analysis
+returns a real QUBO; benchmark/other experiment requests show real 501 responses.
+Sample inputs contain no measured results.
 
 No environment file or credentials are required. Optional overrides:
 
