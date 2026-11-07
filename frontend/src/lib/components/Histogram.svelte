@@ -13,7 +13,7 @@
       <span class="percentage">{((bin.count / total) * 100).toFixed(1)}%</span>
     </div>
   {/each}
-  <p>Cut size distribution <span class="mono">n = {total.toLocaleString()}</span></p>
+  <p>Example counts <span class="mono">n = {total.toLocaleString()}</span></p>
 </div>
 
 <style>
@@ -26,26 +26,26 @@
     gap: 13px;
     align-items: center;
     margin-bottom: 17px;
-    font-size: 10px;
+    font-size: 12px;
   }
   .mono {
     color: #526b88;
-    font-size: 10px;
+    font-size: 12px;
   }
   .cut-label {
     font:
-      8px 'IBM Plex Sans',
+      12px 'IBM Plex Sans',
       sans-serif;
     color: #677383;
     margin-left: 5px;
   }
   .track {
     height: 10px;
-    border-radius: 5px;
+    border-radius: 4px;
     background: #f0f5fb;
   }
   .bar {
-    border-radius: 5px;
+    border-radius: 4px;
     height: 100%;
     background: #b7cae4;
     transition: width 0.2s;
@@ -55,7 +55,7 @@
     background: #75b6e6;
   }
   .percentage {
-    font: 9px var(--mono);
+    font: 12px var(--mono);
     text-align: right;
     color: #60738b;
   }
@@ -67,6 +67,6 @@
     margin: 22px 0 0;
     padding-top: 13px;
     color: #677282;
-    font-size: 10px;
+    font-size: 12px;
   }
 </style>

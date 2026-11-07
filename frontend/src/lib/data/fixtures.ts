@@ -145,7 +145,6 @@ export interface ExampleRun {
   expected: number[];
   bestSampled: number[];
   histogram: { cut: number; count: number }[];
-  fixtureConfig: { p: number; shots: number; seed: number; optimizer: string };
 }
 
 export const exampleRuns: Record<string, ExampleRun> = {
@@ -153,14 +152,14 @@ export const exampleRuns: Record<string, ExampleRun> = {
     benchmark: {
       experiment: 'optimization',
       problem_id: 'ui-example-prism',
-      backend: 'aer_simulator',
-      classical: { algorithm: 'brute_force', elapsed_ms: 0.43, objective: -7 },
-      quantum: { algorithm: 'qaoa', elapsed_ms: 1284, objective: -7 },
-      metrics: { num_qubits: 6, circuit_depth: 38, shots: 1024, optimizer_evaluations: 32 },
+      backend: 'ui_example',
+      classical: { algorithm: 'brute_force', elapsed_ms: null, objective: -7 },
+      quantum: { algorithm: 'qaoa', elapsed_ms: null, objective: -7 },
+      metrics: { num_qubits: null, circuit_depth: null, shots: null, optimizer_evaluations: null },
       metadata: {
-        seed: 42,
-        timing_scope: 'illustrative_fixture',
-        simulated: true,
+        seed: null,
+        timing_scope: null,
+        simulated: null,
         ui_fixture: true
       }
     },
@@ -176,21 +175,20 @@ export const exampleRuns: Record<string, ExampleRun> = {
       { cut: 4, count: 128 },
       { cut: 3, count: 92 },
       { cut: 0, count: 32 }
-    ],
-    fixtureConfig: { p: 2, shots: 1024, seed: 42, optimizer: 'COBYLA' }
+    ]
   },
   cube: {
     benchmark: {
       experiment: 'optimization',
       problem_id: 'ui-example-cube',
-      backend: 'aer_simulator',
-      classical: { algorithm: 'brute_force', elapsed_ms: 0.87, objective: -12 },
-      quantum: { algorithm: 'qaoa', elapsed_ms: 1862, objective: -12 },
-      metrics: { num_qubits: 8, circuit_depth: 46, shots: 1024, optimizer_evaluations: 32 },
+      backend: 'ui_example',
+      classical: { algorithm: 'brute_force', elapsed_ms: null, objective: -12 },
+      quantum: { algorithm: 'qaoa', elapsed_ms: null, objective: -12 },
+      metrics: { num_qubits: null, circuit_depth: null, shots: null, optimizer_evaluations: null },
       metadata: {
-        seed: 42,
-        timing_scope: 'illustrative_fixture',
-        simulated: true,
+        seed: null,
+        timing_scope: null,
+        simulated: null,
         ui_fixture: true
       }
     },
@@ -205,21 +203,20 @@ export const exampleRuns: Record<string, ExampleRun> = {
       { cut: 8, count: 196 },
       { cut: 6, count: 84 },
       { cut: 4, count: 32 }
-    ],
-    fixtureConfig: { p: 2, shots: 1024, seed: 42, optimizer: 'COBYLA' }
+    ]
   },
   cycle: {
     benchmark: {
       experiment: 'optimization',
       problem_id: 'ui-example-cycle',
-      backend: 'aer_simulator',
-      classical: { algorithm: 'brute_force', elapsed_ms: 0.12, objective: -4 },
-      quantum: { algorithm: 'qaoa', elapsed_ms: 726, objective: -4 },
-      metrics: { num_qubits: 4, circuit_depth: 22, shots: 1024, optimizer_evaluations: 32 },
+      backend: 'ui_example',
+      classical: { algorithm: 'brute_force', elapsed_ms: null, objective: -4 },
+      quantum: { algorithm: 'qaoa', elapsed_ms: null, objective: -4 },
+      metrics: { num_qubits: null, circuit_depth: null, shots: null, optimizer_evaluations: null },
       metadata: {
-        seed: 42,
-        timing_scope: 'illustrative_fixture',
-        simulated: true,
+        seed: null,
+        timing_scope: null,
+        simulated: null,
         ui_fixture: true
       }
     },
@@ -232,8 +229,7 @@ export const exampleRuns: Record<string, ExampleRun> = {
       { cut: 4, count: 704 },
       { cut: 2, count: 288 },
       { cut: 0, count: 32 }
-    ],
-    fixtureConfig: { p: 2, shots: 1024, seed: 42, optimizer: 'COBYLA' }
+    ]
   }
 };
 

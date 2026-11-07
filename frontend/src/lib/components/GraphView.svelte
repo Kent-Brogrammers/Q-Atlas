@@ -35,7 +35,7 @@
 <div class="graph-view" class:compact>
   {#if !compact}
     <div class="graph-overlay">
-      <span class="graph-caption">{partition ? 'YOUR PARTITION' : 'REFERENCE PARTITION'}</span><span
+      <span class="graph-caption">{partition ? 'Your partition' : 'Reference partition'}</span><span
         class="mono">G = (V, E)</span
       >
     </div>
@@ -46,7 +46,7 @@
     role={interactive ? 'group' : 'img'}
     aria-label={`${graph.name}, ${graph.nodes.length} vertices and ${graph.edges.length} edges${interactive ? '. Select a node to change its partition.' : ''}`}
   >
-    <title>{graph.name} — example graph</title>
+    <title>{graph.name} — graph preset</title>
     <defs
       ><pattern id={gridId} width="24" height="24" patternUnits="userSpaceOnUse"
         ><circle cx="1" cy="1" r=".7" fill="#c7d8e9" /></pattern
@@ -111,8 +111,8 @@
       <p aria-live="polite"><strong>{cut}</strong> / {graph.edges.length} edges cut</p>
     </div>
     {#if interactive}<div class="graph-instructions">
-        <span>Click a node to explore the cut.</span><button onclick={() => (partition = null)}
-          >Reset partition<Icon name="reset" size={12} /></button
+        <span>Select a node to change its partition.</span><button
+          onclick={() => (partition = null)}>Reset partition<Icon name="reset" size={12} /></button
         >
       </div>{/if}
   {/if}
@@ -141,12 +141,12 @@
     z-index: 1;
   }
   .graph-caption {
-    font: 8px var(--mono);
-    letter-spacing: 0.08em;
+    font: 12px var(--mono);
+    letter-spacing: normal;
     color: #647385;
   }
   .graph-overlay .mono {
-    font-size: 9px;
+    font-size: 12px;
     color: #9cacc0;
   }
   .edge {
@@ -219,7 +219,7 @@
   .graph-bottom p {
     margin: 0;
     color: #667385;
-    font: 10px var(--mono);
+    font: 12px var(--mono);
   }
   .graph-bottom strong {
     color: var(--cyan);
@@ -229,7 +229,7 @@
   .graph-legend {
     display: flex;
     gap: 14px;
-    font-size: 9px;
+    font-size: 12px;
     color: #677382;
   }
   .graph-legend span {
@@ -256,7 +256,7 @@
     justify-content: space-between;
     align-items: center;
     color: #8a9bb0;
-    font-size: 9px;
+    font-size: 12px;
   }
   .graph-instructions button {
     display: flex;
@@ -266,7 +266,7 @@
     background: none;
     border: none;
     padding: 0;
-    font-size: 9px;
+    font-size: 12px;
   }
   .compact {
     background: transparent;

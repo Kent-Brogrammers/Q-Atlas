@@ -4,8 +4,10 @@
 
 <aside class="example-notice" aria-label="Data provenance">
   <Icon name="info" size={15} />
-  <strong>DEMONSTRATION DATA</strong>
-  <span>Illustrative fixture data. No experiment has been executed.</span>
+  <strong>Backend not connected</strong>
+  <span
+    >No experiments execute here. Optional example data is labeled and is not measured output.</span
+  >
 </aside>
 
 <style>
@@ -18,16 +20,16 @@
     border: 1px solid #e2ebf5;
     background: #f7faff;
     padding: 9px 13px;
-    border-radius: 10px;
+    border-radius: 4px;
     color: #69809b;
-    font-size: 11px;
+    font-size: 12px;
     line-height: 1.5;
   }
   strong {
     font:
-      500 9px/1.5 'IBM Plex Sans',
+      500 12px/1.5 'IBM Plex Sans',
       sans-serif;
-    letter-spacing: 0.06em;
+    letter-spacing: normal;
     color: #4975a1;
   }
   span {

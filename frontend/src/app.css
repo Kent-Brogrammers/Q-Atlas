@@ -16,7 +16,7 @@
   --surface-raised: #f6f9fc;
   --border: #e6ebf1;
   --text: #17212f;
-  --muted: #657187;
+  --muted: #596579;
   --subtle: #8b96a7;
   --blue: #0f62fe;
   --blue-light: #2868ce;
@@ -82,10 +82,12 @@ summary:focus-visible,
 }
 .eyebrow {
   color: var(--muted);
-  font: 9px/1.5 var(--mono);
-  letter-spacing: 0.055em;
+  font:
+    12px/1.5 'IBM Plex Sans',
+    sans-serif;
+  letter-spacing: normal;
   margin: 0;
-  text-transform: uppercase;
+  text-transform: none;
 }
 .muted {
   color: var(--muted);
@@ -100,23 +102,23 @@ summary:focus-visible,
   min-width: 0;
   background: white;
   border: 1px solid var(--border);
-  border-radius: 19px;
-  box-shadow: 0 3px 10px #172b4d03;
+  border-radius: 6px;
+  box-shadow: none;
   overflow: hidden;
 }
 .button {
-  min-height: 39px;
+  min-height: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   padding: 10px 16px;
   border: 1px solid #e1e7ef;
-  border-radius: 10px;
+  border-radius: 2px;
   background: #fff;
   color: #344158;
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 400;
   transition:
     background 0.15s,
     border-color 0.15s,
@@ -130,7 +132,7 @@ summary:focus-visible,
   background: #0f62fe;
   color: #fff;
   border-color: #0f62fe;
-  box-shadow: 0 3px 7px #0f62fe16;
+  box-shadow: none;
 }
 .button.primary:hover {
   background: #0959ee;
@@ -140,9 +142,9 @@ summary:focus-visible,
   background: transparent;
 }
 .button.small {
-  min-height: 33px;
+  min-height: 36px;
   padding: 8px 12px;
-  font-size: 11px;
+  font-size: 12px;
 }
 .icon-button {
   display: inline-flex;
@@ -151,7 +153,7 @@ summary:focus-visible,
   width: 32px;
   height: 32px;
   border: 1px solid #e0e7f0;
-  border-radius: 9px;
+  border-radius: 2px;
   background: #fff;
   padding: 0;
   color: #65758b;
@@ -207,7 +209,7 @@ summary:focus-visible,
 .brand > span {
   font-size: 25px;
   font-weight: 500;
-  letter-spacing: -0.06em;
+  letter-spacing: normal;
   color: #f5f8ff;
 }
 .brand-dash {
@@ -222,22 +224,24 @@ summary:focus-visible,
   min-height: 35px;
   border: 1px solid #2c3548;
   background: #172132;
-  border-radius: 9px;
+  border-radius: 4px;
   margin: 0 7px 30px;
   display: flex;
   align-items: center;
   gap: 9px;
   padding: 0 10px;
-  font-size: 11px;
+  font-size: 12px;
   color: #b7c6da;
 }
 .workspace-short {
   display: none;
 }
 .nav-heading {
-  font: 9px var(--mono);
-  letter-spacing: 0.07em;
-  color: #697992;
+  font:
+    12px 'IBM Plex Sans',
+    sans-serif;
+  letter-spacing: normal;
+  color: #94a3ba;
   margin: 0 13px 13px;
 }
 .sidebar nav {
@@ -245,15 +249,15 @@ summary:focus-visible,
   gap: 7px;
 }
 .sidebar nav a {
-  min-height: 45px;
+  min-height: 44px;
   padding: 0 12px;
   display: flex;
   align-items: center;
   gap: 11px;
   color: #9aa8bf;
-  font-size: 12px;
+  font-size: 14px;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: 2px;
   position: relative;
   transition:
     background 0.15s,
@@ -281,14 +285,10 @@ summary:focus-visible,
 .sidebar nav .mobile-nav-label {
   display: none;
 }
-.nav-index {
-  font: 9px var(--mono);
-  margin-left: auto;
-  color: #6d86a9;
-}
 .sidebar-bottom {
   margin-top: auto;
-  padding-top: 50px;
+  padding-top: 32px;
+  padding-bottom: 20px;
 }
 .methodology-link {
   width: 100%;
@@ -307,39 +307,6 @@ summary:focus-visible,
 }
 .methodology-link svg:last-child {
   margin-left: auto;
-}
-.sidebar-signature {
-  border: 1px solid #29364b;
-  border-radius: 12px;
-  background: #182235;
-  margin: 18px 7px 20px;
-  padding: 16px 10px;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-.signature-mark {
-  color: #64b8ec;
-  display: flex;
-}
-.sidebar-signature p {
-  margin: 0;
-  color: #ccd7e8;
-  font-size: 10px;
-  line-height: 1.7;
-}
-.sidebar-signature p span {
-  color: #8396b1;
-}
-.sidebar-version {
-  border-top: 1px solid #253147;
-  padding: 18px 19px;
-  margin: 0 -16px;
-  font: 8px var(--mono);
-  color: #72849f;
-  letter-spacing: 0.04em;
-  display: flex;
-  justify-content: space-between;
 }
 .workspace {
   margin-left: 226px;
@@ -373,18 +340,12 @@ summary:focus-visible,
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 11px;
+  font-size: 12px;
   color: #6f7d90;
 }
-.environment-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: #f6f8fc;
-  border: 1px solid #e6ebf3;
-  padding: 8px 11px;
-  border-radius: 30px;
-  font-size: 10px;
+.connection-status {
+  font-size: 12px;
+  color: var(--muted);
 }
 .topbar-methodology {
   display: inline-flex;
@@ -392,9 +353,9 @@ summary:focus-visible,
   gap: 8px;
   padding: 8px 12px;
   border: 1px solid #e5eaf1;
-  border-radius: 30px;
+  border-radius: 2px;
   background: white;
-  font-size: 11px;
+  font-size: 12px;
   color: #53637b;
 }
 .topbar-methodology:hover {
@@ -420,41 +381,22 @@ main:focus {
   margin-bottom: 21px;
 }
 .page-heading h1 {
-  font-size: 26px;
-  font-weight: 500;
-  letter-spacing: -0.04em;
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: normal;
   line-height: 1.2;
   margin: 8px 0 7px;
 }
 .page-heading p:not(.eyebrow) {
   margin: 0;
   color: #67748a;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.65;
 }
 .page-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 9px;
-}
-.workspace-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 19px 32px;
-  border-top: 1px solid #edf0f5;
-  color: #8995a7;
-  font-size: 10px;
-}
-.workspace-footer > span:last-child {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-}
-.footer-dash {
-  color: #c5cfdc;
-  margin: 0 8px;
 }
 .skip-link {
   position: fixed;
@@ -464,7 +406,7 @@ main:focus {
   color: white;
   padding: 12px 20px;
   z-index: 50;
-  border-radius: 8px;
+  border-radius: 4px;
 }
 .skip-link:focus {
   top: 10px;
@@ -476,9 +418,9 @@ main:focus {
   padding: 28px;
   background: white;
   border: 1px solid #dce5f0;
-  border-radius: 22px;
+  border-radius: 4px;
   margin: auto;
-  box-shadow: 0 24px 80px #11244126;
+  box-shadow: none;
 }
 .methodology-dialog::backdrop {
   background: #0c1e3955;
@@ -492,7 +434,7 @@ main:focus {
 .methodology-dialog h2 {
   font-weight: 500;
   font-size: 28px;
-  letter-spacing: -0.04em;
+  letter-spacing: normal;
   margin: 25px 0 16px;
   line-height: 1.25;
 }
@@ -516,7 +458,7 @@ main:focus {
   font-weight: 500;
 }
 .code-block {
-  font: 11px/1.85 var(--mono);
+  font: 12px/1.85 var(--mono);
   overflow: auto;
   color: #38567a;
   background: #f6f9fd;
@@ -527,7 +469,7 @@ main:focus {
 .segmented {
   display: inline-flex;
   border: 1px solid #e7ecf4;
-  border-radius: 9px;
+  border-radius: 2px;
   overflow: hidden;
   background: #f5f8fc;
   padding: 3px;
@@ -538,14 +480,14 @@ main:focus {
   padding: 6px 10px;
   background: transparent;
   border: none;
-  border-radius: 6px;
+  border-radius: 2px;
   color: #7b8799;
-  font-size: 10px;
+  font-size: 12px;
 }
 .segmented button.selected {
   background: white;
   color: #1f6cd9;
-  box-shadow: 0 1px 5px #1f3f7010;
+  box-shadow: none;
 }
 .empty-state {
   padding: 35px;
@@ -554,7 +496,7 @@ main:focus {
 .empty-state h3 {
   font-weight: 500;
   font-size: 23px;
-  letter-spacing: -0.03em;
+  letter-spacing: normal;
 }
 .empty-state p {
   max-width: 520px;
@@ -582,10 +524,8 @@ main:focus {
   .workspace-label > span:not(.workspace-short),
   .nav-heading,
   .sidebar nav a > span,
-  .sidebar-signature,
   .methodology-link > span,
-  .methodology-link svg:last-child,
-  .sidebar-version {
+  .methodology-link svg:last-child {
     display: none;
   }
   .workspace-short {
@@ -661,7 +601,7 @@ main:focus {
   }
   .sidebar nav a > .mobile-nav-label {
     display: block;
-    font-size: 8px;
+    font-size: 12px;
   }
   .workspace {
     margin: 0;
@@ -680,9 +620,8 @@ main:focus {
   .topbar-methodology span {
     display: none;
   }
-  .environment-pill {
-    font-size: 9px;
-    padding: 7px 9px;
+  .connection-status {
+    font-size: 12px;
   }
   main {
     padding: 22px 16px;
@@ -695,13 +634,6 @@ main:focus {
   }
   .page-actions {
     margin-top: 15px;
-  }
-  .workspace-footer {
-    padding: 16px;
-    font-size: 9px;
-  }
-  .workspace-footer > span:last-child {
-    display: none;
   }
   .skip-link {
     left: 16px;
@@ -718,7 +650,13 @@ main:focus {
 }
 
 @media (max-width: 380px) {
-  .environment-pill {
+  .connection-status {
     display: none;
   }
+}
+
+.project-information {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
 }

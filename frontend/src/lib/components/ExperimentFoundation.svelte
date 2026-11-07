@@ -3,7 +3,6 @@
   import type { Experiment } from '../types/contracts.ts';
   import Icon from './Icon.svelte';
   import Panel from './Panel.svelte';
-  import Badge from './Badge.svelte';
   import ExampleNotice from './ExampleNotice.svelte';
   import CircuitDiagram from './CircuitDiagram.svelte';
 
@@ -30,43 +29,43 @@
   const comparisons: Record<string, { title: string; description: string }[]> = {
     compiler: [
       {
-        title: 'A validated objective',
+        title: 'Source validation (planned)',
         description: 'Allowlisted AST analysis with diagnostics. User source is never executed.'
       },
       {
-        title: 'A shared QUBO',
+        title: 'QUBO normalization (planned)',
         description: 'Canonical minimization, normalized terms, and explicit variable order.'
       },
       {
-        title: 'One reusable QAOA runner',
+        title: 'QAOA integration (planned)',
         description: 'The same optimization engine serves the compiler and Max-Cut experiments.'
       }
     ],
     materials: [
       {
-        title: 'A small spin Hamiltonian',
+        title: 'Spin Hamiltonian (planned)',
         description: 'Two to four spins, with explicit model assumptions and parameters.'
       },
       {
-        title: 'An exact classical reference',
+        title: 'Exact diagonalization (planned)',
         description: 'A defined observable checked against exact diagonalization.'
       },
       {
-        title: 'An honest comparison',
+        title: 'Observable comparison (planned)',
         description: 'Report absolute error, units, backend, and timing scope.'
       }
     ],
     search: [
       {
-        title: 'An explicit oracle',
+        title: 'Oracle construction (planned)',
         description: 'Marked states and oracle-construction assumptions remain visible.'
       },
       {
-        title: 'Probability and query counts',
+        title: 'Probability and query counts (planned)',
         description: 'Compare success probabilities and query complexity separately from runtime.'
       },
       {
-        title: 'A classical baseline',
+        title: 'Classical baseline (planned)',
         description: 'Use the same search problem and account for predicate implementation.'
       }
     ]
@@ -76,20 +75,18 @@
 <svelte:head><title>{info.title} · Q-Atlas</title></svelte:head>
 <header class="page-heading">
   <div>
-    <p class="eyebrow"><span class="cyan-text">EXPERIMENT {info.number}</span> / {info.method}</p>
+    <p class="eyebrow">{info.method}</p>
     <h1>{info.title}</h1>
     <p>{info.description}</p>
   </div>
-  <Badge>BACKEND INTEGRATION PENDING</Badge>
 </header>
 <ExampleNotice />
 
 {#if experiment === 'compiler'}
   <div class="foundation-grid compiler-grid">
     <Panel
-      title="Start with an objective"
-      kicker="PYTHON SOURCE"
-      subtitle="Editor foundation · source stays in your browser."
+      title="Python source"
+      subtitle="Source stays in your browser; compiler integration is pending."
     >
       {#snippet toolbar()}<span class="file-label">objective.py</span>{/snippet}
       <div class="source-editor">
@@ -97,6 +94,8 @@
           {#each source.split('\n') as _, i}<span>{i + 1}</span>{/each}
         </div>
         <textarea
+          id="objective-source"
+          name="source"
           aria-label="Python objective source"
           bind:value={source}
           oninput={() => {
@@ -117,16 +116,16 @@
         >
       </div>
       <p class="editor-status" role="status">
-        {status || 'Edit freely. Live AST diagnostics will appear when the compiler is connected.'}
+        {status || 'Source edits are not analyzed. Load the bundled example to inspect its QUBO.'}
       </p>
     </Panel>
-    <Panel title="QUBO extraction" kicker="THE SHARED REPRESENTATION">
-      {#if preview}<div class="output-label"><Badge tone="amber">STATIC EXAMPLE OUTPUT</Badge></div>
+    <Panel title="QUBO extraction">
+      {#if preview}<div class="output-label">Example QUBO · not compiler output</div>
         <pre class="code-block">{JSON.stringify(exampleQubo, null, 2)}</pre>{:else}<div
           class="empty-state"
         >
           <Icon name="code" size={32} />
-          <h3>From source to structure.</h3>
+          <h3>No QUBO extracted</h3>
           <p>
             Load the bundled example to inspect its hand-authored QUBO. Editing source does not
             trigger extraction.
@@ -135,18 +134,13 @@
     </Panel>
   </div>
   <Panel
-    title="A circuit, made visible"
-    kicker="CIRCUIT PATHWAY"
+    title="QAOA circuit schematic"
     subtitle="A conceptual QAOA layer schematic. Circuit generation is not connected."
     ><CircuitDiagram /></Panel
   >
 {:else if experiment === 'materials'}
   <div class="foundation-grid">
-    <Panel
-      title="Model setup"
-      kicker="SPIN SYSTEM"
-      subtitle="Illustrative controls for a small Ising chain."
-    >
+    <Panel title="Model setup" subtitle="Illustrative controls for a small Ising chain.">
       <div class="foundation-controls">
         <label for="spins">Spin count<output>{spins}</output></label><input
           id="spins"
@@ -173,7 +167,7 @@
         <p>Parameters describe a model preview. No Hamiltonian or observable is computed here.</p>
       </div>
     </Panel>
-    <Panel title="Inside the spin chain" kicker="SYSTEM ILLUSTRATION">
+    <Panel title="Spin-chain schematic">
       <div class="spin-illustration">
         <svg
           viewBox="0 0 600 220"
@@ -204,11 +198,7 @@
   </div>
 {:else}
   <div class="foundation-grid">
-    <Panel
-      title="Define the search space"
-      kicker="ORACLE PREVIEW"
-      subtitle="Select a marked state to inspect the UI."
-    >
+    <Panel title="Search settings" subtitle="Select a marked state to inspect the UI.">
       <div class="foundation-controls">
         <label for="space">Number of states</label><select
           id="space"
@@ -219,7 +209,7 @@
           ><option value={16}>16 states · 4 qubits</option></select
         >
         <div class="marked-label">
-          <span class="eyebrow">MARKED STATE</span><strong
+          <span class="eyebrow">Marked state</span><strong
             >|{marked.toString(2).padStart(Math.log2(space), '0')}⟩</strong
           >
         </div>
@@ -229,10 +219,7 @@
         </p>
       </div>
     </Panel>
-    <Panel
-      title="Find a state in the crowd"
-      kicker="SEARCH SPACE ILLUSTRATION"
-      subtitle="Click any state to mark it."
+    <Panel title="Search states" subtitle="Click any state to mark it."
       ><div class="state-grid">
         {#each Array.from({ length: space }) as _, i}<button
             class:marked={marked === i}
@@ -240,7 +227,7 @@
             aria-label={`Mark state ${i}`}
             onclick={() => (marked = i)}
             ><span>|{i.toString(2).padStart(Math.log2(space), '0')}⟩</span><i
-              >{marked === i ? 'MARKED' : 'STATE'}</i
+              >{marked === i ? 'Marked' : 'State'}</i
             ></button
           >{/each}
       </div>
@@ -252,7 +239,7 @@
 {/if}
 
 <div class="integration-row">
-  <Panel title="What will be compared" kicker="EXPERIMENT PLAN"
+  <Panel title="Pending backend integration"
     ><div class="comparison-plan">
       {#each comparisons[experiment] as item, i}<div>
           <span class="mono">0{i + 1}</span>
@@ -261,9 +248,8 @@
     </div></Panel
   >
   <section class="next-workspace">
-    <span class="eyebrow">KEEP EXPLORING</span><Icon name="graph" size={28} />
-    <h2>See the comparison<br />workspace in action.</h2>
-    <p>Explore graph partitions and example result panels in the optimization lab.</p>
+    <h2>Max-Cut optimization</h2>
+    <p>Inspect graph partitions, canonical QUBOs, and optional example result charts.</p>
     <a class="text-link" href="/optimization/">Open optimization<Icon name="arrow" size={16} /></a>
   </section>
 </div>
@@ -280,7 +266,10 @@
   }
   .file-label {
     color: #637387;
-    font: 9px var(--mono);
+    font: 12px var(--mono);
+  }
+  input[type='number'] {
+    font-family: var(--mono);
   }
   .source-editor {
     display: flex;
@@ -296,7 +285,7 @@
     padding-right: 10px;
     text-align: right;
     color: #9baabd;
-    font: 10px/2.1 var(--mono);
+    font: 12px/2.1 var(--mono);
     user-select: none;
   }
   textarea {
@@ -307,10 +296,10 @@
     background: transparent;
     color: #496b9b;
     padding: 0 16px 0 5px;
-    font: 10px/2.1 var(--mono);
+    font: 12px/2.1 var(--mono);
     white-space: pre;
     overflow: auto;
-    border-radius: 9px;
+    border-radius: 4px;
   }
   .editor-actions {
     display: flex;
@@ -321,16 +310,16 @@
     border-top: 1px solid var(--border);
   }
   .editor-actions > span {
-    font-size: 9px;
+    font-size: 12px;
     color: #667382;
   }
   .editor-actions .button {
-    font-size: 9px;
+    font-size: 12px;
   }
   .editor-status {
     margin: 0;
     padding: 0 20px 18px;
-    font-size: 10px;
+    font-size: 12px;
     color: #708bac;
     line-height: 1.7;
   }
@@ -349,7 +338,7 @@
     color: #3e587b;
   }
   .empty-state p {
-    font-size: 11px;
+    font-size: 12px;
   }
   .foundation-controls {
     padding: 10px 24px 22px;
@@ -358,7 +347,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 11px;
+    font-size: 12px;
     color: #5d738f;
     margin: 0 0 12px;
   }
@@ -373,15 +362,15 @@
     width: 100%;
     background: #f6f9fd;
     border: 1px solid #d9e4f2;
-    border-radius: 9px;
+    border-radius: 4px;
     padding: 10px;
     color: #567397;
-    font: 11px var(--mono);
+    font: 12px var(--mono);
     margin-bottom: 25px;
   }
   .foundation-controls p {
     color: #667385;
-    font-size: 10px;
+    font-size: 12px;
     line-height: 1.8;
   }
   .spin-illustration {
@@ -395,11 +384,11 @@
   }
   .spin-illustration svg text {
     fill: #8494ac;
-    font: 11px var(--mono);
+    font: 12px var(--mono);
   }
   .spin-illustration .mono {
     color: #8f78b3;
-    font-size: 11px;
+    font-size: 12px;
   }
   .spin-illustration .mono span {
     color: #756e7f;
@@ -407,7 +396,7 @@
   }
   .spin-illustration > span {
     color: #687382;
-    font-size: 9px;
+    font-size: 12px;
   }
   .state-grid {
     padding: 5px 24px 20px;
@@ -418,7 +407,7 @@
   .state-grid button {
     border: 1px solid #dde6f1;
     min-height: 68px;
-    border-radius: 12px;
+    border-radius: 4px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -439,8 +428,8 @@
     font: 12px var(--mono);
   }
   .state-grid i {
-    font: 7px var(--mono);
-    letter-spacing: 0.07em;
+    font: 12px var(--mono);
+    letter-spacing: normal;
     color: #97a9bf;
   }
   .state-grid .marked i {
@@ -450,7 +439,7 @@
     margin: 0;
     padding: 0 24px 22px;
     color: #657385;
-    font-size: 9px;
+    font-size: 12px;
     line-height: 1.7;
   }
   .marked-label {
@@ -479,12 +468,12 @@
   }
   .comparison-plan .mono {
     color: #8ca8ca;
-    font-size: 10px;
+    font-size: 12px;
     padding-top: 3px;
   }
   .comparison-plan p {
     margin: 0;
-    font-size: 11px;
+    font-size: 12px;
     color: #647386;
     line-height: 1.8;
   }
@@ -507,12 +496,12 @@
   .next-workspace h2 {
     font-weight: 400;
     font-size: 24px;
-    letter-spacing: -0.03em;
+    letter-spacing: normal;
     line-height: 1.3;
   }
   .next-workspace p {
     color: #657385;
-    font-size: 11px;
+    font-size: 12px;
     line-height: 1.8;
     max-width: 280px;
     margin-bottom: 22px;
@@ -536,7 +525,7 @@
       padding-inline: 15px;
     }
     .state-grid button > span {
-      font-size: 10px;
+      font-size: 12px;
     }
   }
 </style>

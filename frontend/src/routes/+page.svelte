@@ -1,7 +1,6 @@
 <script lang="ts">
   import { experiments } from '#lib/data/experiments.ts';
   import { graphs } from '#lib/data/fixtures.ts';
-  import Badge from '#lib/components/Badge.svelte';
   import Icon from '#lib/components/Icon.svelte';
   import Panel from '#lib/components/Panel.svelte';
   import ExampleNotice from '#lib/components/ExampleNotice.svelte';
@@ -17,41 +16,40 @@
 
 <header class="page-heading">
   <div>
-    <p class="eyebrow">YOUR RESEARCH WORKSPACE</p>
-    <h1>A little curiosity. A new perspective.</h1>
-    <p>Welcome to Q-Atlas. Let's explore what quantum computing can do.</p>
+    <h1>Q-Atlas Overview</h1>
+    <p>Experiment configuration, QUBO inspection, and benchmark comparisons.</p>
   </div>
-  <a class="button small" href="/optimization/">Open the lab<Icon name="northeast" size={15} /></a>
+  <a class="button small" href="/optimization/"
+    >Open optimization<Icon name="northeast" size={15} /></a
+  >
 </header>
 <ExampleNotice />
 
 <div class="dashboard-columns grid gap-6">
   <div class="primary-column min-w-0">
     <FeatureBanner
-      eyebrow="THE Q-ATLAS WORKSPACE"
-      title="Quantum exploration, with the full picture."
-      description="Turn small problems into meaningful comparisons. Explore circuits, inspect solutions, and keep the evidence in view."
+      title="Quantum computing benchmarks"
+      description="Configure small quantum computing problems and compare solution quality against classical baselines. Backend execution is not connected."
     >
-      <a href="/optimization/">Explore optimization<Icon name="arrow" size={15} /></a><span
-        class="banner-tag">4 experiment views</span
-      >
+      <a href="/optimization/">Max-Cut optimization<Icon name="arrow" size={15} /></a>
+      <a href="/compiler/">Python compiler<Icon name="arrow" size={15} /></a>
     </FeatureBanner>
 
     <section class="experiment-modules" aria-labelledby="modules-heading">
       <div class="section-heading">
         <div>
-          <h2 id="modules-heading">Find your next experiment</h2>
-          <p>Four ways to explore the same big questions.</p>
+          <h2 id="modules-heading">Experiments</h2>
+          <p>Select a workspace to configure inputs and inspect available outputs.</p>
         </div>
-        <span class="section-count">04 modules<Icon name="sliders" size={15} /></span>
       </div>
       <div class="module-grid grid grid-cols-1 gap-4 sm:grid-cols-2">
         {#each experiments as experiment}
           <a class="experiment-module {experiment.color}" href="/{experiment.id}/">
             <div class="module-top">
-              <span class="module-icon"><Icon name={experiment.icon} size={21} /></span><span
-                class="module-number">0{experiments.indexOf(experiment) + 1}</span
-              ><Icon name="northeast" size={15} />
+              <span class="module-icon"><Icon name={experiment.icon} size={21} /></span><Icon
+                name="northeast"
+                size={15}
+              />
             </div>
             <h3>{experiment.title}</h3>
             <p>{experiment.description}</p>
@@ -76,27 +74,26 @@
                 >
               {:else}<span class="search-preview"
                   >{#each Array.from({ length: 12 }) as _, i}<i class:marked={i === 7}
-                    ></i>{/each}<span>Find a different path.</span></span
+                    ></i>{/each}<span>Marked state</span></span
                 >{/if}
             </div>
             <div class="module-footer">
-              <span
-                >{experiment.id === 'optimization'
-                  ? 'Interactive workspace'
-                  : 'Explore the foundation'}</span
-              ><Icon name="arrow" size={13} />
+              <span>Open {experiment.short.toLowerCase()}</span><Icon name="arrow" size={13} />
             </div>
           </a>
         {/each}
       </div>
     </section>
 
-    <Panel title="Your example notebook" subtitle="A few small problems to start exploring.">
+    <Panel
+      title="Max-Cut graph presets"
+      subtitle="Problem definitions for inspecting graphs and QUBOs."
+    >
       {#snippet toolbar()}<div class="segmented">
           <button
             class:selected={filter === 'all'}
             aria-pressed={filter === 'all'}
-            onclick={() => (filter = 'all')}>All examples</button
+            onclick={() => (filter = 'all')}>All presets</button
           ><button
             class:selected={filter === 'small'}
             aria-pressed={filter === 'small'}
@@ -105,38 +102,34 @@
         </div>{/snippet}
       <div class="notebook-table">
         <table>
-          <thead
-            ><tr><th>Problem</th><th>Variables</th><th>Edges</th><th>Data source</th></tr></thead
+          <thead><tr><th>Problem</th><th>Variables</th><th>Edges</th><th>Source</th></tr></thead
           ><tbody
-            >{#each visibleGraphs as graph, i}<tr
+            >{#each visibleGraphs as graph}<tr
                 ><td
                   ><span class="notebook-icon"><Icon name="graph" size={17} /></span>
                   <div><strong>{graph.name}</strong><small>Unweighted Max-Cut</small></div></td
-                ><td>{graph.nodes.length}</td><td>{graph.edges.length}</td><td
-                  ><Badge tone="blue">UI example</Badge></td
+                ><td>{graph.nodes.length}</td><td>{graph.edges.length}</td><td>Built-in preset</td
                 ></tr
               >{/each}</tbody
           >
         </table>
       </div>
       <div class="notebook-footer">
-        <span><span class="status-dot amber"></span>No live experiments yet</span><a
+        <span>Graph definitions only; no solver results</span><a
           class="text-link"
-          href="/optimization/">Open example workspace<Icon name="arrow" size={14} /></a
+          href="/optimization/">Configure Max-Cut<Icon name="arrow" size={14} /></a
         >
       </div>
     </Panel>
   </div>
 
   <aside class="analytics-column" aria-label="Workspace analytics and context">
-    <Panel title="Workspace overview" subtitle="Small problems. Room to explore."
-      >{#snippet toolbar()}<Badge>Library</Badge>{/snippet}<LibraryOverview /></Panel
-    >
+    <Panel title="Execution metrics"><LibraryOverview /></Panel>
     <Panel title="Execution context">
       <div class="execution-context">
         <div>
           <span class="context-icon"><Icon name="terminal" size={17} /></span>
-          <p><strong>Local simulator</strong><span>Qiskit Aer · integration pending</span></p>
+          <p><strong>Planned simulator</strong><span>Qiskit Aer · integration pending</span></p>
         </div>
         <div>
           <span class="context-icon violet"><Icon name="circuit" size={17} /></span>
@@ -144,25 +137,20 @@
         </div>
         <div>
           <span class="context-icon gray"><Icon name="layers" size={17} /></span>
-          <p><strong>Current data source</strong><span>Hand-authored UI examples</span></p>
+          <p><strong>Current data source</strong><span>Optional example charts</span></p>
         </div>
       </div>
       <div class="context-footer">
         <Icon name="info" size={13} />Simulation is distinct from hardware execution.
       </div>
     </Panel>
-    <section class="perspective-card">
-      <span class="perspective-icon"><Icon name="book" size={22} /></span><span class="eyebrow"
-        >A BETTER COMPARISON</span
-      >
-      <h2>There is more to a result than runtime.</h2>
-      <p>
-        Keep solution quality, the classical reference, and execution context in the same frame.
-      </p>
+    <section class="requirements-card">
+      <h2>Benchmark requirements</h2>
+      <p>Measured results must identify the objective, backend, and timing scope.</p>
       <div>
-        <span><Icon name="check" size={12} />Same mathematical problem</span><span
-          ><Icon name="check" size={12} />Quality alongside time</span
-        ><span><Icon name="check" size={12} />Clear data provenance</span>
+        <span><Icon name="check" size={12} />Shared QUBO objective</span>
+        <span><Icon name="check" size={12} />Classical baseline</span>
+        <span><Icon name="check" size={12} />Separate simulator and optimizer timing</span>
       </div>
     </section>
   </aside>
@@ -189,25 +177,18 @@
   .section-heading h2 {
     font-size: 16px;
     font-weight: 500;
-    letter-spacing: -0.02em;
+    letter-spacing: normal;
     margin: 0 0 5px;
   }
   .section-heading p {
-    font-size: 11px;
+    font-size: 12px;
     color: #6a727f;
     margin: 0;
-  }
-  .section-count {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    color: #8c9ab0;
-    font-size: 10px;
   }
   .experiment-module {
     min-width: 0;
     border: 1px solid #e5ebf2;
-    border-radius: 17px;
+    border-radius: 4px;
     background: white;
     padding: 19px 20px 0;
     display: block;
@@ -217,13 +198,16 @@
       box-shadow 0.15s;
   }
   .experiment-module:hover {
-    transform: translateY(-2px);
+    background: #f7faff;
     border-color: #b8d4f1;
-    box-shadow: 0 6px 15px #29497307;
+    box-shadow: none;
   }
   .experiment-module.cyan {
     background: #f7fbff;
     border-color: #d9e8f7;
+  }
+  .module-top > :global(svg) {
+    margin-left: auto;
   }
   .module-top {
     display: flex;
@@ -234,7 +218,7 @@
   .module-icon {
     width: 34px;
     height: 34px;
-    border-radius: 10px;
+    border-radius: 4px;
     background: #ecf4ff;
     color: #4b94d8;
     display: grid;
@@ -248,11 +232,6 @@
     background: #edf8f7;
     color: #72a9a3;
   }
-  .module-number {
-    margin-left: auto;
-    color: #b6c0cf;
-    font: 9px var(--mono);
-  }
   .module-top > :global(svg) {
     color: #b0bdcd;
   }
@@ -260,10 +239,10 @@
     font-size: 15px;
     font-weight: 500;
     margin: 0 0 6px;
-    letter-spacing: -0.025em;
+    letter-spacing: normal;
   }
   .experiment-module > p {
-    font-size: 11px;
+    font-size: 12px;
     line-height: 1.65;
     color: #687281;
     margin: 0;
@@ -278,9 +257,9 @@
   .code-preview {
     display: block;
     background: #f5f8fc;
-    border-radius: 7px;
+    border-radius: 4px;
     color: #6c84a5;
-    font: 9px var(--mono);
+    font: 12px var(--mono);
     padding: 10px;
     width: 100%;
     white-space: nowrap;
@@ -333,7 +312,7 @@
   }
   .search-preview > span {
     color: #94a9ae;
-    font-size: 8px;
+    font-size: 12px;
     margin-left: 5px;
   }
   .module-footer {
@@ -345,7 +324,7 @@
     margin: 0 -20px;
     padding: 12px 20px;
     color: #637389;
-    font-size: 9px;
+    font-size: 12px;
   }
   .cyan .module-footer {
     color: #3475b4;
@@ -358,26 +337,30 @@
     width: 100%;
     border-collapse: collapse;
     text-align: left;
-    font-size: 11px;
+    font-size: 12px;
   }
   th {
     padding: 10px 8px;
-    color: #8c99ac;
+    color: var(--muted);
     background: #fafbfd;
-    font-size: 9px;
+    font-size: 12px;
     font-weight: 400;
   }
   th:first-child {
     padding-left: 11px;
-    border-radius: 7px 0 0 7px;
+    border-radius: 4px 0 0 4px;
   }
   th:last-child {
-    border-radius: 0 7px 7px 0;
+    border-radius: 0 4px 4px 0;
   }
   td {
     padding: 15px 8px;
-    color: #7d90a9;
+    color: var(--muted);
     border-bottom: 1px solid #edf1f6;
+  }
+  td:nth-child(2),
+  td:nth-child(3) {
+    font-family: var(--mono);
   }
   td:first-child {
     display: flex;
@@ -393,19 +376,19 @@
     width: 31px;
     height: 31px;
     background: #f1f6fc;
-    border-radius: 9px;
+    border-radius: 4px;
     color: #87a9d2;
   }
   td strong {
     display: block;
     font-weight: 500;
-    font-size: 11px;
+    font-size: 12px;
     color: #4b6080;
     margin-bottom: 3px;
     white-space: nowrap;
   }
   td small {
-    font-size: 9px;
+    font-size: 12px;
     color: #69727e;
   }
   .notebook-footer {
@@ -421,10 +404,10 @@
     align-items: center;
     gap: 7px;
     color: #68727e;
-    font-size: 9px;
+    font-size: 12px;
   }
   .notebook-footer .text-link {
-    font-size: 10px;
+    font-size: 12px;
   }
   .execution-context {
     display: grid;
@@ -441,7 +424,7 @@
     place-items: center;
     width: 33px;
     height: 33px;
-    border-radius: 10px;
+    border-radius: 4px;
     color: #6da2d3;
     background: #eef6ff;
   }
@@ -458,14 +441,14 @@
   }
   .execution-context strong {
     display: block;
-    font-size: 11px;
+    font-size: 12px;
     color: #5c708c;
     font-weight: 500;
     margin-bottom: 4px;
   }
   .execution-context p > span {
     color: #677280;
-    font-size: 9px;
+    font-size: 12px;
   }
   .context-footer {
     display: flex;
@@ -474,50 +457,36 @@
     padding: 15px 23px;
     border-top: 1px solid #edf1f6;
     color: #697380;
-    font-size: 9px;
+    font-size: 12px;
     line-height: 1.5;
   }
-  .perspective-card {
+  .requirements-card {
     padding: 24px;
     background: #f3f9ff;
     border: 1px solid #dfedfa;
-    border-radius: 19px;
+    border-radius: 4px;
   }
-  .perspective-icon {
-    width: 39px;
-    height: 39px;
-    display: grid;
-    place-items: center;
-    border-radius: 12px;
-    color: #5599d6;
-    background: #e4f1ff;
-    margin-bottom: 18px;
-  }
-  .perspective-card .eyebrow {
-    font-size: 8px;
-    color: #5c738c;
-  }
-  .perspective-card h2 {
+  .requirements-card h2 {
     font-size: 20px;
     line-height: 1.35;
-    letter-spacing: -0.035em;
+    letter-spacing: normal;
     font-weight: 500;
     color: #3a608a;
     margin: 10px 0;
   }
-  .perspective-card p {
+  .requirements-card p {
     color: #637385;
-    font-size: 11px;
+    font-size: 12px;
     line-height: 1.8;
     margin: 0 0 20px;
   }
-  .perspective-card > div {
+  .requirements-card > div {
     display: grid;
     gap: 10px;
   }
-  .perspective-card > div > span {
+  .requirements-card > div > span {
     color: #5c738c;
-    font-size: 10px;
+    font-size: 12px;
     display: inline-flex;
     align-items: center;
     gap: 7px;
@@ -549,7 +518,7 @@
       grid-template-columns: 1fr 1fr;
       align-items: start;
     }
-    .perspective-card {
+    .requirements-card {
       grid-column: 1 / -1;
     }
   }
@@ -560,9 +529,6 @@
     .notebook-footer {
       align-items: flex-start;
       flex-direction: column;
-    }
-    .section-count {
-      display: none;
     }
     :global(.notebook-table) {
       padding-inline: 13px;

@@ -42,7 +42,7 @@
     margin: 0;
     font-size: 16px;
     font-weight: 500;
-    letter-spacing: -0.02em;
+    letter-spacing: normal;
   }
   .eyebrow {
     margin: 0 0 10px;
