@@ -17,3 +17,8 @@ frontend/openapi.json
 coverage/
 .coverage
 htmlcov/
+# Local Python environments, caches, and build output.
+.python/
+.cache/
+
+# Local credentials and environment settings.

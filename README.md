@@ -3,7 +3,8 @@
 Q-Atlas is a five-developer quantum computing hackathon project for reproducible,
 scientifically honest comparisons with classical methods. It combines a restricted
 Python optimization compiler, small spin-system experiments, QAOA optimization, and
-Grover search in one React application.
+Grover search in a SvelteKit application. The original React scaffold is preserved
+in `frontend/react-scaffold/` for Developer 5 review; the shared specification is unchanged.
 
 **Current state: materials experiment plus shared development foundation.** Health works;
 materials runs a 2–4-spin transverse-field Ising experiment with exact, ideal circuit,
@@ -40,23 +41,23 @@ features. The original file and its casing are preserved.
 │   │   └── benchmarks/            # shared timing/result assembly
 │   └── tests/                     # api, schemas, compiler, materials, optimization, search
 └── frontend/
-    ├── package.json
-    ├── package-lock.json
-    ├── vite.config.ts
-    └── src/
-        ├── App.tsx                # overview + four feature routes
-        ├── pages/                 # Developer 5
-        ├── components/            # minimal request/response panels
-        ├── api/client.ts          # typed fetch client
-        └── types/                 # generated API types + named exports
+    ├── package.json               # primary SvelteKit application
+    ├── src/
+    │   ├── routes/                # overview + four experiment views
+    │   ├── lib/                   # reusable controls, graphs, example displays
+    │   ├── api/client.ts          # one shared typed transport
+    │   └── types/                 # canonical OpenAPI-generated types
+    ├── tools/api-types/           # isolated TypeScript 5 generator workspace
+    └── react-scaffold/            # preserved React application on port 5174
 ```
 
 ## Setup and run
 
-Prerequisites: Python 3.11+, [uv](https://docs.astral.sh/uv/getting-started/installation/),
-and Node.js 22.12+ (22 LTS or 24+). The lockfiles pin resolved compatible packages.
-The TypeScript 5.9 pin is intentional: the OpenAPI generator's peer range is TypeScript 5.
-The frontend uses [Vite](https://vite.dev/guide/) and the
+Prerequisites: Python 3.11+ (Developer 3 uses Python 3.12), [uv](https://docs.astral.sh/uv/getting-started/installation/),
+and Node.js 22.17+ (22 LTS or 24+). The lockfiles pin resolved compatible packages.
+SvelteKit uses TypeScript 6; the OpenAPI generator is isolated in a workspace
+using TypeScript 5.9 to satisfy its peer range. The frontends use
+[Vite](https://vite.dev/guide/) and the
 [Tailwind Vite plugin](https://tailwindcss.com/docs/installation/using-vite).
 
 From the repository root, in the backend terminal:
@@ -85,6 +86,10 @@ The frontend serves `/`, `/compiler`, `/materials`, `/optimization`, and `/searc
 Use **Check API health** on the overview to test the connection. With the quantum extra
 installed, the materials page's request panel displays real simulation results; its UI
 labels are still the integration owner's scaffold. Other experiment pages show real 501 responses.
+SvelteKit preserves the developed dashboard and displays example data only after
+an explicit example action; it sends no live experiment requests. Main's original
+React health/request panels remain runnable from `frontend/react-scaffold/` on
+port 5174. See [frontend setup](frontend/README.md) for both applications.
 
 No environment file or credentials are required. Optional overrides:
 
@@ -109,7 +114,9 @@ From `frontend/`:
 
 ```sh
 npm run types:check
-npm run typecheck
+npm run check
+npm test
+npm run format:check
 npm run build
 ```
 
@@ -127,7 +134,7 @@ commit the types with the backend change. `frontend/openapi.json` is ignored int
 | Developer 2 | `backend/app/compiler/`, `api/compiler.py`, `tests/compiler/` | Allowlisted marked AST, diagnostics, normalized QUBO; consume shared runners |
 | Developer 3 | `backend/app/quantum/qaoa.py`, `experiments/optimization/solvers.py`, `api/optimization.py`, `tests/optimization/` | QUBO evaluation and classical reference, then shared QAOA and fair timings |
 | Developer 4 | `backend/app/experiments/search/`, `api/search.py`, `tests/search/` | Marked-state oracle with explicit wire ordering and query assumptions |
-| Developer 5 | `frontend/src/pages/`, `components/`, `api/`, `App.tsx` | Replace minimal request panels with controls; preserve live errors/loading |
+| Developer 5 | `frontend/src/routes/`, `src/lib/`, `src/api/`; preserved `frontend/react-scaffold/` | Review SvelteKit integration and connect typed requests while preserving live errors/loading |
 
 All backend paths in the table are relative to `backend/` where shortened. Shared
 contracts are in `backend/app/schemas/contracts.py`; timing guidance is in
