@@ -1,0 +1,79 @@
+# Compiler manual validation record
+
+This records local integration checks of the compiler and its browser page. These
+are source-analysis/UI correctness checks, not classical or quantum performance
+measurements. No simulator, hardware, supercomputer, or credential-based jobs ran.
+No synthetic solver measurements were installed into the live API.
+
+## Checkpoint
+
+- Compiler implementation commit: `75539fd`.
+- Canonical zero-coefficient fix found during HTTP validation: `ba11311`.
+- Backend suite: 266 passing pytest cases; Ruff lint/format checks passed.
+- Frontend: four file-reading checks passed; generated-type checks, TypeScript
+  checks, and production build passed.
+- Browser session: Firefox 159.0, with actual local Vite/FastAPI servers.
+- Integration ports were 5179 (frontend) and 8011 (API), with matching CORS/base URL
+  settings. These checks do not change the default development ports.
+
+The browser driver was installed under `/tmp` only. The browser checks below were
+run against actual analysis responses; deliberate client-side delays were used for
+the two stale-result cases. No fake success responses replaced the analysis API.
+
+## Direct HTTP cases
+
+All seven `.py` files in [examples/compiler](../examples/compiler/README.md) were
+read as text and submitted to `POST /api/compiler/analyze`. Every case returned:
+
+- HTTP 200 and `status=supported`.
+- A QUBO matching [expected_qubos.json](../examples/compiler/expected_qubos.json).
+- A symbolic circuit with `executed=false` and `depth=null`.
+
+Additional checks:
+
+| Request | Observed result |
+| --- | --- |
+| Analyze marked objective containing `return sum(x)` | 200, rejected, `UNSUPPORTED_SYNTAX` |
+| Benchmark that rejected source | 422, `VALIDATION_ERROR`, compiler diagnostics |
+| Benchmark the supported exactly-one example | 501, `NOT_IMPLEMENTED`, shared runner unavailable |
+
+The first direct comparison exposed signed zeros for unused maximization terms.
+The compiler now applies objective negation before filling absent terms with +0.0;
+a regression checks both unused linear coefficients and an absent constant.
+
+## Browser cases
+
+| Interaction | Observed result |
+| --- | --- |
+| Analyze default squared-penalty source | Real API QUBO has linear [-11,-12,-13]; readable coefficient/gate panels appear |
+| Request comparison | 501 dependency message; existing supported analysis remains visible |
+| Load bounded_loops.py and analyze | Editor loads file text, old panels clear, four-bit QUBO matches expectations |
+| Paste unsupported call and analyze | Source rejected; prior QUBO/preview hidden; diagnostic selects the source line |
+| Load maximization example | Canonical/original-sense explanation appears |
+| Load a 20,001-character file | Read rejected; previous editor contents preserved |
+| Edit source while an earlier analysis response is held | Earlier response discarded; fresh analysis uses the edited source |
+| Edit source while an earlier file read is held | Earlier file cannot overwrite the newer edit |
+| Inspect at 375px viewport | No page-level horizontal overflow |
+| Check uncaught page errors across the session | None observed |
+
+The page was also visually inspected after successful analysis. Its gate table is
+explicitly labeled **Not executed** and separates logical depth from transpiled depth.
+These observations cover the listed cases; future changes still need their own checks.
+
+## Reproduce locally
+
+Start the normal backend/frontend using [README.md](../README.md). Open
+`http://127.0.0.1:5173/compiler`, then:
+
+1. Analyze the default example; inspect the QUBO and the symbolic gate table.
+2. Load each example `.py` file using **Load a Python file**, then Analyze.
+3. Paste the unsupported-call example above; click the diagnostic line button.
+4. Restore the example and request comparison; expect the current 501 dependency message.
+5. Change coefficients; confirm old results disappear and a new analysis reflects them.
+6. Check keyboard access, a narrow viewport, and a file exceeding the character limit.
+7. For API response races, use browser network throttling and edit while analysis is
+   pending. Controlled delayed file reads are best covered by a browser test harness.
+
+Run the frontend checks in [Developer 5's handoff](DEVELOPER_5_HANDOFF.md) and the
+backend checks in [COMPILER.md](COMPILER.md). The source subset remains restricted;
+these checks do not establish arbitrary-Python support or live QAOA correctness.

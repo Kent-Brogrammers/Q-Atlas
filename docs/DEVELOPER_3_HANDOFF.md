@@ -61,9 +61,10 @@ configuration. The preview identifies itself with `kind=qaoa_logical_preview` an
 `depth` remains null because no transpilation has happened. The backend field names
 the intended target; it does not claim that Aer was invoked.
 
-Developer 5 can render `gates`, `parameters`, and `global_phase` from the generated
-`CircuitPreview` type. No image payload or new endpoint is required. The existing
-UI still displays JSON; a visual circuit renderer remains Developer 5 work.
+The compiler page now renders `gates`, `parameters`, and `global_phase` from the
+generated `CircuitPreview` type in a readable table, with an unexecuted label and
+collapsed raw JSON. No image payload or new endpoint was needed. Developer 5 owns
+further UI work; a graphical circuit diagram and benchmark charts remain future work.
 
 Analytical tests verify the diagonal cost-phase formulas for all assignments of a
 tiny QUBO, including constant offsets, both original senses, and multiple layers.
