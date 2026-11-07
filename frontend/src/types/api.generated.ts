@@ -297,6 +297,26 @@ export interface components {
             energy_unit: string;
             /** Observable Unit */
             observable_unit: string;
+            /** Initial State */
+            initial_state?: string | null;
+            /**
+             * Trotter Order
+             * @default 2
+             * @constant
+             */
+            trotter_order?: 2;
+            /** Execution Methods */
+            execution_methods?: ("scipy_expm" | "aer_statevector" | "aer_shots")[];
+            /** Measurement Bases */
+            measurement_bases?: ("Z" | "X")[];
+            /** Transpilation Basis */
+            transpilation_basis?: string[];
+            /** Circuit Depth Scope */
+            circuit_depth_scope?: string | null;
+            /** Ideal Elapsed Ms */
+            ideal_elapsed_ms?: number | null;
+            /** Sampling Seed Policy */
+            sampling_seed_policy?: string | null;
         };
         /** MaterialsMetrics */
         MaterialsMetrics: {
@@ -312,6 +332,43 @@ export interface components {
             quantum_observable?: number | null;
             /** Absolute Error */
             absolute_error?: number | null;
+            /** Ideal Observable */
+            ideal_observable?: number | null;
+            /** Trotter Absolute Error */
+            trotter_absolute_error?: number | null;
+            /** Sampling Absolute Error */
+            sampling_absolute_error?: number | null;
+            /** Total Shots */
+            total_shots?: number | null;
+            /** Time Series */
+            time_series?: components["schemas"]["MaterialsTimePoint"][];
+        };
+        /** MaterialsObservableErrors */
+        MaterialsObservableErrors: {
+            /** Magnetization Z */
+            magnetization_z: number;
+            /** Zz Correlations */
+            zz_correlations: number[];
+            /** Energy */
+            energy: number;
+        };
+        /**
+         * MaterialsObservables
+         * @description Dimensionless quantities; arrays are in increasing spin/bond order.
+         */
+        MaterialsObservables: {
+            /** Per Spin Z */
+            per_spin_z: number[];
+            /** Per Spin X */
+            per_spin_x: number[];
+            /** Magnetization Z */
+            magnetization_z: number;
+            /** Zz Correlations */
+            zz_correlations: number[];
+            /** Energy */
+            energy: number;
+            /** State Norm */
+            state_norm?: number | null;
         };
         /** MaterialsRequest */
         MaterialsRequest: {
@@ -348,7 +405,22 @@ export interface components {
              * @enum {string}
              */
             observable?: "energy" | "magnetization";
-            config?: components["schemas"]["RunConfig"];
+            config?: components["schemas"]["MaterialsRunConfig"];
+            /**
+             * Evolution Time
+             * @default 1
+             */
+            evolution_time?: number;
+            /**
+             * Trotter Steps
+             * @default 20
+             */
+            trotter_steps?: number;
+            /**
+             * Time Samples
+             * @default 1
+             */
+            time_samples?: number;
         };
         /** MaterialsResult */
         MaterialsResult: {
@@ -375,6 +447,50 @@ export interface components {
             quantum: components["schemas"]["SolverResult"] | null;
             metrics: components["schemas"]["MaterialsMetrics"];
             metadata: components["schemas"]["MaterialsMetadata"];
+        };
+        /**
+         * MaterialsRunConfig
+         * @description Materials alone permits null for a nondeterministic simulator seed.
+         */
+        MaterialsRunConfig: {
+            /**
+             * Backend
+             * @default aer_simulator
+             * @constant
+             */
+            backend?: "aer_simulator";
+            /**
+             * Shots
+             * @default 1024
+             */
+            shots?: number;
+            /**
+             * Seed
+             * @default 42
+             */
+            seed?: number | null;
+            /**
+             * Timeout Seconds
+             * @default 30
+             */
+            timeout_seconds?: number;
+        };
+        /** MaterialsTimePoint */
+        MaterialsTimePoint: {
+            /** Time */
+            time: number;
+            exact: components["schemas"]["MaterialsObservables"];
+            ideal: components["schemas"]["MaterialsObservables"];
+            measured: components["schemas"]["MaterialsObservables"];
+            trotter_error: components["schemas"]["MaterialsObservableErrors"];
+            sampling_error: components["schemas"]["MaterialsObservableErrors"];
+            total_error: components["schemas"]["MaterialsObservableErrors"];
+            /** State Fidelity */
+            state_fidelity: number;
+            /** Circuit Depth */
+            circuit_depth: number;
+            /** Shots Per Basis */
+            shots_per_basis: number;
         };
         /** OptimizationMetadata */
         OptimizationMetadata: {
@@ -983,6 +1099,24 @@ export interface operations {
             };
             /** @description Feature not implemented */
             501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Quantum dependencies unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Materials runtime budget exceeded */
+            504: {
                 headers: {
                     [name: string]: unknown;
                 };
