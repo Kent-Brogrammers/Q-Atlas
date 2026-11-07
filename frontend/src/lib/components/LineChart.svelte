@@ -16,9 +16,9 @@
   <svg
     viewBox="0 0 565 230"
     role="img"
-    aria-label="Illustrative QAOA objective trace over 32 evaluations. Lower objective values are better."
+    aria-label="Example QAOA objective display. Points are illustrative; no optimizer was run."
   >
-    <title>Illustrative optimizer trace, not measured data</title>
+    <title>Example objective trace, not measured data</title>
     {#each [0, 1, 2, 3, 4] as tick}
       {@const value = max - (tick / 4) * (max - min)}
       <line x1="50" x2="530" y1={y(value)} y2={y(value)} stroke="#e5edf5" stroke-width=".7" />
@@ -43,16 +43,16 @@
         r="3"
         fill="#ffffff"
         stroke="#7bb4ed"
-        stroke-width="1.5"><title>Evaluation {(i + 1) * 2}: {value.toFixed(2)}</title></circle
+        stroke-width="1.5"><title>Example point {i + 1}: {value.toFixed(2)}</title></circle
       >
     {/each}
-    {#each [2, 8, 16, 24, 32] as tick}
-      <text x={50 + ((tick - 2) / 30) * 480} y="207" text-anchor="middle">{tick}</text>
+    {#each [1, 4, 8, 12, 16] as tick}
+      <text x={50 + ((tick - 1) / 15) * 480} y="207" text-anchor="middle">{tick}</text>
     {/each}
-    <text x="530" y="226" text-anchor="end">optimizer evaluation</text>
+    <text x="530" y="226" text-anchor="end">example point</text>
   </svg>
   <figcaption>
-    <span><i></i>QAOA example</span><span><i class="reference"></i>Exact reference</span><span
+    <span><i></i>Example QAOA cost</span><span><i class="reference"></i>Exact reference</span><span
       class="direction">Lower is better ↓</span
     >
   </figcaption>
@@ -69,7 +69,7 @@
   }
   text {
     fill: #6f8198;
-    font: 9px var(--mono);
+    font: 12px var(--mono);
   }
   figcaption {
     display: flex;
@@ -77,7 +77,7 @@
     gap: 18px;
     padding: 10px 8px 0 40px;
     color: #647387;
-    font-size: 9px;
+    font-size: 12px;
     flex-wrap: wrap;
   }
   figcaption > span {

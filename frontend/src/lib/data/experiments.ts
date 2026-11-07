@@ -15,7 +15,7 @@ export const experiments: {
     number: '01',
     title: 'Python Compiler',
     short: 'Compiler',
-    description: 'From a Python objective to a quantum-ready problem.',
+    description: 'Edit a binary Python objective and inspect an example QUBO.',
     method: 'AST → QUBO → circuit',
     icon: 'code',
     color: 'blue'
@@ -25,7 +25,7 @@ export const experiments: {
     number: '02',
     title: 'Quantum Materials',
     short: 'Materials',
-    description: 'Small spin systems. A closer look at quantum matter.',
+    description: 'Set spin count, coupling, and field parameters for a small spin system.',
     method: 'Spin Hamiltonian · exact reference',
     icon: 'atom',
     color: 'violet'
@@ -35,7 +35,7 @@ export const experiments: {
     number: '03',
     title: 'Optimization',
     short: 'Optimization',
-    description: 'One problem. Two approaches. Evidence side by side.',
+    description: 'Configure Max-Cut inputs and inspect classical and QAOA example data.',
     method: 'Max-Cut · QAOA · classical',
     icon: 'graph',
     color: 'cyan'
@@ -45,7 +45,7 @@ export const experiments: {
     number: '04',
     title: 'Quantum Search',
     short: 'Search',
-    description: 'Explore amplitude amplification, one iteration at a time.',
+    description: 'Configure a search space and select a marked state for Grover’s algorithm.',
     method: 'Grover · probability · queries',
     icon: 'search',
     color: 'teal'

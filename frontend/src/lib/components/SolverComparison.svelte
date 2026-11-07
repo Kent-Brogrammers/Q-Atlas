@@ -1,25 +1,25 @@
 <script lang="ts">
   import type { BenchmarkResult } from '../types/contracts.ts';
-  let { result, optimum }: { result: BenchmarkResult; optimum: number } = $props();
+  let { result, optimum }: { result: BenchmarkResult | null; optimum: number } = $props();
   let metric = $state<'quality' | 'time'>('quality');
   let rows = $derived([
     {
       label: 'Classical',
       value:
         metric === 'quality'
-          ? result.classical?.objective == null
+          ? result?.classical?.objective == null
             ? null
-            : -result.classical.objective
-          : (result.classical?.elapsed_ms ?? null)
+            : -result?.classical.objective
+          : (result?.classical?.elapsed_ms ?? null)
     },
     {
       label: 'QAOA',
       value:
         metric === 'quality'
-          ? result.quantum?.objective == null
+          ? result?.quantum?.objective == null
             ? null
-            : -result.quantum.objective
-          : (result.quantum?.elapsed_ms ?? null)
+            : -result?.quantum.objective
+          : (result?.quantum?.elapsed_ms ?? null)
     }
   ]);
   let max = $derived(
@@ -45,9 +45,14 @@
     {#each rows as row, i}<div class="comparison-row">
         <div>
           <span><i class:qaoa={i === 1}></i>{row.label}</span><strong
-            >{row.value == null ? 'Unavailable' : row.value.toLocaleString()}<small
-              >{metric === 'quality' ? 'edges cut' : 'ms'}</small
-            ></strong
+            class:unavailable={row.value == null}
+            >{row.value == null
+              ? metric === 'time'
+                ? 'Not measured'
+                : 'No result'
+              : row.value.toLocaleString()}{#if row.value != null}<small
+                >{metric === 'quality' ? 'edges cut' : 'ms'}</small
+              >{/if}</strong
           >
         </div>
         <div class="comparison-track">
@@ -59,20 +64,20 @@
       </div>{/each}
   </div>
   <div class="comparison-foot">
-    <strong
-      >{metric === 'quality'
-        ? 'Same problem. Same objective.'
-        : 'Illustrative elapsed time only.'}</strong
-    >
     <p>
-      {metric === 'quality'
-        ? 'Best samples compared with the exact reference.'
-        : 'No measured timing or quantum speedup is established.'}
+      {metric === 'time'
+        ? 'Timing is unavailable. No solver has been executed.'
+        : result
+          ? 'Example cut sizes only; not measured solver output.'
+          : 'Load example data in Simulation settings to inspect solution quality displays.'}
     </p>
   </div>
 </div>
 
 <style>
+  strong.unavailable {
+    font: 400 12px var(--font-sans);
+  }
   .solver-comparison {
     padding: 0 23px 20px;
   }
@@ -84,7 +89,7 @@
   }
   .segmented button {
     flex: 1;
-    font-size: 9px;
+    font-size: 12px;
     padding-inline: 7px;
   }
   .comparison-bars {
@@ -103,7 +108,7 @@
     gap: 7px;
     align-items: center;
     color: #63738a;
-    font-size: 11px;
+    font-size: 12px;
   }
   i {
     display: inline-block;
@@ -116,13 +121,11 @@
     background: #a38cc6;
   }
   strong {
-    font:
-      500 13px 'IBM Plex Sans',
-      sans-serif;
+    font: 400 13px var(--mono);
     color: #344760;
   }
   strong small {
-    font-size: 9px;
+    font-size: 12px;
     font-weight: 400;
     color: #687382;
     margin-left: 5px;
@@ -130,14 +133,14 @@
   .comparison-track {
     height: 10px;
     background: #f0f5fb;
-    border-radius: 7px;
+    border-radius: 4px;
     overflow: hidden;
   }
   .comparison-track > span {
     height: 100%;
     display: block;
     background: #7cbaec;
-    border-radius: 7px;
+    border-radius: 4px;
     transition: width 0.15s;
   }
   .comparison-track > span.qaoa {
@@ -148,12 +151,8 @@
     padding-top: 15px;
     border-top: 1px solid #edf1f7;
   }
-  .comparison-foot strong {
-    font-size: 10px;
-    font-weight: 500;
-  }
   .comparison-foot p {
-    font-size: 9px;
+    font-size: 12px;
     line-height: 1.65;
     color: #677383;
     margin: 4px 0 0;

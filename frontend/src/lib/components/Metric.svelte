@@ -12,11 +12,12 @@
     note: string;
     tone?: 'neutral' | 'cyan' | 'violet';
   } = $props();
+  let numerical = $derived(typeof value === 'number' || /^-?\d+(?:\.\d+)?$/.test(value));
 </script>
 
 <div class="measurement {tone}">
   <p class="eyebrow">{label}</p>
-  <p class="value">{value}<span>{unit}</span></p>
+  <p class="value" class:unavailable={!numerical}>{value}<span>{unit}</span></p>
   <p class="note">{note}</p>
 </div>
 
@@ -26,19 +27,16 @@
     border: 1px solid var(--border);
     padding: 18px 20px;
     min-width: 0;
-    border-radius: 15px;
-    box-shadow: 0 2px 7px #172b4d03;
+    border-radius: 4px;
+    box-shadow: none;
   }
   .eyebrow {
-    font-size: 9px;
+    font-size: 12px;
   }
   .value {
     margin: 9px 0 5px;
-    font:
-      500 28px/1.2 'IBM Plex Sans',
-      sans-serif;
-    font-weight: 500;
-    letter-spacing: -0.05em;
+    font: 400 26px/1.25 var(--mono);
+    letter-spacing: normal;
   }
   .value span {
     font-size: 13px;
@@ -47,7 +45,7 @@
     margin-left: 7px;
   }
   .note {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--muted);
     margin: 0;
   }
@@ -56,5 +54,11 @@
   }
   .violet .value {
     color: var(--violet);
+  }
+  .value.unavailable {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 2.3;
+    color: var(--muted);
   }
 </style>

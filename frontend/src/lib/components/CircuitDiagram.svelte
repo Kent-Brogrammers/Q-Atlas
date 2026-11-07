@@ -63,7 +63,7 @@
     display: block;
   }
   text {
-    font: 10px var(--mono);
+    font: 12px var(--mono);
     fill: #4c6485;
   }
   .qubit {
@@ -75,11 +75,11 @@
   }
   .annotation {
     fill: #8a9bb0;
-    font-size: 8px;
+    font-size: 12px;
   }
   figcaption {
     color: var(--muted);
-    font: 9px var(--mono);
+    font: 12px var(--mono);
     margin-top: 12px;
   }
   .compact {

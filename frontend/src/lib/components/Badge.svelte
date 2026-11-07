@@ -14,12 +14,12 @@
     align-items: center;
     gap: 6px;
     padding: 5px 9px;
-    border-radius: 30px;
+    border-radius: 4px;
     border: 1px solid var(--border);
     font:
-      500 9px/1.2 'IBM Plex Sans',
+      500 12px/1.2 'IBM Plex Sans',
       sans-serif;
-    letter-spacing: 0.04em;
+    letter-spacing: normal;
     white-space: nowrap;
     color: var(--muted);
     background: var(--surface);

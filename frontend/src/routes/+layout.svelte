@@ -20,7 +20,7 @@
 <svelte:head>
   <meta
     name="description"
-    content="Q-Atlas: a scientific workspace for exploring quantum computing through fair, reproducible comparisons."
+    content="Q-Atlas: a workspace for quantum computing benchmarks, QUBO inspection, and classical comparisons."
   />
 </svelte:head>
 
@@ -32,19 +32,16 @@
       ></a
     >
     <div class="workspace-label">
-      <span class="status-dot"></span><span>Research workspace</span><span class="workspace-short"
-        >QA</span
-      >
+      <span>Benchmark workspace</span><span class="workspace-short">QA</span>
     </div>
-    <p class="nav-heading">EXPERIMENTS</p>
+    <p class="nav-heading">Experiments</p>
     <nav>
       <a
         class:active={!active}
         href="/"
         aria-current={!active ? 'page' : undefined}
         title="Overview"
-        ><Icon name="home" /><span>Overview</span><span class="mobile-nav-label">Overview</span
-        ><span class="nav-index">00</span></a
+        ><Icon name="home" /><span>Overview</span><span class="mobile-nav-label">Overview</span></a
       >
       {#each experiments as item}
         <a
@@ -54,7 +51,7 @@
           title={item.title}
           ><Icon name={item.icon} /><span>{item.title}</span><span class="mobile-nav-label"
             >{item.short}</span
-          ><span class="nav-index">{item.number}</span></a
+          ></a
         >
       {/each}
     </nav>
@@ -68,11 +65,6 @@
           size={14}
         /></button
       >
-      <div class="sidebar-signature">
-        <div class="signature-mark"><Icon name="circuit" size={21} /></div>
-        <p>Built for discovery.<br /><span>Powered by curiosity.</span></p>
-      </div>
-      <p class="sidebar-version">FALL FEST 2026 <span>v0.1</span></p>
     </div>
   </aside>
 
@@ -84,7 +76,7 @@
         >
       </div>
       <div class="topbar-status">
-        <span class="environment-pill"><span class="status-dot amber"></span>Demo workspace</span>
+        <span class="connection-status">Backend not connected</span>
         <button
           class="topbar-methodology"
           onclick={() => methodology.showModal()}
@@ -104,44 +96,40 @@
         </div>
       {/key}
     </main>
-    <footer class="workspace-footer">
-      <span>Q-Atlas <span class="footer-dash">/</span> Quantum computing, with context.</span><span
-        >Local workspace <span class="status-dot"></span></span
-      >
-    </footer>
   </div>
 </div>
 
 <dialog bind:this={methodology} class="methodology-dialog" aria-labelledby="methodology-title">
   <div class="dialog-header">
-    <p class="eyebrow">HOW TO READ THE EVIDENCE</p>
+    <p class="eyebrow">Project information</p>
     <button class="icon-button" aria-label="Close methodology" onclick={() => methodology.close()}
       ><Icon name="close" /></button
     >
   </div>
-  <h2 id="methodology-title">Compare fairly.<br />Interpret carefully.</h2>
+  <h2 id="methodology-title">Benchmark methodology</h2>
   <p>
     Q-Atlas compares solutions to the same mathematical problem. Solution quality matters alongside
     runtime.
   </p>
   <ol>
     <li>
-      <strong>One objective.</strong> QUBO values use canonical minimization. A larger Max-Cut is represented
-      by a smaller, negative cost.
+      <strong>Objective convention.</strong> QUBO values use canonical minimization. A larger Max-Cut
+      is represented by a smaller, negative cost.
     </li>
     <li>
-      <strong>Explicit timing.</strong> Simulator execution and total optimizer time must be reported
-      separately once connected.
+      <strong>Timing scope.</strong> Simulator execution and total optimizer time must be reported separately
+      once connected.
     </li>
     <li>
-      <strong>Simulation has context.</strong> A classical simulation of a quantum circuit does not demonstrate
+      <strong>Simulator results.</strong> A classical simulation of a quantum circuit does not demonstrate
       hardware speedup.
     </li>
     <li>
-      <strong>Know the source.</strong> All current charts and benchmark values are illustrative UI fixtures.
-      They are not experimental evidence.
+      <strong>Example data.</strong> Optional chart examples are labeled and are not measured benchmark
+      results.
     </li>
   </ol>
+  <p class="project-information">Ohio State Qiskit Fall Fest 2026</p>
   <button class="button primary" onclick={() => methodology.close()}
     >Return to workspace<Icon name="arrow" size={17} /></button
   >

@@ -29,20 +29,24 @@ for (const graph of graphs) {
     assert.equal(cut, graph.optimumCut);
   });
 
-  test(`${graph.name}: result and histogram use a consistent, explicitly labeled fixture`, () => {
+  test(`${graph.name}: example data is labeled, internally consistent, and has no fabricated run measurements`, () => {
     const run = getExampleRun(graph.id);
     assert.equal(parseBenchmark(run.benchmark).metadata.ui_fixture, true);
-    assert.equal(run.benchmark.metadata.timing_scope, 'illustrative_fixture');
+    assert.equal(run.benchmark.backend, 'ui_example');
+    assert.equal(run.benchmark.metadata.timing_scope, null);
+    assert.equal(run.benchmark.metadata.seed, null);
+    assert.equal(run.benchmark.metadata.simulated, null);
+    assert.equal(run.benchmark.classical?.elapsed_ms, null);
+    assert.equal(run.benchmark.quantum?.elapsed_ms, null);
+    for (const field of ['num_qubits', 'circuit_depth', 'shots', 'optimizer_evaluations']) {
+      assert.equal(run.benchmark.metrics[field], null);
+    }
     assert.equal(run.benchmark.classical?.objective, -graph.optimumCut);
-    assert.equal(
-      run.histogram.reduce((sum, bin) => sum + bin.count, 0),
-      run.fixtureConfig.shots
-    );
-    assert.equal(run.fixtureConfig.shots, run.benchmark.metrics.shots);
+    const exampleCount = run.histogram.reduce((sum, bin) => sum + bin.count, 0);
+    assert.ok(exampleCount > 0);
     assert.equal(run.expected.length, run.bestSampled.length);
-    assert.equal(run.expected.length * 2, run.benchmark.metrics.optimizer_evaluations);
     const histogramMean =
-      -run.histogram.reduce((sum, bin) => sum + bin.cut * bin.count, 0) / run.fixtureConfig.shots;
+      -run.histogram.reduce((sum, bin) => sum + bin.cut * bin.count, 0) / exampleCount;
     assert.equal(run.expected.at(-1), histogramMean);
     const possibleCuts: Record<string, number[]> = {
       prism: [0, 3, 4, 5, 6, 7],

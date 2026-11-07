@@ -3,7 +3,6 @@
   import { prefersReducedMotion } from 'svelte/motion';
   import { graphs, getExampleRun } from '#lib/data/fixtures.ts';
   import Panel from '#lib/components/Panel.svelte';
-  import Badge from '#lib/components/Badge.svelte';
   import Icon from '#lib/components/Icon.svelte';
   import Metric from '#lib/components/Metric.svelte';
   import GraphView from '#lib/components/GraphView.svelte';
@@ -23,7 +22,8 @@
   let graph = $derived(graphs.find((item) => item.id === loadedId)!);
   let graphTab = $state<'graph' | 'qubo'>('graph');
   let chartTab = $state<'expected' | 'sampled'>('expected');
-  let status = $state('Triangular prism example loaded.');
+  let showExample = $state(false);
+  let status = $state('Graph preset ready. No solver has run.');
   let revision = $state(0);
   let copyLabel = $state('Copy QUBO');
   let gap = $derived(
@@ -34,8 +34,9 @@
     event?.preventDefault();
     run = getExampleRun(selectedId);
     loadedId = selectedId;
+    showExample = true;
     revision += 1;
-    status = `${graphs.find((item) => item.id === selectedId)!.name} example loaded. Metrics are fixed fixtures; settings are a request preview.`;
+    status = `${graph.name}: example data displayed. No solver ran; controls do not change example values.`;
   }
 
   function reset() {
@@ -46,7 +47,17 @@
     optimizer = 'COBYLA';
     graphTab = 'graph';
     chartTab = 'expected';
-    loadExample();
+    selectGraph();
+  }
+
+  function selectGraph(id = selectedId) {
+    selectedId = id;
+    loadedId = selectedId;
+    run = getExampleRun(selectedId);
+    showExample = false;
+    revision += 1;
+    copyLabel = 'Copy QUBO';
+    status = `${graph.name}: graph preset ready. No solver has run.`;
   }
 
   async function copyQubo() {
@@ -61,7 +72,11 @@
   function exportExample() {
     const data = {
       ...run.benchmark,
-      ui_fixture_config: run.fixtureConfig,
+      example_chart_data: {
+        expected: run.expected,
+        best_sampled: run.bestSampled,
+        histogram: run.histogram
+      },
       ui_controls_preview: {
         graphPreset: selectedId,
         p: layers,
@@ -70,7 +85,7 @@
         optimizer
       },
       notice:
-        'Illustrative UI example. No experiment was executed. Controls do not change fixture metrics.'
+        'Illustrative UI example. No experiment was executed. Controls do not change example values.'
     };
     const url = URL.createObjectURL(
       new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
@@ -80,21 +95,20 @@
     link.download = `q-atlas-ui-example-${loadedId}.json`;
     link.click();
     URL.revokeObjectURL(url);
-    status = 'Exported labeled UI fixture JSON.';
+    status = 'Exported labeled example JSON. No measured results were included.';
   }
 </script>
 
-<svelte:head><title>Optimization lab · Q-Atlas</title></svelte:head>
+<svelte:head><title>Max-Cut Optimization · Q-Atlas</title></svelte:head>
 
 <header class="page-heading">
   <div>
-    <p class="eyebrow"><span class="cyan-text">EXPERIMENT 03</span> / MAX-CUT & QAOA</p>
-    <h1>Optimization workspace</h1>
-    <p>Explore the problem. Inspect the solution. Compare on equal terms.</p>
+    <h1>Max-Cut Optimization</h1>
+    <p>Graph configuration and classical versus QAOA result comparison.</p>
   </div>
   <div class="page-actions">
     <button class="button quiet small" onclick={reset}><Icon name="reset" size={14} />Reset</button
-    ><button class="button small" onclick={exportExample}
+    ><button class="button small" onclick={exportExample} disabled={!showExample}
       >Export example<Icon name="download" size={14} /></button
     >
   </div>
@@ -104,31 +118,28 @@
 <div class="optimization-intro">
   <div class="lab-introduction">
     <FeatureBanner
-      eyebrow="EXPERIMENT 03 / QUANTUM + CLASSICAL"
-      title="Optimization Lab"
-      description="A small graph. Two ways to solve it. Explore the problem, inspect the partition, and put both approaches in perspective."
+      title="Classical vs quantum optimization"
+      description="Max-Cut assigns vertices to two sets to maximize crossing edges. Its QUBO minimizes the negative cut size. QAOA and classical solver execution are not connected."
     >
-      <span class="banner-tag">Max-Cut</span><span class="banner-tag">QAOA</span><span
-        class="banner-tag">Exact reference</span
-      >
+      <a href="#experiment-settings">Simulation settings<Icon name="arrow" size={15} /></a>
+      <a href="#benchmark-results">Benchmark results<Icon name="arrow" size={15} /></a>
     </FeatureBanner>
     <div class="lab-description">
-      <h2>Different approaches. One shared objective.</h2>
+      <h2>QAOA workflow</h2>
       <p>
-        QAOA alternates cost and mixing layers while a classical optimizer adjusts the circuit
-        angles. Sampled solutions are compared with an exact classical reference. The panels below
-        demonstrate that workflow using fixed example data.
+        QAOA alternates cost and mixing layers while a classical optimizer adjusts circuit angles.
+        Compare sampled solutions against the same QUBO's classical baseline. Load example data
+        below to inspect the result displays without executing a solver.
       </p>
-      <div>
-        <span><i>1</i>Define the graph</span><Icon name="arrow" size={12} /><span
-          ><i>2</i>Explore the circuit</span
-        ><Icon name="arrow" size={12} /><span><i>3</i>Compare the evidence</span>
-      </div>
     </div>
   </div>
-  <Panel title="Statistics overview" subtitle="Illustrative solver comparisons.">
-    {#snippet toolbar()}<Badge tone="blue">Demo</Badge>{/snippet}
-    <SolverComparison result={run.benchmark} optimum={graph.optimumCut} />
+  <Panel
+    title="Solver comparison"
+    subtitle={showExample
+      ? 'Example data · not measured results'
+      : 'No benchmark results available'}
+  >
+    <SolverComparison result={showExample ? run.benchmark : null} optimum={graph.optimumCut} />
   </Panel>
 </div>
 
@@ -138,39 +149,38 @@
     <h2>{graph.name}</h2>
     <span class="context-separator">/</span><span class="context-detail">Unweighted Max-Cut</span>
   </div>
-  <Badge tone="neutral">CANONICAL MINIMIZATION</Badge>
+  <span class="context-detail mono">QUBO · minimize</span>
 </div>
 
 <div class="metrics-grid">
   <Metric
-    label="PROBLEM SIZE"
+    label="Problem size"
     value={graph.nodes.length}
-    unit="qubits"
+    unit="variables"
     note={`${graph.edges.length} edges · binary variables`}
   /><Metric
-    label="REFERENCE CUT"
+    label="Reference cut"
     value={graph.optimumCut}
     unit={`/ ${graph.edges.length}`}
-    note="Known optimum for this example"
+    note="Known optimum for this graph"
     tone="cyan"
   /><Metric
-    label="BEST-SAMPLE GAP"
-    value={gap.toFixed(2)}
-    note="QAOA objective − exact objective"
+    label="Best-sample gap"
+    value={showExample ? gap.toFixed(2) : 'Not run'}
+    note={showExample
+      ? 'Example QAOA objective − reference objective'
+      : 'No QAOA samples available'}
     tone="violet"
-  /><Metric
-    label="OPTIMIZER EVALUATIONS"
-    value={String(run.benchmark.metrics.optimizer_evaluations)}
-    note="Illustrative fixture, not measured"
-  />
+  /><Metric label="Circuit depth" value="Not measured" note="Circuit generation is not connected" />
 </div>
 
-<div class="lab-grid">
-  <Panel title="Experiment setup" kicker="01 / CONFIGURE" className="controls-panel">
+<div class="lab-grid" id="experiment-settings">
+  <Panel title="Simulation settings" className="controls-panel">
     <form class="controls-form" onsubmit={loadExample}>
-      <label for="graph-preset">Graph instance<span>01</span></label><select
+      <label for="graph-preset">Graph preset</label><select
         id="graph-preset"
         bind:value={selectedId}
+        onchange={(event) => selectGraph(event.currentTarget.value)}
         >{#each graphs as item}<option value={item.id}
             >{item.name} · {item.nodes.length} nodes</option
           >{/each}</select
@@ -198,7 +208,7 @@
         id="optimizer"
         bind:value={optimizer}><option>COBYLA</option><option>SPSA</option></select
       >
-      <label for="seed">Random seed<span>REPRODUCIBILITY</span></label><input
+      <label for="seed">Random seed</label><input
         id="seed"
         type="number"
         min="0"
@@ -209,19 +219,19 @@
       />
       <div class="backend-preview">
         <Icon name="terminal" size={16} />
-        <div><strong>Local simulator</strong><span>Qiskit Aer · integration pending</span></div>
+        <div><strong>Planned simulator</strong><span>Qiskit Aer · integration pending</span></div>
       </div>
       <button type="submit" class="button primary load-button"
-        >Load example run<Icon name="arrow" size={16} /></button
+        >Load example data<Icon name="arrow" size={16} /></button
       >
       <p class="control-note">
-        Controls preview future requests. Example metrics use the fixed fixture settings below; no
-        solver executes.
+        Settings preview a future backend request. Loading example data does not use these settings
+        or run a solver.
       </p>
     </form>
   </Panel>
 
-  <Panel title="Problem space" kicker="02 / INSPECT" className="problem-panel">
+  <Panel title="Graph and QUBO" className="problem-panel">
     {#snippet toolbar()}<div class="segmented">
         <button
           class:selected={graphTab === 'graph'}
@@ -236,9 +246,11 @@
           }}>QUBO</button
         >
       </div>{/snippet}
-    {#if graphTab === 'graph'}<GraphView {graph} />{:else}<div class="qubo-view">
+    {#if graphTab === 'graph'}{#key revision}<GraphView {graph} />{/key}{:else}<div
+        class="qubo-view"
+      >
         <div class="qubo-toolbar">
-          <span class="eyebrow">SPEC §6.1 / JSON</span><button
+          <span class="eyebrow">Canonical QUBO · JSON</span><button
             class="button small quiet"
             onclick={copyQubo}>{copyLabel}<Icon name="copy" size={13} /></button
           >
@@ -250,13 +262,17 @@
         </p>
       </div>{/if}
     <div class="objective-strip">
-      <span class="eyebrow">THE OBJECTIVE</span>
+      <span class="eyebrow">Objective</span>
       <p>minimize <span class="mono">C(x) = −cut(x)</span></p>
       <span>More edges cut → lower cost</span>
     </div>
   </Panel>
 
-  <Panel title="Side by side" kicker="03 / COMPARE" className="solver-panel">
+  <Panel
+    title="Benchmark results"
+    subtitle={showExample ? 'Example data · not measured results' : 'No solver has run'}
+    className="solver-panel"
+  >
     {#key revision}<div
         class="solver-results"
         in:fade={{ duration: prefersReducedMotion.current ? 0 : 140 }}
@@ -264,45 +280,36 @@
         <div class="solver-block">
           <div class="solver-label">
             <span class="solver-dot classical"></span>
-            <h3>Exact classical</h3>
-            <span class="solver-label-note">REFERENCE</span>
+            <h3>Classical baseline</h3>
           </div>
           <p class="solver-method">Brute force</p>
           <p class="solver-objective cyan-text">
-            {run.benchmark.classical?.objective?.toFixed(2)}<span>objective</span>
+            {showExample ? run.benchmark.classical?.objective?.toFixed(2) : '—'}<span
+              >{showExample ? 'example objective' : 'No result'}</span
+            >
           </p>
-          <div class="solver-detail">
-            <span>Example elapsed</span><strong>{run.benchmark.classical?.elapsed_ms} ms</strong>
-          </div>
+          <div class="solver-detail"><span>Execution time</span><strong>Not measured</strong></div>
         </div>
         <div class="solver-block quantum">
           <div class="solver-label">
             <span class="solver-dot qaoa"></span>
             <h3>QAOA</h3>
-            <Badge tone="violet">SIMULATOR</Badge>
           </div>
-          <p class="solver-method">Variational quantum approach</p>
+          <p class="solver-method">Quantum simulator integration pending</p>
           <p class="solver-objective violet-text">
-            {run.benchmark.quantum?.objective?.toFixed(2)}<span>best sample</span>
-          </p>
-          <div class="solver-detail">
-            <span>Example elapsed</span><strong
-              >{run.benchmark.quantum?.elapsed_ms?.toLocaleString()} ms</strong
+            {showExample ? run.benchmark.quantum?.objective?.toFixed(2) : '—'}<span
+              >{showExample ? 'example best sample' : 'No result'}</span
             >
-          </div>
+          </p>
+          <div class="solver-detail"><span>Execution time</span><strong>Not measured</strong></div>
         </div>
         <div class="gap-note">
           <Icon name="info" size={14} />
-          <p>Matching objective values do not establish quantum speedup.</p>
-        </div>
-        <div class="solver-snapshot">
-          <span class="eyebrow">FIXTURE SETTINGS</span>
           <p>
-            p = {run.fixtureConfig.p} <span>/</span>
-            {run.fixtureConfig.shots.toLocaleString()} shots <span>/</span> seed {run.fixtureConfig
-              .seed}
+            {showExample
+              ? 'Example objectives illustrate the display. They are not solver output.'
+              : 'Load example data to inspect these result displays.'}
           </p>
-          <p>{run.fixtureConfig.optimizer} · illustrative data</p>
         </div>
       </div>{/key}
   </Panel>
@@ -310,11 +317,12 @@
 
 <p class="run-status" role="status"><Icon name="check" size={13} />{status}</p>
 
-<div class="charts-grid">
+<div class="charts-grid" id="benchmark-results">
   <Panel
-    title="The path toward a lower cost"
-    kicker="OPTIMIZER TRACE"
-    subtitle="Illustrative values across 32 optimizer evaluations."
+    title="QAOA objective trace"
+    subtitle={showExample
+      ? 'Example data · 16 illustrative points, not optimizer evaluations'
+      : 'No optimizer trace available'}
   >
     {#snippet toolbar()}<div class="segmented">
         <button
@@ -327,39 +335,42 @@
           onclick={() => (chartTab = 'sampled')}>Best sampled</button
         >
       </div>{/snippet}
-    <LineChart
-      values={chartTab === 'expected' ? run.expected : run.bestSampled}
-      optimum={-graph.optimumCut}
-    />
+    {#if showExample}<LineChart
+        values={chartTab === 'expected' ? run.expected : run.bestSampled}
+        optimum={-graph.optimumCut}
+      />{:else}<div class="result-empty">
+        No optimization has been executed. Load example data to inspect the chart.
+      </div>{/if}
   </Panel>
   <Panel
-    title="What the samples look like"
-    kicker="CUT SIZE DISTRIBUTION"
-    subtitle="Example counts grouped by cut size."><Histogram bins={run.histogram} /></Panel
+    title="Cut-size distribution"
+    subtitle={showExample
+      ? 'Example data · illustrative counts, not measurements'
+      : 'No measurement samples available'}
+    >{#if showExample}<Histogram bins={run.histogram} />{:else}<div class="result-empty">
+        No measurement samples have been collected.
+      </div>{/if}</Panel
   >
 </div>
 
-<Panel title="Measurement record" kicker="RESULT CONTEXT" className="record-panel">
-  {#snippet toolbar()}<Badge tone="amber">UI FIXTURE / NOT EVIDENCE</Badge>{/snippet}
+<Panel title="Execution metrics" className="record-panel">
   <div class="record-grid">
     <div>
-      <span class="eyebrow">CIRCUIT DEPTH</span><strong
-        >{String(run.benchmark.metrics.circuit_depth)}</strong
+      <span class="eyebrow">Circuit depth</span><strong class="unavailable">Not measured</strong>
+    </div>
+    <div>
+      <span class="eyebrow">Measurement shots</span><strong class="unavailable"
+        >Not collected</strong
       >
     </div>
     <div>
-      <span class="eyebrow">MEASUREMENT SHOTS</span><strong
-        >{run.fixtureConfig.shots.toLocaleString()}</strong
+      <span class="eyebrow">Simulator execution time</span><strong class="unavailable"
+        >Not measured</strong
       >
     </div>
     <div>
-      <span class="eyebrow">SIMULATOR-ONLY TIME</span><strong class="unavailable"
-        >Not available</strong
-      >
-    </div>
-    <div>
-      <span class="eyebrow">DATA SOURCE</span><strong class="source"
-        >Hand-authored UI fixture</strong
+      <span class="eyebrow">Data source</span><strong class="source"
+        >{showExample ? 'Example data only' : 'No results'}</strong
       >
     </div>
   </div>
@@ -367,38 +378,53 @@
     <summary>Inspect data & integration notes<Icon name="plus" size={15} /></summary>
     <div class="details-content">
       <p>
-        All displayed results are fixed illustrative examples, including elapsed time, circuit
-        depth, optimizer trace, and counts. Current control values are not solver output. The
-        negative cut cost follows the project spec's minimization convention.
+        Optional example data demonstrates objectives, chart points, and count displays. Execution
+        time, circuit depth, and optimizer evaluation counts are not measured and remain
+        unavailable. Control values preview a request; they are not a run record.
       </p>
       <p>
         Backend integration must agree on request validation, result status/errors, measurement bit
         order, and explicit timing scopes. No timing decomposition or speedup is inferred here.
       </p>
-      <div class="table-scroll">
-        <table>
-          <caption>Underlying example trace and sample distribution</caption><thead
-            ><tr><th>Evaluation</th><th>Expected cost</th><th>Best sampled cost</th></tr></thead
-          ><tbody
-            >{#each run.expected as value, i}<tr
-                ><td>{(i + 1) * 2}</td><td>{value.toFixed(2)}</td><td
-                  >{run.bestSampled[i].toFixed(2)}</td
-                ></tr
-              >{/each}</tbody
-          >
-        </table>
-        <table>
-          <thead><tr><th>Cut size</th><th>Count</th></tr></thead><tbody
-            >{#each run.histogram as bin}<tr><td>{bin.cut}</td><td>{bin.count}</td></tr
-              >{/each}</tbody
-          >
-        </table>
-      </div>
+      {#if showExample}<div class="table-scroll">
+          <table>
+            <caption>Underlying example trace and sample distribution</caption><thead
+              ><tr><th>Example point</th><th>Expected cost</th><th>Best sampled cost</th></tr
+              ></thead
+            ><tbody
+              >{#each run.expected as value, i}<tr
+                  ><td>{i + 1}</td><td>{value.toFixed(2)}</td><td
+                    >{run.bestSampled[i].toFixed(2)}</td
+                  ></tr
+                >{/each}</tbody
+            >
+          </table>
+          <table>
+            <thead><tr><th>Cut size</th><th>Count</th></tr></thead><tbody
+              >{#each run.histogram as bin}<tr><td>{bin.cut}</td><td>{bin.count}</td></tr
+                >{/each}</tbody
+            >
+          </table>
+        </div>{/if}
     </div>
   </details>
 </Panel>
 
 <style>
+  .result-empty {
+    min-height: 195px;
+    display: grid;
+    align-content: center;
+    padding: 24px;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.6;
+    border-top: 1px solid var(--border);
+  }
+  #experiment-settings,
+  #benchmark-results {
+    scroll-margin-top: 24px;
+  }
   .optimization-intro {
     display: grid;
     grid-template-columns: minmax(0, 1.65fr) minmax(280px, 1fr);
@@ -416,40 +442,14 @@
     margin: 0 0 9px;
     font-size: 15px;
     font-weight: 500;
-    letter-spacing: -0.02em;
+    letter-spacing: normal;
   }
   .lab-description > p {
     margin: 0;
-    font-size: 11px;
+    font-size: 12px;
     line-height: 1.85;
     color: #687381;
     max-width: 710px;
-  }
-  .lab-description > div {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 15px;
-    color: #a4b5c8;
-  }
-  .lab-description > div > span {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 9px;
-    color: #61738a;
-  }
-  .lab-description i {
-    font: 8px var(--mono);
-    font-style: normal;
-    display: grid;
-    place-items: center;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    color: #79a2ce;
-    background: #f0f6fd;
   }
   .experiment-context {
     display: flex;
@@ -479,7 +479,7 @@
   }
   .context-detail {
     color: #677384;
-    font-size: 10px;
+    font-size: 12px;
   }
   .metrics-grid {
     display: grid;
@@ -504,27 +504,26 @@
     align-items: center;
     gap: 10px;
     color: #5d7390;
-    font-size: 10px;
+    font-size: 12px;
     margin: 0 0 9px;
-  }
-  .controls-form > label > span {
-    color: #677381;
-    font: 7px var(--mono);
   }
   input[type='number'],
   select {
     width: 100%;
     border: 1px solid #dce5f0;
-    border-radius: 9px;
+    border-radius: 4px;
     color: #536f93;
     background: #f8fafd;
     min-height: 35px;
-    font-size: 10px;
+    font-size: 12px;
     padding: 8px 10px;
     margin-bottom: 19px;
   }
   select {
     padding-right: 21px;
+  }
+  input[type='number'] {
+    font-family: var(--mono);
   }
   .control-divider {
     border-top: 1px solid var(--border);
@@ -541,7 +540,7 @@
   }
   output {
     color: var(--blue-light);
-    font: 10px var(--mono);
+    font: 12px var(--mono);
   }
   input[type='range'] {
     width: 100%;
@@ -555,7 +554,7 @@
     display: flex;
     justify-content: space-between;
     color: #667282;
-    font: 8px var(--mono);
+    font: 12px var(--mono);
     margin-bottom: 20px;
   }
   fieldset {
@@ -571,13 +570,13 @@
     gap: 5px;
   }
   .shot-options label {
-    border-radius: 8px;
+    border-radius: 4px;
     display: flex;
     justify-content: center;
     align-items: center;
     position: relative;
     flex: 1;
-    font: 9px var(--mono);
+    font: 12px var(--mono);
     color: #617388;
     min-height: 31px;
     border: 1px solid #e0e8f2;
@@ -610,23 +609,23 @@
   }
   .backend-preview strong {
     display: block;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 400;
     color: #566e8f;
     margin-bottom: 4px;
   }
   .backend-preview span {
     display: block;
-    font-size: 8px;
+    font-size: 12px;
     color: #8d9bb0;
   }
   .load-button {
     width: 100%;
-    font-size: 10px;
+    font-size: 12px;
   }
   .control-note {
     color: #677383;
-    font-size: 9px;
+    font-size: 12px;
     line-height: 1.7;
     margin: 12px 0 0;
   }
@@ -635,10 +634,10 @@
     border-top: 1px solid var(--border);
   }
   .objective-strip .eyebrow {
-    font-size: 8px;
+    font-size: 12px;
   }
   .objective-strip p {
-    font-size: 10px;
+    font-size: 12px;
     margin: 8px 0;
     color: #657385;
   }
@@ -649,7 +648,7 @@
   }
   .objective-strip > span {
     color: #657283;
-    font-size: 9px;
+    font-size: 12px;
   }
   .solver-results {
     padding: 0 20px;
@@ -667,7 +666,7 @@
     gap: 7px;
   }
   .solver-label h3 {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 500;
     margin: 0;
   }
@@ -682,31 +681,26 @@
   .solver-dot.qaoa {
     background: var(--violet);
   }
-  .solver-label-note {
-    margin-left: auto;
-    color: #647383;
-    font: 6px var(--mono);
-  }
   .solver-label :global(.badge) {
     margin-left: auto;
     padding: 3px 5px;
-    font-size: 7px;
+    font-size: 12px;
   }
   .solver-method {
     margin: 6px 0 17px 12px;
     color: #7f91a9;
-    font-size: 9px;
+    font-size: 12px;
   }
   .solver-objective {
     font: 31px/1 var(--mono);
-    letter-spacing: -0.06em;
+    letter-spacing: normal;
     margin: 0 0 16px 10px;
     display: flex;
     align-items: baseline;
     gap: 11px;
   }
   .solver-objective > span {
-    font: 8px var(--mono);
+    font: 12px var(--mono);
     letter-spacing: normal;
     color: #617287;
   }
@@ -715,11 +709,11 @@
     justify-content: space-between;
     gap: 10px;
     margin: 0 0 0 12px;
-    font-size: 9px;
+    font-size: 12px;
     color: #667382;
   }
   .solver-detail strong {
-    font: 9px var(--mono);
+    font: 12px var(--mono);
     color: #587398;
   }
   .gap-note {
@@ -733,24 +727,8 @@
   .gap-note p {
     margin: 0;
     color: #667384;
-    font-size: 9px;
+    font-size: 12px;
     line-height: 1.75;
-  }
-  .solver-snapshot {
-    padding: 16px 0;
-    border-top: 1px solid var(--border);
-  }
-  .solver-snapshot .eyebrow {
-    font-size: 7px;
-  }
-  .solver-snapshot > p:not(.eyebrow) {
-    font: 8px/1.7 var(--mono);
-    color: #607389;
-    margin: 8px 0 0;
-  }
-  .solver-snapshot > p > span {
-    color: #69717b;
-    margin: 0 4px;
   }
   .run-status {
     margin: 13px 0 23px;
@@ -758,7 +736,7 @@
     gap: 7px;
     align-items: flex-start;
     color: #8495ac;
-    font-size: 9px;
+    font-size: 12px;
     line-height: 1.5;
   }
   .run-status :global(svg) {
@@ -774,7 +752,7 @@
     gap: 10px;
   }
   .charts-grid .segmented button {
-    font-size: 8px;
+    font-size: 12px;
     padding-inline: 8px;
   }
   .record-grid {
@@ -792,7 +770,7 @@
     border: 0;
   }
   .record-grid .eyebrow {
-    font-size: 8px;
+    font-size: 12px;
   }
   .record-grid strong {
     display: block;
@@ -803,7 +781,7 @@
   .record-grid .unavailable,
   .record-grid .source {
     font:
-      11px 'IBM Plex Sans',
+      12px 'IBM Plex Sans',
       sans-serif;
     color: #657385;
     margin-top: 18px;
@@ -818,7 +796,7 @@
     padding: 16px 24px;
     cursor: pointer;
     color: #597496;
-    font-size: 10px;
+    font-size: 12px;
     list-style: none;
   }
   summary::-webkit-details-marker {
@@ -828,7 +806,7 @@
     padding: 0 24px 24px;
   }
   .details-content p {
-    font-size: 11px;
+    font-size: 12px;
     line-height: 1.8;
     color: #657385;
     max-width: 850px;
@@ -839,7 +817,7 @@
   table {
     width: 100%;
     border-collapse: collapse;
-    font: 10px var(--mono);
+    font: 12px var(--mono);
   }
   td,
   th {
@@ -868,19 +846,19 @@
     border-top: 1px solid var(--border);
   }
   .qubo-toolbar .eyebrow {
-    font-size: 8px;
+    font-size: 12px;
   }
   .qubo-toolbar .button {
-    font-size: 9px;
+    font-size: 12px;
   }
   .qubo-view .code-block {
     height: 322px;
-    font-size: 10px;
+    font-size: 12px;
   }
   .qubo-view > p {
     padding: 13px 20px;
     margin: 0;
-    font-size: 9px;
+    font-size: 12px;
     line-height: 1.6;
     color: #617388;
     border-top: 1px solid var(--border);
@@ -910,16 +888,6 @@
     .gap-note {
       border-top: 0;
       padding-top: 4px;
-    }
-    .solver-snapshot {
-      grid-column: 1 / -1;
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      padding-top: 15px;
-    }
-    .solver-snapshot > p:not(.eyebrow) {
-      margin: 0;
     }
     .charts-grid {
       grid-template-columns: 1.4fr 1fr;
@@ -964,11 +932,6 @@
       grid-column: 1 / -1;
       padding: 0 0 12px;
     }
-    .solver-snapshot {
-      gap: 10px;
-      flex-wrap: wrap;
-      padding-bottom: 18px;
-    }
   }
   @media (max-width: 550px) {
     .lab-grid {
@@ -981,10 +944,10 @@
       flex-wrap: wrap;
     }
     .context-detail {
-      font-size: 9px;
+      font-size: 12px;
     }
     .experiment-context :global(.badge) {
-      font-size: 8px;
+      font-size: 12px;
     }
     .metrics-grid {
       gap: 10px;
@@ -1000,7 +963,7 @@
       margin-left: 0;
     }
     .solver-objective > span {
-      font-size: 7px;
+      font-size: 12px;
     }
     .solver-detail {
       flex-wrap: wrap;
@@ -1008,9 +971,6 @@
     }
     .solver-block.quantum {
       padding-left: 15px;
-    }
-    .solver-label-note {
-      display: none;
     }
     .record-grid {
       padding-inline: 18px;

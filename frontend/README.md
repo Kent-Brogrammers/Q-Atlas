@@ -55,25 +55,31 @@ Shared design tokens and scoped CSS handle the application shell and scientific
 visualizations. Charts use SVG without an additional charting runtime.
 
 `FeatureBanner.svelte`, `LibraryOverview.svelte`, and `SolverComparison.svelte`
-provide the shared blue introduction card, example-library inventory, and
-interactive quality/time comparison. The light workspace, navy navigation,
-rounded cards, and analytics column follow the visual structure of the
-[Growly reference](https://dribbble.com/shots/26996873-LMS-Dashboard-Web-App-Design-Growly).
-The implementation uses original Q-Atlas branding and diagrams; reference images
-are not included in application assets.
+provide the shared blue introduction card, unmeasured execution status, and
+interactive quality/time comparison. The existing light workspace, navy navigation,
+blue feature panels, experiment cards, and analytics column are preserved.
+IBM Plex Sans handles UI text; Plex Mono handles code, numbers, and technical metadata.
+Cards use 4–6px corners, controls use minimal rounding, and solid backgrounds and
+borders define the hierarchy without decorative shadows or gradients.
 
 ## Current behavior and data provenance
 
 Overview and Optimization are the developed workspaces. Optimization supports
 graph presets, manual partition changes, graph zoom/reset, QUBO inspection/copy,
-trace switching, fixture loading, and labeled JSON export. Counts, costs,
-elapsed times, depth, and optimizer traces are **hand-authored UI examples**, not
-measured results. The page banner and export metadata preserve that distinction.
+trace switching, optional example-data loading, and labeled JSON export. Results and
+charts start empty. The **Load example data** action reveals the existing
+illustrative cost traces and counts, labeled as **example data, not measured
+results**. These examples are not attributed to a backend or a seeded optimizer
+run. Execution times, circuit depth, measurement shots, qubit count, and optimizer
+evaluation count remain `null` in the example benchmark payloads. No elapsed-time
+comparison is fabricated.
 
-Setup controls are a preview of future requests. Loading a graph selects its
-fixed example dataset; changing layers/shots/seed/optimizer does not compute new
-results or change the fixture's displayed configuration. The interactive graph
+Setup controls preview future requests. Changing the graph selects its graph/QUBO
+preset and clears the example result displays. Changing layers/shots/seed/optimizer
+does not compute new results or change example chart values. The interactive graph
 counts edges in a user-selected partition; it does not optimize that partition.
+Known reference cuts and graph sizes describe the built-in mathematical problems,
+not measured experiment activity.
 
 Compiler has an editable local source area and a bundled static QUBO example;
 editing source clears the example output. It never executes or analyzes source.
