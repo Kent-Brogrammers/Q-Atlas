@@ -13,6 +13,16 @@ from app.schemas.contracts import (
 )
 
 SOURCE = "@qatlas.objective(num_bits=3)\ndef cost(x): return 5 - 2*x[0] + x[1]*x[2]"
+LOCAL_SOURCE = (
+    "@qatlas.objective(num_bits=3)\ndef cost(x):\n"
+    "    weight = 2\n    benefit = weight*x[0]\n    penalty = x[1]*x[2]\n"
+    "    total = 5 - benefit\n    total = total + penalty\n    return total\n"
+)
+LOOP_SOURCE = (
+    "@qatlas.objective(num_bits=3)\ndef cost(x):\n"
+    "    total = 5\n    for i in range(1):\n        total -= 2*x[i]\n"
+    "    total += x[1]*x[2]\n    return total\n"
+)
 
 
 @pytest.fixture
@@ -52,11 +62,12 @@ def mock_runners(monkeypatch):
 
 
 @pytest.mark.parametrize(("algorithm", "expected_gap"), [("brute_force", 0), ("heuristic", None)])
+@pytest.mark.parametrize("source", [SOURCE, LOCAL_SOURCE, LOOP_SOURCE])
 def test_source_to_shared_qaoa_pipeline_preserves_contract(
-    client, mock_runners, algorithm, expected_gap
+    client, mock_runners, algorithm, expected_gap, source
 ):
     mock_runners[0].return_value.algorithm = algorithm
-    payload = {"source": SOURCE, "config": {"seed": 7, "shots": 32, "p": 2}}
+    payload = {"source": source, "config": {"seed": 7, "shots": 32, "p": 2}}
     response = client.post("/api/compiler/benchmark", json=payload)
     assert response.status_code == 200
     result = CompilerBenchmarkResult.model_validate(response.json())
@@ -74,17 +85,23 @@ def test_source_to_shared_qaoa_pipeline_preserves_contract(
     assert result.metrics.approximation_ratio is None
     assert result.metadata.simulated and result.metadata.repetitions == 1
     assert result.metadata.versions["python"]
-    assert SOURCE not in response.text
+    assert source not in response.text
     # A stable instance ID depends on the normalized problem, not formatting.
-    again = client.post("/api/compiler/benchmark", json={**payload, "source": SOURCE + "\n"})
+    again = client.post("/api/compiler/benchmark", json={**payload, "source": source + "\n"})
     assert again.json()["problem_id"] == result.problem_id
 
 
-def test_analysis_endpoint_returns_real_qubo_without_calling_solvers(client, mock_runners):
-    response = client.post("/api/compiler/analyze", json={"source": SOURCE})
+@pytest.mark.parametrize("source", [SOURCE, LOCAL_SOURCE, LOOP_SOURCE])
+def test_analysis_endpoint_returns_real_qubo_without_calling_solvers(client, mock_runners, source):
+    response = client.post("/api/compiler/analyze", json={"source": source})
     assert response.status_code == 200
     assert response.json()["status"] == "supported"
     assert response.json()["qubo"]["linear"] == [-2, 0, 0]
+    circuit = response.json()["circuit"]
+    assert circuit["kind"] == "qaoa_logical_preview"
+    assert circuit["executed"] is False and circuit["depth"] is None
+    assert circuit["num_qubits"] == 3 and circuit["p"] == 1
+    assert circuit["gates"][0] == {"name": "h", "qubits": [0], "angle": None}
     for runner in mock_runners:
         runner.assert_not_called()
 
@@ -119,9 +136,99 @@ def test_shared_runner_errors_are_sanitized(client, mock_runners, failure, statu
     assert "private details" not in response.text
 
 
-def test_live_benchmark_reports_missing_shared_runners_without_mock_data(client):
+def test_benchmark_reports_missing_shared_runners_without_mock_data(client, mock_runners):
+    mock_runners[0].side_effect = NotImplementedError("unavailable")
     response = client.post("/api/compiler/benchmark", json={"source": SOURCE})
     assert response.status_code == 501
     assert response.json()["error"]["code"] == "NOT_IMPLEMENTED"
     assert "Developer 3" in response.json()["error"]["message"]
     assert "quantum" not in response.json()
+    mock_runners[1].assert_not_called()
+
+
+def test_maximization_handoff_preserves_canonical_values_and_nonzero_gap(client, mock_runners):
+    source = SOURCE.replace("num_bits=3", 'num_bits=3, sense="maximize"')
+    mock_runners[0].return_value.objective = -6
+    mock_runners[0].return_value.best_bitstring = "011"
+    mock_runners[1].return_value.objective = -5
+    mock_runners[1].return_value.best_bitstring = "001"
+    response = client.post(
+        "/api/compiler/benchmark", json={"source": source, "config": {"shots": 32}}
+    )
+    assert response.status_code == 200
+    result = CompilerBenchmarkResult.model_validate(response.json())
+    assert result.metadata.qubo.original_sense == "maximize"
+    assert result.metadata.qubo.constant == -5
+    assert result.metadata.qubo.linear == [2, 0, 0]
+    assert result.metadata.qubo.quadratic[0].coefficient == -1
+    assert result.classical.best_bitstring == "011"
+    assert result.quantum.best_bitstring == "001"
+    assert result.quantum.objective == -5
+    assert result.metrics.optimality_gap == 1
+
+
+@pytest.mark.parametrize("invalid", ["objective", "width", "bits", "shots", "qubits", "optimum"])
+def test_invalid_shared_results_never_become_completed_measurements(client, mock_runners, invalid):
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    classical, quantum = (runner.return_value for runner in mock_runners)
+    if invalid == "objective":
+        quantum.objective = 99
+    elif invalid == "width":
+        quantum.best_bitstring = "1"
+    elif invalid == "bits":
+        quantum.best_bitstring = "001"  # Same width, wrong assignment for objective 3.
+    elif invalid == "shots":
+        quantum.metrics.shots = 100
+    elif invalid == "qubits":
+        quantum.metrics.num_qubits = 2
+    else:
+        classical.best_bitstring, classical.objective = "000", 5  # False exact optimum.
+    with TestClient(app, raise_server_exceptions=False) as safe_client:
+        response = safe_client.post(
+            "/api/compiler/benchmark", json={"source": SOURCE, "config": {"shots": 32}}
+        )
+    assert response.status_code == 500
+    assert response.json()["error"]["code"] == "INTERNAL_ERROR"
+    assert "quantum" not in response.json()
+
+
+def test_invalid_classical_result_stops_before_quantum_handoff(client, mock_runners):
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    mock_runners[0].return_value.objective = None
+    with TestClient(app, raise_server_exceptions=False) as safe_client:
+        response = safe_client.post("/api/compiler/benchmark", json={"source": SOURCE})
+    assert response.status_code == 500
+    mock_runners[1].assert_not_called()
+
+
+def test_squared_penalty_analysis_and_mocked_comparison(client, mock_runners):
+    source = (
+        "@qatlas.objective(num_bits=3)\ndef cost(x):\n"
+        "    selected = x[0] + x[1] + x[2]\n"
+        "    benefit = x[0] + 2*x[1] + 3*x[2]\n"
+        "    return 10*(selected - 1)**2 - benefit\n"
+    )
+    analysis = client.post("/api/compiler/analyze", json={"source": source})
+    assert analysis.status_code == 200
+    assert analysis.json()["qubo"]["linear"] == [-11, -12, -13]
+    for runner in mock_runners:
+        runner.assert_not_called()
+    mock_runners[0].return_value.objective = -3
+    mock_runners[0].return_value.best_bitstring = "001"
+    mock_runners[1].return_value.objective = -2
+    mock_runners[1].return_value.best_bitstring = "010"
+    response = client.post(
+        "/api/compiler/benchmark", json={"source": source, "config": {"shots": 32}}
+    )
+    assert response.status_code == 200
+    result = CompilerBenchmarkResult.model_validate(response.json())
+    assert result.metadata.qubo.constant == 10
+    assert result.metrics.optimality_gap == 1
+    assert result.quantum.best_bitstring == "010"
+    assert result.quantum.objective == -2

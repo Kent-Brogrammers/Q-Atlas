@@ -6,15 +6,24 @@ Python optimization compiler, small spin-system experiments, QAOA optimization, 
 Grover search in one React application.
 
 **Current state: compiler analysis plus development foundation.** Health and safe
-Python-to-QUBO analysis work. Compiler benchmarking is wired to the shared runner
-interfaces, which remain Developer 3 stubs; supported benchmark requests and the
+Python-to-QUBO analysis and symbolic QAOA circuit previews work. Compiler benchmarking
+uses the shared runner interfaces, which remain Developer 3 stubs; supported benchmark requests and the
 other experiment routes return HTTP 501. Execution is mocked in compiler tests only.
-There are no circuit/solver implementations or experimental measurements.
+There are no solver implementations or experimental measurements; circuit previews
+are constructed without execution.
 
 See [the compiler guide](docs/COMPILER.md) for supported syntax, diagnostics, limits,
 and the mocked QUBO-to-QAOA handoff. The
 [Developer 2 next steps](docs/DEVELOPER_2_NEXT_STEPS.md) cover the remaining integration
 work and owner handoffs under the current mocks-only constraint.
+The [Developer 3 handoff](docs/DEVELOPER_3_HANDOFF.md) records the selected circuit and
+solver contracts for optimization integration.
+
+The compiler accepts named local terms, numeric accumulation, bounded literal
+`range` loops, and squared penalty expressions inside a marked objective function.
+Start with the seven
+[pasteable Python examples](examples/compiler/README.md)
+and their expected QUBOs. Submitted source is parsed and verified, never executed.
 
 Read [the original specification](docs/Project_Spec.md) completely before implementing
 features. The original file and its casing are preserved.

@@ -110,18 +110,64 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** CircuitMetadata */
-        CircuitMetadata: {
+        /**
+         * CircuitAngle
+         * @description Angle in radians: coefficient * the named variational parameter.
+         */
+        CircuitAngle: {
+            /** Parameter */
+            parameter: string;
+            /** Coefficient */
+            coefficient: number;
+        };
+        /** CircuitGate */
+        CircuitGate: {
+            /**
+             * Name
+             * @enum {string}
+             */
+            name: "h" | "rz" | "cp" | "rx";
+            /** Qubits */
+            qubits: number[];
+            angle?: components["schemas"]["CircuitAngle"] | null;
+        };
+        /**
+         * CircuitPreview
+         * @description Symbolic, untranspiled QAOA plan. No sampling or execution evidence.
+         */
+        CircuitPreview: {
             /** Num Qubits */
             num_qubits: number;
             /** Depth */
-            depth?: number | null;
+            depth?: null;
             /**
              * Backend
              * @default aer_simulator
              * @constant
              */
             backend?: "aer_simulator";
+            /**
+             * Kind
+             * @default qaoa_logical_preview
+             * @constant
+             */
+            kind?: "qaoa_logical_preview";
+            /**
+             * Executed
+             * @default false
+             * @constant
+             */
+            executed?: false;
+            /** P */
+            p: number;
+            /** Parameters */
+            parameters: string[];
+            /** Gates */
+            gates: components["schemas"]["CircuitGate"][];
+            /** Global Phase */
+            global_phase: components["schemas"]["CircuitAngle"][];
+            /** Logical Depth */
+            logical_depth: number;
         };
         /** CompilerAnalyzeRequest */
         CompilerAnalyzeRequest: {
@@ -138,7 +184,7 @@ export interface components {
             /** Diagnostics */
             diagnostics: components["schemas"]["Diagnostic"][];
             qubo?: components["schemas"]["QUBO"] | null;
-            circuit?: components["schemas"]["CircuitMetadata"] | null;
+            circuit?: components["schemas"]["CircuitPreview"] | null;
         };
         /** CompilerBenchmarkRequest */
         CompilerBenchmarkRequest: {
