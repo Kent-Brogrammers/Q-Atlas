@@ -39,12 +39,15 @@ not a quantum measurement. The compiler never executes submitted Python.
 | Verify cost-gate phase formulas analytically | Tested | The declared formulas match the cost phase on tiny cases |
 | Compare mocked solver outputs | Tested | Integration and result validation work with synthetic fixtures |
 | Run classical/QAOA solvers | Shared stubs | Real solver behavior remains unverified |
-| Render a visual circuit in the browser | Pending Developer 5 | The current UI displays response JSON |
-| Upload a `.py` file | Pending, optional UI work | Pasting source is already available |
+| Render a circuit preview in the browser | Implemented as a gate table | Symbolic gates, parameters, global phase, and logical depth are readable; a graphical diagram is future work |
+| Load a `.py` file | Implemented | Browser reads bounded text into the existing source editor |
 | Compile general Python scripts | Outside the current subset | Imports, data-dependent control flow, and helper calls are rejected; local assignments and fixed literal-range loops are supported |
 
-At the latest code-validation checkpoint, 265 pytest cases, Ruff lint/format checks,
+At the latest code-validation checkpoint, 266 pytest cases, four frontend file-reading
+checks, Ruff lint/format checks,
 frontend generated-type checks, TypeScript checks, and the production build passed.
+All seven examples were also checked over actual HTTP, and the compiler page was
+checked in Firefox. See [the validation record](COMPILER_MANUAL_CHECKS.md).
 That is a recorded checkpoint, not a guarantee about subsequent changes.
 
 ### Execution constraint
@@ -87,9 +90,10 @@ be made visible to the affected owners. Keep other experiment modules out of sco
 
 **Owner: Developer 2. Dependency: none.**
 
-The initial compiler and original next-steps document were pushed in commits
-`995de08` and `4e9ba20`. At the time this guide was written, the later circuit-preview
-and result-validation changes were still uncommitted on `Connor`.
+The initial compiler and original next-steps document were saved in commits
+`995de08` and `4e9ba20`. The later language/preview pipeline is committed as `75539fd`,
+and a signed-zero normalization regression fix as `ba11311`. The compiler-page
+integration and owner handoffs are kept in a separate commit for frontend review.
 
 From the repository root, inspect the current state before staging anything:
 
@@ -117,8 +121,12 @@ git add -- \
   backend/tests/compiler/test_loops.py \
   backend/tests/compiler/test_penalties.py \
   frontend/src/types/api.generated.ts frontend/src/types/index.ts \
+  frontend/package.json frontend/src/pages/CompilerPage.tsx frontend/src/compiler/ \
+  frontend/src/components/CompilerAnalysisPanel.tsx \
+  frontend/src/components/CircuitPreview.tsx frontend/tests/ \
   README.md docs/API_CONTRACTS.md docs/COMPILER.md \
-  docs/DEVELOPER_2_NEXT_STEPS.md docs/DEVELOPER_3_HANDOFF.md
+  docs/DEVELOPER_2_NEXT_STEPS.md docs/DEVELOPER_3_HANDOFF.md \
+  docs/DEVELOPER_5_HANDOFF.md docs/COMPILER_MANUAL_CHECKS.md
 git diff --cached --check
 git diff --cached --stat
 git commit -m "feat(compiler): add symbolic circuit previews and validate solver handoffs"
@@ -305,8 +313,8 @@ virtual-environment executable. If the executable is missing, finish backend set
 first; do not install quantum packages to fix an API startup problem.
 
 Open <http://127.0.0.1:5173/compiler>. Interactive API documentation is available at
-<http://127.0.0.1:8000/docs>. The compiler page currently has stale placeholder wording
-about analysis being unimplemented; the endpoint already works despite that text.
+<http://127.0.0.1:8000/docs>. The compiler page now supports both pasted source and
+local text-file loading, with structured analysis output and an unexecuted gate table.
 
 ### Direct analyze request
 
@@ -371,44 +379,46 @@ changes, obtain useful rejection diagnostics, and distinguish a preview from exe
 
 **Owner: Developer 5 for UI; Developer 2 supplies examples and acceptance checks.**
 
-Coordinate this work with Developer 5 before editing their frontend module. No new
-API endpoint is needed for the basic experience.
+The user authorized implementing this compiler-page integration as part of the
+agenda. The basic experience is now implemented for Developer 5 review, with no new
+API endpoint. Use [DEVELOPER_5_HANDOFF.md](DEVELOPER_5_HANDOFF.md) for ownership review
+and remaining frontend work.
 
 ### File-by-file implementation plan
 
-| File | Planned change |
+| File | Implemented responsibility |
 | --- | --- |
 | `frontend/src/pages/CompilerPage.tsx` | Separate typed analysis state from benchmark state; replace stale status copy; render structured analysis |
-| `frontend/src/components/CompilerAnalysisPanel.tsx` | Proposed new component for diagnostics, normalized coefficients, and original sense |
-| `frontend/src/components/CircuitPreview.tsx` | Proposed new component rendering the returned symbolic gates and parameters |
+| `frontend/src/components/CompilerAnalysisPanel.tsx` | Diagnostics, normalized coefficients, and original sense |
+| `frontend/src/components/CircuitPreview.tsx` | Symbolic gates, parameters, global phase, and logical depth |
+| `frontend/src/compiler/source.ts` | Example source, bounded file reads, angle formatting |
 | `frontend/src/api/client.ts` | Reuse existing `api.analyze`, `api.compilerBenchmark`, and `ApiError` handling |
 | `frontend/src/types/index.ts` | Reuse existing named compiler/circuit types |
 
-The two component filenames above are proposed deliverables, not existing files.
-Prefer existing styling and components over introducing an editor, diagram, or chart
-dependency for this milestone. A readable gate table is sufficient before an SVG renderer.
+These components now exist and use the existing styling without a new runtime
+dependency. A readable gate table is provided; an SVG renderer remains optional future work.
 
 ### Source and analysis controls
 
-- [ ] Explain that the editor accepts one marked binary objective, with a 1–6-bit limit.
-- [ ] Load the reproducible examples without silently altering their source.
-- [ ] Preserve the submitted source when a request fails.
-- [ ] Disable duplicate submissions and show a loading state.
-- [ ] Clear or mark previous results stale when source changes. Prevent an earlier
+- [x] Explain that the editor accepts one marked binary objective, with a 1–6-bit limit.
+- [x] Load the reproducible examples without silently altering their source.
+- [x] Preserve the submitted source when a request fails.
+- [x] Disable duplicate submissions and show a loading state.
+- [x] Clear or mark previous results stale when source changes. Prevent an earlier
   response from being displayed as the analysis of newly edited text.
-- [ ] Treat HTTP 200 with `status=rejected` as an analysis rejection, not success.
-- [ ] Display diagnostic severity, message, line, and column. Support missing locations.
+- [x] Treat HTTP 200 with `status=rejected` as an analysis rejection, not success.
+- [x] Display diagnostic severity, message, line, and column. Support missing locations.
 
 ### QUBO and circuit display
 
-- [ ] Show constant, indexed linear coefficients, and canonical pair terms.
-- [ ] Explain that unused variables remain part of the declared width.
-- [ ] Show canonical minimization sense and the original sense separately.
-- [ ] Label the preview as symbolic and unexecuted, with one preview layer.
-- [ ] Render qubit i as x[i]. Display parameter-scaled angles without evaluating strings.
-- [ ] Distinguish `logical_depth` from transpiled depth, which is currently unavailable.
+- [x] Show constant, indexed linear coefficients, and canonical pair terms.
+- [x] Explain that unused variables remain part of the declared width.
+- [x] Show canonical minimization sense and the original sense separately.
+- [x] Label the preview as symbolic and unexecuted, with one preview layer.
+- [x] Render qubit i as x[i]. Display parameter-scaled angles without evaluating strings.
+- [x] Distinguish `logical_depth` from transpiled depth, which is currently unavailable.
 - [ ] Explain that Analyze uses p=1 even if a later benchmark uses another configured p.
-- [ ] Retain raw JSON as optional developer detail, not the only explanation of results.
+- [x] Retain raw JSON as optional developer detail, not the only explanation of results.
 
 ### Comparison state
 
@@ -425,9 +435,9 @@ using canonical values; changing display sense must not change solver semantics.
 
 ### Optional file input
 
-If selecting a local `.py` file would help your workflow, Developer 5 can add a browser
-file control that reads text into the same editor and submits `{source}` through the
-existing endpoint. Enforce the same character limit and preserve server-side validation.
+The local `.py` file control is implemented. It reads text into the same editor and
+submits `{source}` through the existing endpoint, enforces the source character limit,
+and preserves server-side validation. A late file read cannot overwrite newer edits.
 Treat the filename/extension as a convenience, not a security check. No module import,
 server filesystem write, uploaded-code execution, or additional upload endpoint is needed.
 
@@ -526,6 +536,7 @@ npm run types:generate
 For frontend changes or contract updates, also run:
 
 ```sh
+npm run test:compiler
 npm run types:check
 npm run typecheck
 npm run build
@@ -611,13 +622,13 @@ counts remain separate decisions. Do not add them incidentally while fixing the 
 
 ### Ready for your own manual analysis testing
 
-- [ ] Current pipeline saved on Connor and standard setup documented.
+- [x] Current pipeline saved on Connor and standard setup documented.
 - [x] Seven reproducible source examples and expected QUBOs checked.
-- [ ] Editing source changes extracted coefficients as expected.
-- [ ] Rejected input gives actionable diagnostics with no partial QUBO/circuit.
-- [ ] Browser displays the QUBO and explicitly unexecuted preview clearly.
-- [ ] Unavailable comparisons are explained without fabricated data.
-- [ ] Compiler tests, affected lint/type checks, and build pass.
+- [x] Editing source changes extracted coefficients as expected.
+- [x] Rejected input gives actionable diagnostics with no partial QUBO/circuit.
+- [x] Browser displays the QUBO and explicitly unexecuted preview clearly.
+- [x] Unavailable comparisons are explained without fabricated data.
+- [x] Compiler tests, affected lint/type checks, and build pass.
 
 ### Ready for a separately authorized local solver test
 
@@ -634,13 +645,13 @@ pending. The supercomputer allocation stays unused.
 
 ## 11. Immediate agenda after the compiler-language milestones
 
-1. Save and publish the current reviewed changes on Connor; language/preview work
-   remains uncommitted until that step is performed.
-2. Use the seven fixtures and one objective you actually want to submit for manual
-   Analyze testing. Record unsupported constructs and mismatches before adding syntax.
-3. Give Developer 5 the examples and generated preview contracts for the compiler
-   result display, stale-result handling, and optional local text-file loading.
-4. Give Developer 3 the selected shared gate/solver handoff and keep compiler
+1. The language/preview pipeline and canonical-zero fix are committed on Connor,
+   followed by the separately reviewable compiler-page integration and check record.
+2. All seven fixtures have passed direct HTTP checks. Next choose an objective you
+   want to submit, load it in the compiler page, and record any unsupported constructs.
+3. Give Developer 5 [the frontend handoff](DEVELOPER_5_HANDOFF.md) for review of the
+   implemented result display, stale-result handling, and local text-file loading.
+4. Give Developer 3 [the shared handoff](DEVELOPER_3_HANDOFF.md) and keep compiler
    integration tests mocked while the actual runners are implemented.
 5. Once separately authorized, verify the tiny local solver path and measured
    provenance according to milestone F. Keep the supercomputer allocation unused.

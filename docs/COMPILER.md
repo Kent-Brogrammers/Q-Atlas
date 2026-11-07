@@ -5,6 +5,29 @@ extraction, QUBO normalization, exhaustive verification, diagnostics, and the
 benchmark adapter. It never executes submitted Python. The project specification
 is unchanged; the analysis response now includes a typed symbolic circuit preview.
 
+## Using the compiler page
+
+Start the API and frontend as described in [README.md](../README.md), then open
+`/compiler`. The page starts with a three-bit squared-penalty example.
+
+1. Edit the source, choose **Load a Python file**, or restore it with **Load example**.
+2. Click **Analyze** to see supported/rejected status and the server diagnostics.
+3. Click a diagnostic line button to select that line in the editor.
+4. For supported source, inspect the constant, indexed coefficients, objective
+   sense, and symbolic gate table. The preview explicitly shows **Not executed**.
+5. Editing/loading source clears previous results; a late response or file read
+   cannot overwrite a newer edit. A pending request finishes before resubmission.
+6. **Run comparison** requires a supported analysis of the current source. It
+   currently explains the missing shared-runner dependency after HTTP 501, while
+   preserving the working analysis.
+
+File loading reads text in the browser and sends it through the existing `{source}`
+request. It does not import Python, run a decorator, or write uploaded files on the
+server. Empty files and files over the character limit are rejected. A separate
+80,000-byte read guard prevents unnecessarily large local reads; the server still
+enforces its own source limits. Raw response JSON remains available in a collapsed
+details panel. See [manual validation](COMPILER_MANUAL_CHECKS.md) for actual checks.
+
 ## Supported source
 
 ```python

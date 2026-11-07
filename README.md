@@ -24,6 +24,10 @@ The compiler accepts named local terms, numeric accumulation, bounded literal
 Start with the seven
 [pasteable Python examples](examples/compiler/README.md)
 and their expected QUBOs. Submitted source is parsed and verified, never executed.
+The compiler page now loads local `.py` text files and displays line-linked
+diagnostics, coefficient tables, and a gate preview labeled **Not executed**.
+See [the manual validation record](docs/COMPILER_MANUAL_CHECKS.md) and
+[Developer 5's integration handoff](docs/DEVELOPER_5_HANDOFF.md).
 
 Read [the original specification](docs/Project_Spec.md) completely before implementing
 features. The original file and its casing are preserved.
@@ -123,6 +127,7 @@ uv run --locked ruff format --check .
 From `frontend/`:
 
 ```sh
+npm run test:compiler
 npm run types:check
 npm run typecheck
 npm run build
