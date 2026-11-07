@@ -1,18 +1,13 @@
 {
+  "extends": "$app/tsconfig",
+  "include": ["src", "tests", "*.ts"],
+  "exclude": ["node_modules", "build"],
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "jsx": "react-jsx",
     "strict": true,
-    "noEmit": true,
+    "allowJs": true,
+    "checkJs": true,
+    "resolveJsonModule": true,
     "skipLibCheck": true,
-    "isolatedModules": true,
-    "verbatimModuleSyntax": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "types": ["vite/client", "node"]
-  },
-  "include": ["src", "vite.config.ts"]
+    "allowImportingTsExtensions": true
+  }
 }
