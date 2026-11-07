@@ -5,9 +5,10 @@ scientifically honest comparisons with classical methods. It combines a restrict
 Python optimization compiler, small spin-system experiments, QAOA optimization, and
 Grover search in one React application.
 
-**Current state: runnable development foundation.** Health works; all five experiment
-operations validate input and return HTTP 501 with `NOT_IMPLEMENTED`. There are no
-compiler, circuit, solver, or simulation implementations and no experimental measurements.
+**Current state: materials experiment plus shared development foundation.** Health works;
+materials runs a 2–4-spin transverse-field Ising experiment with exact, ideal circuit,
+and finite-shot results. Compiler, optimization, and search operations remain HTTP 501
+stubs. See [the materials guide](docs/MATERIALS.md) for physics, examples, limits, and tests.
 
 Read [the original specification](docs/Project_Spec.md) completely before implementing
 features. The original file and its casing are preserved.
@@ -81,8 +82,9 @@ npm run dev
 Open <http://127.0.0.1:5173>. Backend docs are at <http://127.0.0.1:8000/docs>;
 health is <http://127.0.0.1:8000/api/health>. Start either server independently.
 The frontend serves `/`, `/compiler`, `/materials`, `/optimization`, and `/search`.
-Use **Check API health** on the overview to test the connection. Experiment pages
-show real 501 responses; their sample inputs contain no measured results.
+Use **Check API health** on the overview to test the connection. With the quantum extra
+installed, the materials page's request panel displays real simulation results; its UI
+labels are still the integration owner's scaffold. Other experiment pages show real 501 responses.
 
 No environment file or credentials are required. Optional overrides:
 
@@ -97,10 +99,10 @@ No environment file or credentials are required. Optional overrides:
 From `backend/`:
 
 ```sh
-uv run --locked python -c 'from app.main import app; print(app.title)'
-uv run --locked pytest
-uv run --locked ruff check .
-uv run --locked ruff format --check .
+uv run --locked --all-extras python -c 'from app.main import app; print(app.title)'
+uv run --locked --all-extras pytest
+uv run --locked --all-extras ruff check .
+uv run --locked --all-extras ruff format --check .
 ```
 
 From `frontend/`:
@@ -121,7 +123,7 @@ commit the types with the backend change. `frontend/openapi.json` is ignored int
 
 | Owner | Begin here | First owned implementation/test |
 | --- | --- | --- |
-| Developer 1 | `backend/app/experiments/materials/`, `api/materials.py`, `tests/materials/` | Define Hamiltonian signs/units; known two-spin reference |
+| Developer 1 | `backend/app/experiments/materials/`, `api/materials.py`, `tests/materials/` | TFIM implemented; start with the physics and convergence tests |
 | Developer 2 | `backend/app/compiler/`, `api/compiler.py`, `tests/compiler/` | Allowlisted marked AST, diagnostics, normalized QUBO; consume shared runners |
 | Developer 3 | `backend/app/quantum/qaoa.py`, `experiments/optimization/solvers.py`, `api/optimization.py`, `tests/optimization/` | QUBO evaluation and classical reference, then shared QAOA and fair timings |
 | Developer 4 | `backend/app/experiments/search/`, `api/search.py`, `tests/search/` | Marked-state oracle with explicit wire ordering and query assumptions |
@@ -144,12 +146,12 @@ helpers with all owners. No second QAOA engine belongs in the compiler.
 
 ## Integration decisions still owned by the team
 
-- Materials owner must select the exact Hamiltonian, estimation method, sign convention,
-  and physical or dimensionless units before producing results.
+- Materials now fixes an open TFIM chain, all-zero initial state, second-order Trotter
+  evolution, and dimensionless units with hbar=1; see [the implementation guide](docs/MATERIALS.md).
 - Optimization owner must define Max-Cut conversion, baseline selection, gap/ratio
   formulas, and optimizer stopping behavior. Requests accept graphs, but no conversion exists yet.
 - Search owner must specify oracle construction cost and classical query assumptions.
-- Each owner must enforce the declared runtime budget inside their eventual implementation;
-  `timeout_seconds` validation alone does not interrupt Python or native simulator work.
+- Materials enforces a wall-clock budget using a disposable simulation process. Other
+  owners must enforce their runners' budgets; field validation alone cannot stop native work.
 - The initial API is synchronous and simulator-only. Any async jobs or hardware contracts
   require coordinated changes, rather than silently extending current semantics.

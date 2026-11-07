@@ -1,0 +1,12 @@
+{
+  "model": "ising",
+  "num_spins": 3,
+  "coupling": 1.0,
+  "field": 0.7,
+  "boundary": "open",
+  "observable": "magnetization",
+  "evolution_time": 1.0,
+  "trotter_steps": 32,
+  "time_samples": 5,
+  "config": {"backend": "aer_simulator", "shots": 4096, "seed": 42, "timeout_seconds": 30}
+}
