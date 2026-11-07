@@ -1,0 +1,31 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "q-atlas-backend"
+version = "0.1.0"
+description = "Shared contracts and local API for Q-Atlas"
+requires-python = ">=3.11"
+dependencies = ["fastapi", "pydantic>=2,<3", "uvicorn"]
+
+[project.optional-dependencies]
+quantum = ["numpy", "scipy", "qiskit", "qiskit-aer", "networkx"]
+
+[dependency-groups]
+dev = ["pytest", "httpx2", "ruff"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra --import-mode=importlib"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
