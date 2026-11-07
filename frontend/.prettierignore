@@ -1,0 +1,9 @@
+node_modules
+.svelte-kit
+.sites-runtime
+build
+package-lock.json
+
+react-scaffold
+src/types/api.generated.ts
+openapi.json
