@@ -281,12 +281,15 @@ def analyze_source(source: str) -> CompilerAnalyzeResult:
             )
         polynomial = _extract(lowered_expression, parameter, num_bits, symbolic_bindings)
         sign = -1 if sense == "maximize" else 1
+        # The IR stores only nonzero terms. Apply sense before filling absent terms
+        # so their canonical JSON values remain +0.0, including under maximization.
+        polynomial = {key: sign * value for key, value in polynomial.items()}
         qubo = QUBO(
             num_variables=num_bits,
-            constant=sign * polynomial.get((), 0.0),
-            linear=[sign * polynomial.get((i,), 0.0) for i in range(num_bits)],
+            constant=polynomial.get((), 0.0),
+            linear=[polynomial.get((i,), 0.0) for i in range(num_bits)],
             quadratic=[
-                QuadraticTerm(i=key[0], j=key[1], coefficient=sign * value)
+                QuadraticTerm(i=key[0], j=key[1], coefficient=value)
                 for key, value in sorted(polynomial.items())
                 if len(key) == 2
             ],
