@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "q-atlas-backend"
+version = "0.1.0"
+description = "Q-Atlas backend: initial Developer 3 optimization workspace"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "networkx>=3.5,<4",
+    "numpy>=2.2,<3",
+    "scipy>=1.15,<2",
+    "qiskit>=2.2,<3",
+    "qiskit-aer>=0.17.2,<0.19",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4,<10",
+    "ruff>=0.14,<1",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app", "app.*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-config --strict-markers"
+markers = [
+    "environment: local Qiskit Aer installation smoke tests (no hardware)",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
