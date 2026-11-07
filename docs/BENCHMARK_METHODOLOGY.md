@@ -1,7 +1,7 @@
 # Benchmark methodology
 
-This is the measurement agreement for future implementations, not a results report.
-The foundation runs no experiments and supplies no measured performance claims.
+This is the shared measurement agreement, not a performance results report.
+The implemented materials comparison follows [its documented timing scopes](MATERIALS.md).
 Developer 3 coordinates shared instrumentation with each experiment owner.
 
 ## Fair comparisons
