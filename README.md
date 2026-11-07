@@ -12,7 +12,9 @@ other experiment routes return HTTP 501. Execution is mocked in compiler tests o
 There are no circuit/solver implementations or experimental measurements.
 
 See [the compiler guide](docs/COMPILER.md) for supported syntax, diagnostics, limits,
-and the mocked QUBO-to-QAOA handoff.
+and the mocked QUBO-to-QAOA handoff. The
+[Developer 2 next steps](docs/DEVELOPER_2_NEXT_STEPS.md) cover the remaining integration
+work and owner handoffs under the current mocks-only constraint.
 
 Read [the original specification](docs/Project_Spec.md) completely before implementing
 features. The original file and its casing are preserved.
