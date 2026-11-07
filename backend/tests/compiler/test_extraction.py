@@ -1,4 +1,5 @@
 import itertools
+import math
 
 import pytest
 
@@ -41,6 +42,14 @@ def test_parentheses_fractional_coefficients_variable_order_and_cancellation():
     assert result.qubo.linear == [0.5, 1, -2]
     assert [(t.i, t.j, t.coefficient) for t in result.qubo.quadratic] == [(0, 2, -1)]
     assert analyze_source(source("x[0] - x[0]")).qubo.linear == [0, 0, 0]
+
+
+def test_maximization_keeps_absent_coefficients_as_canonical_positive_zeros():
+    result = analyze_source(source("2*x[0]", sense="maximize"))
+    assert result.status == "supported"
+    assert result.qubo.linear == [-2, 0, 0]
+    assert math.copysign(1, result.qubo.constant) == 1
+    assert all(math.copysign(1, value) == 1 for value in result.qubo.linear[1:])
 
 
 @pytest.mark.parametrize(
