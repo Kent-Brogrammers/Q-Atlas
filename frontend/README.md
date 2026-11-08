@@ -17,8 +17,9 @@ npm run dev
 
 Open Vite's local URL, normally `http://127.0.0.1:5173`. Fonts are bundled locally.
 The SvelteKit views do not send live experiment requests. FastAPI can be started
-independently using the root README; its experiment routes return HTTP 501 until
-the owners implement the algorithms.
+independently using the root README; its materials route runs the existing spin-system simulation. Compiler,
+optimization, and search remain HTTP 501 stubs. Neutrino API integration is proposed
+separately and is not registered in this frontend.
 
 ```sh
 npm run check
@@ -31,11 +32,14 @@ npm run preview
 
 `check` includes TypeScript and Svelte accessibility/compiler warnings. Tests cover
 shared request serialization, canonical error envelopes, cancellation, and graph /
-example-data consistency. `build` prerenders all five views into `build/`.
+example-data consistency. `build` prerenders all seven routes into `build/`.
 
 ## Structure
 
-- `src/routes/`: Overview, Compiler, Materials, Optimization, Search, and navigation.
+- `src/routes/`: primary Overview, Neutrino Lab, and Methodology views. Compiler,
+  Materials, Optimization, and Search remain at their original URLs.
+- `src/lib/data/navigation.ts`: the three primary links, separate from the retained
+  experiment catalog in `experiments.ts`.
 - `src/lib/components/`: reusable panels, controls, SVG diagrams, and example displays.
 - `src/types/api.generated.ts`: the canonical types generated from FastAPI OpenAPI.
 - `src/types/index.ts`: named exports used by both frontends.
@@ -57,7 +61,39 @@ Sans handles UI text; Plex Mono handles code, numbers, and technical metadata.
 The light workspace, navy navigation, blue feature panels, 4–6px card corners,
 and minimally rounded controls preserve the current design.
 
-## Current behavior and data provenance
+## Neutrino Oscillation Lab
+
+The main navigation is **Overview**, **Neutrino Lab**, and **Methodology**.
+Overview introduces the science and current availability without example statistics.
+Methodology records the model scope and classical validation requirements.
+
+`/neutrinos/` is the primary workspace. Model/flavor selection, energy/distance,
+vacuum/constant-density matter, matter parameters, and requested shots are visible
+but disabled until capabilities and the API are agreed. There are no assumed
+physical defaults or enabled propagation modes. Run sends no requests.
+
+The probability plot starts empty, with no assumed flavor channels or example
+dataset. Comparison, accuracy, and circuit/execution information are grouped in
+expandable sections rather than empty measurement cards. No physics or error
+calculation runs in the browser. Local draft-export helpers remain available for
+future integration but are not exposed as an approved request workflow.
+
+Draft discussion types live in `src/lib/neutrinos/proposal.ts`, outside the approved
+generated API schema. See [Nick's proposed handoff](../docs/NEUTRINO_INTERFACE_PROPOSAL.md)
+for supported models/flavors, units, matter conventions, independent classical
+reference, measured errors, encoding, and timing requirements. No neutrino endpoint
+is added to the shared client. The existing Materials backend and React scaffold
+are preserved.
+
+## Retained workspaces and data provenance
+
+The original routes `/compiler/`, `/optimization/`, `/search/`, and `/materials/`
+remain accessible by direct URL, with their source and functionality preserved.
+They are hidden from primary navigation and Overview pending the team's decision
+about their long-term role. Their backend implementations, shared schemas, and
+React reference are unchanged.
+
+## Retained behavior
 
 Optimization supports graph presets, manual partition changes, zoom/reset, QUBO
 inspection/copy, trace switching, optional example loading, and labeled JSON export.
