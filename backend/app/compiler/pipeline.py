@@ -4,7 +4,9 @@ import hashlib
 import json
 import math
 import platform
+from collections.abc import Callable
 from importlib.metadata import PackageNotFoundError, version
+from typing import TypeVar
 
 from app.compiler.analysis import analyze_source
 from app.experiments.optimization import solvers
@@ -19,6 +21,8 @@ from app.schemas.contracts import (
     SolverResult,
 )
 
+Result = TypeVar("Result", bound=SolverResult)
+
 
 class CompilationError(Exception):
     def __init__(self, diagnostics: list[Diagnostic]):
@@ -31,8 +35,19 @@ def _validate_solution(qubo: QUBO, result: SolverResult) -> None:
             "compiler comparisons require an assignment and objective from each solver"
         )
     actual = evaluate_qubo(qubo, result.best_bitstring)
-    if not math.isclose(actual, result.objective, rel_tol=1e-9, abs_tol=1e-9):
+    if not math.isclose(actual, result.objective, rel_tol=0, abs_tol=1e-9):
         raise ValueError("shared solver objective does not match its assignment")
+
+
+def _call_shared_runner(
+    runner: Callable[[QUBO, QAOAConfig], Result], qubo: QUBO, config: QAOAConfig
+) -> Result:
+    # Protect the validated problem and provenance, including if a runner raises.
+    runner_qubo, runner_config = qubo.model_copy(deep=True), config.model_copy(deep=True)
+    result = runner(runner_qubo, runner_config)
+    if runner_qubo != qubo or runner_config != config:
+        raise ValueError("shared runner changed its input QUBO or configuration")
+    return result
 
 
 def benchmark_qubo(qubo: QUBO, config: QAOAConfig) -> CompilerBenchmarkResult:
@@ -42,9 +57,9 @@ def benchmark_qubo(qubo: QUBO, config: QAOAConfig) -> CompilerBenchmarkResult:
     results at these two boundaries; production never substitutes mock measurements.
     Source analysis is outside both solvers' reported end-to-end timers.
     """
-    classical = solvers.run_classical(qubo, config)
+    classical = _call_shared_runner(solvers.run_classical, qubo, config)
     _validate_solution(qubo, classical)
-    quantum = qaoa.run_qaoa(qubo, config)
+    quantum = _call_shared_runner(qaoa.run_qaoa, qubo, config)
     _validate_solution(qubo, quantum)
     if quantum.metrics.num_qubits != qubo.num_variables or quantum.metrics.shots != config.shots:
         raise ValueError("shared QAOA metrics do not match the problem and requested shots")

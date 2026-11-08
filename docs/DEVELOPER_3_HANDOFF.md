@@ -85,6 +85,14 @@ run_qaoa(qubo: QUBO, config: QAOAConfig) -> QAOAResult
 - For compiler comparisons, both results must supply a matching objective and a
   valid full-width bitstring. QAOA must supply matching `num_qubits` and `shots`.
   The compiler checks these before returning a completed result.
+- Report assignment costs using the shared evaluator. The compiler checks absolute
+  objective differences against `1e-9`, without a relative tolerance that grows with
+  constant offsets. Return the cost of the best assignment, not an optimizer's mean
+  expectation. Ill-conditioned source/QUBO mismatches are rejected during analysis.
+- Treat supplied QUBO/config models as read-only. The compiler supplies each runner
+  an independent deep copy, checks for persistent mutation, and retains the original
+  instance/seed/settings for comparison metadata. Build working representations
+  internally. Input mutation is an integration failure with sanitized HTTP 500.
 - `brute_force` is the exact baseline label used to populate the canonical
   objective gap. Other algorithms leave the comparison gap unknown. General signed
   QUBO approximation ratios remain null.
@@ -95,6 +103,8 @@ run_qaoa(qubo: QUBO, config: QAOAConfig) -> QAOAResult
 - Each solver's end-to-end timer includes its own preparation/result extraction;
   source parsing and exhaustive verification stay outside both timers. Return
   measured timing flags/components, with null for unmeasured durations.
+  Common request-boundary validation and input isolation also stay outside both
+  solver intervals; neither timer is advertised as complete HTTP request latency.
 - Enforce `timeout_seconds`, including native calls, and raise TimeoutError. Compiler
   HTTP mapping is 504. No fake results on expiry or missing dependencies.
 - Report transpiled depth in benchmark metrics, never preview logical depth.

@@ -124,7 +124,11 @@ detects the resulting objective mismatch. No user function or runtime decorator 
 invoked; the range operations are compiler-owned arithmetic on validated integers.
 
 The independent safe interpreter and the extracted QUBO must agree on every one of
-the `2**num_bits` inputs, within relative/absolute tolerance `1e-9`. API bitstrings
+the `2**num_bits` inputs, within absolute tolerance `1e-9`, with no relative tolerance.
+A large constant cannot relax the equivalence check. For example,
+`1e12 + (1e16 + x[0] - 1e16)` is rejected because floating-point cancellation changes
+its values after symbolic normalization; `1e12 + x[0]` remains supported.
+Rescale ill-conditioned expressions when verification fails. API bitstrings
 remain `x[0]x[1]...x[n-1]`; no bit-order or objective-sense contracts changed.
 
 ## Squared penalty objectives
@@ -177,7 +181,10 @@ the shared Developer 3 dependency. Rejected input returns HTTP 422 with compiler
 diagnostics; future runner timeouts map to HTTP 504 `TIMEOUT`. Unexpected exceptions
 use the existing sanitized HTTP 500 envelope.
 
-The adapter forwards the same QUBO/config to both runners and preserves their
+The adapter forwards independent deep copies of the same QUBO/config to both runners
+and rejects persistent changes to either supplied model. This preserves the original
+instance and provenance even if a runner mutates its inputs or raises an error. A
+classical-input mutation stops the pipeline before the QAOA call. The adapter preserves
 objectives, bitstrings, and measured solver timings. Source analysis is outside
 both solver timers. Instance IDs hash the canonical QUBO, without storing source.
 Comparison gaps are populated only for the exact `brute_force` baseline;
@@ -189,7 +196,11 @@ bitstrings have exactly the QUBO width in API order, and that QAOA metrics match
 requested qubit and shot counts. An allegedly exact baseline cannot report an
 objective above a valid QAOA solution. Inconsistent results fail with sanitized HTTP
 500 rather than being displayed as completed measurements. Objective checks use
-relative/absolute tolerance `1e-9`; the exact-gap ordering check uses absolute `1e-9`.
+absolute tolerance `1e-9` with no relative tolerance; a large constant must not hide an
+incorrect returned objective. The exact-gap ordering check also uses absolute `1e-9`.
+Common adapter validation and input isolation are outside both solver-reported timers,
+like source analysis/request validation. Solver timers still cover their own preparation
+through result extraction; they are not whole-HTTP-request latency measurements.
 
 ## Symbolic circuit previews
 

@@ -77,3 +77,16 @@ Start the normal backend/frontend using [README.md](../README.md). Open
 Run the frontend checks in [Developer 5's handoff](DEVELOPER_5_HANDOFF.md) and the
 backend checks in [COMPILER.md](COMPILER.md). The source subset remains restricted;
 these checks do not establish arbitrary-Python support or live QAOA correctness.
+
+## Follow-up numerical and input-integrity checks
+
+Subsequent compiler hardening passed 274 pytest cases, including new regressions for
+large constant offsets and mutation of shared inputs. The source
+`1e12 + (1e16 + x[0] - 1e16)` previously passed a relative-tolerance check despite
+an objective discrepancy of 1. It now returns `VERIFICATION_FAILED`, while a
+consistent large-offset expression remains supported.
+
+Wrong shared objectives and persistent changes to either the supplied QUBO or
+configuration now fail with sanitized HTTP 500. Each runner receives independent
+input copies; the caller's original instance/configuration remain unchanged. These
+follow-up checks use mock runners and are separate from the earlier Firefox session.
