@@ -1,7 +1,11 @@
 import type { Experiment } from '../types/contracts.ts';
 
+// Retained workspace catalog, separate from the focused primary navigation.
+// These UI IDs do not extend the approved backend experiment discriminator.
+export type WorkspaceView = Experiment | 'neutrinos';
+
 export const experiments: {
-  id: Experiment;
+  id: WorkspaceView;
   number: string;
   title: string;
   short: string;
@@ -10,6 +14,17 @@ export const experiments: {
   icon: string;
   color: string;
 }[] = [
+  {
+    id: 'neutrinos',
+    number: '05',
+    title: 'Neutrino Oscillations',
+    short: 'Neutrinos',
+    description:
+      'Configure neutrino propagation and inspect backend-provided flavor probabilities.',
+    method: 'Vacuum · constant-density matter · accuracy',
+    icon: 'activity',
+    color: 'blue'
+  },
   {
     id: 'compiler',
     number: '01',
@@ -25,7 +40,7 @@ export const experiments: {
     number: '02',
     title: 'Quantum Materials',
     short: 'Materials',
-    description: 'Set spin count, coupling, and field parameters for a small spin system.',
+    description: 'Spin-system controls for the existing Ising-chain experiment.',
     method: 'Spin Hamiltonian · exact reference',
     icon: 'atom',
     color: 'violet'
