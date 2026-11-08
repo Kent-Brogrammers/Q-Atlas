@@ -10,7 +10,7 @@ by those inputs, rather than a prerequisite to trying the current compiler.
 This is the current plan for your track. The original [Project_Spec.md](Project_Spec.md)
 remains the source of truth. Use [COMPILER.md](COMPILER.md) for supported syntax and
 current behavior, and [API_CONTRACTS.md](API_CONTRACTS.md) for the executable contracts.
-This document describes future tasks; proposed scripts/tests are not already implemented.
+This document distinguishes completed operations from the remaining integration tasks.
 
 ## 1. Current checkpoint
 
@@ -24,9 +24,10 @@ This document describes future tasks; proposed scripts/tests are not already imp
 | Browser input | Paste Python or load a local text file; source is never executed | `frontend/src/pages/CompilerPage.tsx` |
 | Browser output | Line-linked diagnostics, coefficient tables, original/canonical sense, unexecuted gate table | `frontend/src/components/CompilerAnalysisPanel.tsx`, `CircuitPreview.tsx` |
 | Reproducible inputs | Seven source files with expected QUBOs and arithmetic reference values | [examples/compiler](../examples/compiler/README.md) |
+| Repeatable API check | Health, seven examples, and a rejection case over HTTP, with no execution routes | `backend/scripts/check_compiler_api.py` |
 | Actual optimization | Classical and QAOA entrypoints are still stubs on this branch | Developer 3 dependency |
 
-The last recorded validation passed **274 backend tests**, four frontend file-reading
+The last recorded validation passed **310 backend tests**, four frontend file-reading
 checks, Ruff, generated-type checks, TypeScript checks, and the production build.
 An earlier real HTTP/Firefox session checked all seven examples and the compiler UI;
 see [COMPILER_MANUAL_CHECKS.md](COMPILER_MANUAL_CHECKS.md) for the cases and later
@@ -66,15 +67,16 @@ returning 501 after integration; do not treat that as permission to execute it.
 | --- | --- | --- | --- | --- |
 | P0 | Analyze one real objective you want to use | You, Developer 2 | None | Reproducible source plus expected/actual analysis |
 | P0 | Relay the selected runner contract | You and Developer 3 | Teammate review | Documented agreement on the existing handoff |
-| P1 | Make the analysis-only API smoke check repeatable | You | Current analyzer and local API | A command that checks examples without calling benchmark |
-| P1 | Close focused integration-test gaps | You | Existing mocked tests | Small regression tests for uncovered failure paths |
+| P1, done | Make the analysis-only API smoke check repeatable | You | Current analyzer and local API | Nine real HTTP checks pass; stopped-server failure is verified |
+| P1, done | Close identified integration-test gaps | You | Existing mocked tests | Both runner error paths and mutation-then-timeout are covered |
 | P1 | Review the compiler page integration | Developer 5, with you | Existing page/handoff | Reviewed UI behavior and any concrete follow-up issues |
 | P2 | Connect actual shared implementations safely | You and Developer 3 | Their implementations and execution opt-in design | Compiler integration still passes with mocks; live tests identified separately |
 | P2 | Verify a tiny local comparison | You and Developer 3 | Explicit execution authorization | Recorded correctness and provenance checks |
 | P3 | Extend the supported language if needed | You | A real rejected objective | One documented construct, bounded implementation, focused tests |
 
-Your first next coding task is the **analysis-only smoke script** below. Your first
-next product task is trying a meaningful objective file and recording what happens.
+The smoke script and identified failure-path tests are now implemented. Your next
+product task is trying a meaningful objective file and recording what happens.
+Further compiler coding should address an observed mismatch or an agreed integration need.
 
 ## 3. P0: validate a real objective
 
@@ -200,70 +202,75 @@ classical solver. You own consuming and checking their results. Keep one QAOA en
 before cross-module code or schema changes are made. A prepared handoff document is
 not evidence that the teammate has received or implemented it.
 
-## 5. P1: implement a reusable analysis-only API smoke check
+## 5. P1, complete: use the reusable analysis-only API smoke check
 
-The previous HTTP/browser checks were performed with temporary local tooling. The
-next useful Developer 2 deliverable is a small repeatable command for the safe path.
+The earlier temporary HTTP checks are now complemented by a committed, repeatable
+analysis-only checker. Use it when starting the API or reviewing compiler integration.
 
-### Proposed files and interface
+### Implemented files and interface
 
-| Proposed file | Purpose |
+| File | Purpose |
 | --- | --- |
 | `backend/scripts/check_compiler_api.py` | Read examples as text, send analysis requests, compare with expected QUBOs |
 | `backend/tests/compiler/test_api_smoke.py` | Check the smoke utility with controlled HTTP responses |
 | `docs/COMPILER.md` | Document the command, expected outcome, and failure interpretation |
 
-These two Python files are proposed; they do not exist at this checkpoint. A possible
-command interface, once implemented, is:
+These files now exist. With a local API running:
 
 ```sh
 cd backend
 .venv/bin/python scripts/check_compiler_api.py --base-url http://127.0.0.1:8000/api
 ```
 
-### Implementation requirements
+The default socket timeout is 5 seconds. Use `--timeout 2` to select another value
+in (0, 60]. The current result is nine checks: health, seven supported source files,
+and one unsupported-call rejection. New manifest examples are included automatically.
 
-- [ ] Use existing dependencies or the standard library; no new package is needed.
-- [ ] Default to the local API and apply a finite HTTP timeout.
-- [ ] Load the seven source files with `read_text` and load expected_qubos.json as JSON.
+### Completed requirements
+
+- [x] Use existing dependencies or the standard library; no new package is needed.
+- [x] Default to the local API and apply a finite HTTP timeout.
+- [x] Load the seven source files with `read_text` and load expected_qubos.json as JSON.
   Never import the objective files or execute their decorators.
-- [ ] Call only health and compiler analyze endpoints. Do not call benchmark,
+- [x] Call only health and compiler analyze endpoints. Do not call benchmark,
   optimization, materials, or search: those could execute jobs after other owners merge.
-- [ ] Validate supported status, QUBO contents, circuit width, executed=false, and depth=null.
-- [ ] Include a harmless unsupported source and require rejected status, diagnostics,
+- [x] Validate supported status, QUBO contents, circuit width, executed=false, and depth=null.
+- [x] Include a harmless unsupported source and require rejected status, diagnostics,
   qubo=null, and circuit=null.
-- [ ] Print a concise per-case pass/fail summary and return a nonzero process exit
+- [x] Print a concise per-case pass/fail summary and return a nonzero process exit
   status on connection failure, timeout, wrong status, malformed response, or mismatch.
-- [ ] Report useful field differences rather than silently accepting a partial match.
-- [ ] Distinguish API readiness from experiment readiness. experiments_ready=false
+- [x] Report useful field differences rather than silently accepting a partial match.
+- [x] Distinguish API readiness from experiment readiness. experiments_ready=false
   currently does not mean analysis is unavailable.
-- [ ] Keep the tool free of mock success measurements, benchmark timings, and source imports.
+- [x] Keep the tool free of mock success measurements, benchmark timings, and source imports.
+- [x] Refuse redirects, including one targeting benchmark, and bound response size.
 
 ### Focused tests
 
-Use controlled transport responses rather than starting a server in every unit test.
-Cover a valid example, a wrong QUBO/response shape, and a timeout/connection failure.
-Have a test prove that the command never requests an execution endpoint. Preserve a
-separate real local API check for integration rather than treating mocks as evidence
-that the running HTTP service was contacted.
+31 controlled-transport cases cover success, wrong coefficients, malformed responses,
+preview labeling/width/layers, signed zeros, connection errors/timeouts, HTTP errors,
+fixture/CLI failures, redirect rejection, and refusal of execution routes. Real HTTP
+checks separately passed all nine cases. After the real API was stopped, the command
+returned code 1 and submitted no source cases. See the manual validation record.
 
-**Done when:** a single command checks the seven examples and a rejection case on
-the running local API, fails visibly when the backend is stopped, and submits no jobs.
+**Completed:** one command checks the seven examples and a rejection case on the
+running local API, fails visibly when the backend is stopped, and submits no jobs.
 
-## 6. P1: close targeted compiler handoff-test gaps
+## 6. P1: preserve the completed compiler handoff-test coverage
 
 The current suite already covers extraction, source scopes, loops, squares, analytical
 cost phases, mocked comparisons, large offsets, invalid solver results, and persistent
 input mutation. Read the existing tests before adding cases that repeat them.
 
-Candidate small additions, only where coverage is absent:
+The identified error-path gaps are now covered. Add further cases only for a concrete
+regression or integration need:
 
-| Behavior | Suggested test location | Expected assertion |
+| Behavior | Test location | Coverage |
 | --- | --- | --- |
-| Classical runner raises TimeoutError | `backend/tests/compiler/test_pipeline.py` | 504 and QAOA never called |
-| A runner changes its copy and then raises | Same file | Caller QUBO/config remain unchanged; failure is structured |
-| Source analysis fails before handoff | Same file | No runner called, source preserved by UI |
-| A new real objective regression | `test_examples.py` or a focused new case | Independent expected values, not extractor-generated expectations |
+| Classical runner raises TimeoutError | `backend/tests/compiler/test_pipeline.py` | Implemented: 504 and QAOA never called |
+| A runner changes its copy and then raises | Same file | Implemented for both runners: original QUBO/config preserved, sanitized 504 |
+| Source analysis fails before handoff | Same file | Existing tests: no runner called; UI preservation checked separately |
+| A new real objective regression | `test_examples.py` or a focused new case | Add when needed, with independent expected values |
 
 Keep the code change as narrow as the observed failure. The compiler should continue to:
 
@@ -458,7 +465,7 @@ Project_Spec.md, existing API conventions, and other owners' modules.
 - [x] Local file input and readable browser output are implemented and checked.
 - [x] Reproducible examples, diagnostics, numerical checks, and mocked handoffs exist.
 - [ ] Your intended objective has been tried and its result or exact unsupported form recorded.
-- [ ] The analysis-only smoke command is implemented and reproducible.
+- [x] The analysis-only smoke command is implemented and reproducible.
 - [ ] Developers 3 and 5 have received/reviewed their respective handoffs.
 
 ### Ready later: full compiler benchmark acceptance

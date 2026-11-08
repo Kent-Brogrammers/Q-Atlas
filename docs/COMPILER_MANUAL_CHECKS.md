@@ -90,3 +90,21 @@ Wrong shared objectives and persistent changes to either the supplied QUBO or
 configuration now fail with sanitized HTTP 500. Each runner receives independent
 input copies; the caller's original instance/configuration remain unchanged. These
 follow-up checks use mock runners and are separate from the earlier Firefox session.
+
+## Analysis-only operations checker
+
+The reusable command `backend/scripts/check_compiler_api.py` was verified against
+a real local API on port 8011. It passed all nine checks: one health request, seven
+supported source examples, and one unsupported-call rejection. The server request
+log contained only GET health and POST compiler/analyze. No benchmark or other
+execution endpoint was contacted.
+
+After stopping that temporary server, the same command returned process exit code
+1, reported that the API could not be reached, and submitted no source cases.
+This negative run was performed outside the network sandbox, so it checked the
+stopped service rather than relying on a sandbox connection denial.
+
+The backend suite now passes 310 cases, including 31 checker transport/validation
+cases and the additional classical-error/mutation-then-timeout cases. Frontend
+file-reading tests, generated-type checks, TypeScript checks, production build, and
+Ruff checks also passed. These operation checks use no simulator or supercomputer.

@@ -139,6 +139,16 @@ and build run independently using the committed generated types. Following a con
 change, run `npm run types:generate` from `frontend/`, review the generated diff, and
 commit the types with the backend change. `frontend/openapi.json` is ignored intermediate output.
 
+With the local API running, check the compiler over HTTP from `backend/`:
+
+```sh
+.venv/bin/python scripts/check_compiler_api.py
+```
+
+This checks health, all seven source examples, and one rejected input. It only calls
+health and Analyze, never a solver endpoint. Use `--base-url` for a different API root
+and `--timeout` for the socket timeout. See [compiler checks](docs/COMPILER.md).
+
 ## Developer handoff
 
 | Owner | Begin here | First owned implementation/test |
