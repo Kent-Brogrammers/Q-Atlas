@@ -43,7 +43,7 @@ not a quantum measurement. The compiler never executes submitted Python.
 | Load a `.py` file | Implemented | Browser reads bounded text into the existing source editor |
 | Compile general Python scripts | Outside the current subset | Imports, data-dependent control flow, and helper calls are rejected; local assignments and fixed literal-range loops are supported |
 
-At the latest code-validation checkpoint, 266 pytest cases, four frontend file-reading
+At the latest code-validation checkpoint, 274 pytest cases, four frontend file-reading
 checks, Ruff lint/format checks,
 frontend generated-type checks, TypeScript checks, and the production build passed.
 All seven examples were also checked over actual HTTP, and the compiler page was
@@ -657,3 +657,17 @@ pending. The supercomputer allocation stays unused.
    provenance according to milestone F. Keep the supercomputer allocation unused.
 
 Prioritize this usable integration flow over broadening the AST allowlist further.
+
+### Completed correctness hardening
+
+- Source equivalence and shared-result objective checks now use absolute tolerance
+  `1e-9`, with no relative scaling. Large offsets cannot hide floating-point
+  normalization errors or incorrect returned objectives.
+- Every shared runner receives its own deep copies of the canonical QUBO/config.
+  Persistent input mutation becomes an integration failure, protects the original
+  source instance/provenance, and stops before QAOA if the classical handoff fails.
+- Regressions cover large-offset acceptance/rejection, wrong objectives from either
+  runner, mutation of either input by either runner, and sanitized API failures.
+
+The remaining live-execution checklist is still Developer 3 dependent. Continue
+manual testing with actual supported objective files before adding more syntax.

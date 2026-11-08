@@ -310,7 +310,7 @@ def analyze_source(source: str) -> CompilerAnalyzeResult:
                 ),
                 expression,
             )
-            if not math.isclose(expected, actual, rel_tol=1e-9, abs_tol=1e-9):
+            if not math.isclose(expected, actual, rel_tol=0, abs_tol=1e-9):
                 _reject(
                     "Floating-point normalization changed objective values; rescale coefficients.",
                     expression,

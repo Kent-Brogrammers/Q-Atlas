@@ -52,6 +52,22 @@ def test_maximization_keeps_absent_coefficients_as_canonical_positive_zeros():
     assert all(math.copysign(1, value) == 1 for value in result.qubo.linear[1:])
 
 
+def test_large_offset_cannot_hide_floating_point_normalization_errors():
+    # For x[0]=1 the inner float sum loses the bit, but symbolic extraction retains it.
+    # A relative tolerance scaled by 1e12 used to accept that objective discrepancy.
+    result = analyze_source(source("1e12 + (1e16 + x[0] - 1e16)"))
+    assert result.status == "rejected"
+    assert result.qubo is None and result.circuit is None
+    assert result.diagnostics[0].code == "VERIFICATION_FAILED"
+
+
+def test_consistent_large_offset_is_still_supported():
+    result = analyze_source(source("1e12 + x[0]"))
+    assert result.status == "supported"
+    assert result.qubo.constant == 1e12
+    assert result.qubo.linear == [1, 0, 0]
+
+
 @pytest.mark.parametrize(
     ("expression", "code"),
     [

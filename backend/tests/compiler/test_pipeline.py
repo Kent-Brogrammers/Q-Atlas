@@ -5,9 +5,11 @@ from unittest.mock import Mock
 import pytest
 
 from app.compiler import pipeline
+from app.compiler.analysis import analyze_source
 from app.schemas.contracts import (
     QUBO,
     CompilerBenchmarkResult,
+    QAOAConfig,
     QAOAResult,
     SolverResult,
 )
@@ -232,3 +234,64 @@ def test_squared_penalty_analysis_and_mocked_comparison(client, mock_runners):
     assert result.metrics.optimality_gap == 1
     assert result.quantum.best_bitstring == "010"
     assert result.quantum.objective == -2
+
+
+@pytest.mark.parametrize("runner_index", [0, 1])
+def test_large_offset_does_not_hide_an_incorrect_shared_objective(
+    client, mock_runners, runner_index
+):
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    source = SOURCE.replace("5 - 2*x[0]", "1e12 - 2*x[0]")
+    for runner in mock_runners:
+        runner.return_value.objective = 1e12 - 2
+    mock_runners[runner_index].return_value.objective += 1
+    with TestClient(app, raise_server_exceptions=False) as safe_client:
+        response = safe_client.post(
+            "/api/compiler/benchmark", json={"source": source, "config": {"shots": 32}}
+        )
+    assert response.status_code == 500
+    assert response.json()["error"]["code"] == "INTERNAL_ERROR"
+    assert "quantum" not in response.json()
+    if runner_index == 0:
+        mock_runners[1].assert_not_called()
+
+
+@pytest.mark.parametrize("runner_index", [0, 1])
+@pytest.mark.parametrize("changed_input", ["qubo", "config"])
+def test_shared_runner_mutation_is_isolated_and_rejected(
+    client, mock_runners, runner_index, changed_input
+):
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    result = mock_runners[runner_index].return_value
+
+    def mutate(qubo, config):
+        if changed_input == "qubo":
+            qubo.linear[2] = (
+                1  # The chosen assignment still has cost 3; quality checks alone miss this.
+            )
+        else:
+            config.seed += 1
+        return result
+
+    mock_runners[runner_index].side_effect = mutate
+    qubo, config = analyze_source(SOURCE).qubo, QAOAConfig(shots=32, seed=7)
+    original_qubo, original_config = qubo.model_copy(deep=True), config.model_copy(deep=True)
+    with pytest.raises(ValueError, match="changed its input"):
+        pipeline.benchmark_qubo(qubo, config)
+    assert qubo == original_qubo and config == original_config
+    if runner_index == 0:
+        mock_runners[1].assert_not_called()
+
+    with TestClient(app, raise_server_exceptions=False) as safe_client:
+        response = safe_client.post(
+            "/api/compiler/benchmark", json={"source": SOURCE, "config": {"shots": 32}}
+        )
+    assert response.status_code == 500
+    assert response.json()["error"]["code"] == "INTERNAL_ERROR"
+    assert "quantum" not in response.json()

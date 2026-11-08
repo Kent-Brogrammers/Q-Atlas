@@ -222,3 +222,8 @@ helpers execute no jobs. Developer 3 should consume the plan instead of duplicat
 gate mapping. The compiler validates solver objective/assignment consistency and
 QAOA qubit/shot metrics before returning a completed comparison. Invalid shared
 results return sanitized HTTP 500, never an invented completed measurement.
+The compiler gives each runner independent copies of the validated instance/config
+and rejects persistent input mutations. Objective matching uses absolute tolerance
+`1e-9` with no relative tolerance, so large constant offsets cannot hide discrepancies.
+These checks do not change the QUBO representation, bit order, canonical sense, or
+solver timing flags. Common boundary validation/isolation is outside solver intervals.
