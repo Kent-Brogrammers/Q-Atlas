@@ -28,6 +28,49 @@ server. Empty files and files over the character limit are rejected. A separate
 enforces its own source limits. Raw response JSON remains available in a collapsed
 details panel. See [manual validation](COMPILER_MANUAL_CHECKS.md) for actual checks.
 
+## Repeatable analysis-only API check
+
+With the API running, from `backend/`:
+
+```sh
+.venv/bin/python scripts/check_compiler_api.py
+```
+
+For a different API root or socket timeout:
+
+```sh
+.venv/bin/python scripts/check_compiler_api.py --base-url http://127.0.0.1:8000/api --timeout 2
+```
+
+The default root is `http://127.0.0.1:8000/api`, and the default socket timeout is
+5 seconds (configurable to >0 and <=60). The checker reads the example files as
+text and `expected_qubos.json` as data; it never imports objectives or invokes
+the local extractor to manufacture a response. It contacts the running service.
+
+It checks health, every supported example in the expected-QUBO manifest (currently
+seven), and one forbidden-call rejection. The current successful summary is:
+
+```text
+9/9 analysis-only checks passed. No execution endpoints requested.
+```
+
+The client only permits GET health and POST compiler/analyze, refuses redirects,
+and caps responses at 1 MB. It checks normalized coefficients, preview width,
+explicit executed=false/depth=null, and one preview layer. `experiments_ready=false`
+does not prevent analysis checks. Rejected input must include an error diagnostic
+and explicit null QUBO/circuit fields.
+
+Exit code 0 means all checks passed. Code 1 means a fixture, connection, HTTP,
+response-validation, or expected-value check failed; code 2 means invalid CLI
+options. A health failure stops before any source case is submitted. A failed
+example reports field differences and does not hide subsequent case outcomes.
+Neither failure output nor validation output dumps submitted source or response bodies.
+
+The tool requires only existing API dependencies and the standard library, with
+no quantum extras. Its controlled-transport tests are in
+`backend/tests/compiler/test_api_smoke.py`; real HTTP verification is recorded in
+[COMPILER_MANUAL_CHECKS.md](COMPILER_MANUAL_CHECKS.md).
+
 ## Supported source
 
 ```python

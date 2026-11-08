@@ -125,17 +125,22 @@ def test_benchmark_revalidates_source_before_calling_solvers(client, mock_runner
         (RuntimeError("private details"), 500, "INTERNAL_ERROR"),
     ],
 )
-def test_shared_runner_errors_are_sanitized(client, mock_runners, failure, status, code):
+@pytest.mark.parametrize("runner_index", [0, 1])
+def test_shared_runner_errors_are_sanitized(
+    client, mock_runners, failure, status, code, runner_index
+):
     from fastapi.testclient import TestClient
 
     from app.main import app
 
-    mock_runners[1].side_effect = failure
+    mock_runners[runner_index].side_effect = failure
     with TestClient(app, raise_server_exceptions=False) as safe_client:
         response = safe_client.post("/api/compiler/benchmark", json={"source": SOURCE})
     assert response.status_code == status
     assert response.json()["error"]["code"] == code
     assert "private details" not in response.text
+    if runner_index == 0:
+        mock_runners[1].assert_not_called()
 
 
 def test_benchmark_reports_missing_shared_runners_without_mock_data(client, mock_runners):
@@ -295,3 +300,28 @@ def test_shared_runner_mutation_is_isolated_and_rejected(
     assert response.status_code == 500
     assert response.json()["error"]["code"] == "INTERNAL_ERROR"
     assert "quantum" not in response.json()
+
+
+@pytest.mark.parametrize("runner_index", [0, 1])
+def test_mutation_then_timeout_preserves_original_inputs_and_structured_failure(
+    client, mock_runners, runner_index
+):
+    def mutate_then_timeout(qubo, config):
+        qubo.linear[0] = 999
+        config.seed += 1
+        raise TimeoutError("private details")
+
+    mock_runners[runner_index].side_effect = mutate_then_timeout
+    qubo, config = analyze_source(SOURCE).qubo, QAOAConfig(shots=32, seed=7)
+    original_qubo, original_config = qubo.model_copy(deep=True), config.model_copy(deep=True)
+    with pytest.raises(TimeoutError):
+        pipeline.benchmark_qubo(qubo, config)
+    assert qubo == original_qubo and config == original_config
+    if runner_index == 0:
+        mock_runners[1].assert_not_called()
+    response = client.post(
+        "/api/compiler/benchmark", json={"source": SOURCE, "config": {"shots": 32}}
+    )
+    assert response.status_code == 504
+    assert response.json()["error"]["code"] == "TIMEOUT"
+    assert "private details" not in response.text and "quantum" not in response.json()
