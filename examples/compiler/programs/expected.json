@@ -1,0 +1,40 @@
+{
+  "weighted_selection.py": {
+    "status": "supported",
+    "entrypoint": "build_circuit",
+    "snapshot": "generated/weighted_selection_qaoa.py",
+    "qubo": {
+      "num_variables": 4,
+      "constant": 24,
+      "linear": [-21, -19, -22, -20],
+      "quadratic": [
+        {"i": 0, "j": 1, "coefficient": 12},
+        {"i": 0, "j": 2, "coefficient": 12},
+        {"i": 0, "j": 3, "coefficient": 12},
+        {"i": 1, "j": 2, "coefficient": 12},
+        {"i": 1, "j": 3, "coefficient": 12},
+        {"i": 2, "j": 3, "coefficient": 12}
+      ]
+    },
+    "known_optimum": {"assignment": "1010", "canonical_objective": -7, "original_objective": -7}
+  },
+  "weighted_maximize.py": {
+    "status": "supported",
+    "entrypoint": "build_circuit",
+    "snapshot": "generated/weighted_maximize_qaoa.py",
+    "qubo": {
+      "num_variables": 3,
+      "constant": 0,
+      "linear": [-2, -7, -3],
+      "quadratic": [
+        {"i": 0, "j": 1, "coefficient": 4},
+        {"i": 1, "j": 2, "coefficient": 6}
+      ],
+      "original_sense": "maximize"
+    },
+    "known_optimum": {"assignment": "010", "canonical_objective": -7, "original_objective": 7}
+  },
+  "rejected_helper_call.py": {"status": "rejected", "diagnostic": "UNSUPPORTED_SYNTAX"},
+  "rejected_dynamic_loop.py": {"status": "rejected", "diagnostic": "INVALID_LOOP"},
+  "rejected_higher_order.py": {"status": "rejected", "diagnostic": "HIGHER_ORDER"}
+}

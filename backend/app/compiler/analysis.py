@@ -18,7 +18,10 @@ MAX_SOURCE_LENGTH = 20_000
 MAX_AST_NODES = 2048
 MAX_AST_DEPTH = 64
 MAX_COMPILER_BITS = 6
+MAX_VECTOR_LENGTH = 64
 Polynomial = dict[tuple[int, ...], float]
+SymbolicBindings = dict[str, Polynomial | tuple[float, ...]]
+NumericBindings = dict[str, float | tuple[float, ...]]
 
 
 class Rejected(Exception):
@@ -156,15 +159,36 @@ def _multiply(left: Polynomial, right: Polynomial, node: ast.AST) -> Polynomial:
     return result
 
 
+def _vector_literal(node: ast.List | ast.Tuple) -> tuple[float, ...]:
+    if not 1 <= len(node.elts) <= MAX_VECTOR_LENGTH:
+        _reject("Numeric vectors require 1 to 64 literal elements.", node, "INVALID_VECTOR")
+
+    def number(item: ast.expr) -> float:
+        if isinstance(item, ast.UnaryOp) and isinstance(item.op, (ast.UAdd, ast.USub)):
+            value = number(item.operand)
+            return -value if isinstance(item.op, ast.USub) else value
+        if not isinstance(item, ast.Constant) or type(item.value) not in (int, float):
+            _reject("Vector elements must be signed numeric literals.", item, "INVALID_VECTOR")
+        try:
+            return _finite(float(item.value), item)
+        except OverflowError:
+            _reject("Numeric literal is too large.", item, "NONFINITE_COEFFICIENT")
+
+    return tuple(number(item) for item in node.elts)
+
+
 def _extract(
-    node: ast.expr, parameter: str, num_bits: int, bindings: dict[str, Polynomial]
+    node: ast.expr, parameter: str, num_bits: int, bindings: SymbolicBindings
 ) -> Polynomial:
     if isinstance(node, ast.Name):
         if node.id == parameter:
             _reject("Index the binary-vector parameter with a literal integer.", node)
         if node.id not in bindings:
             _reject("Local name must be assigned before use.", node, "UNDEFINED_NAME")
-        return bindings[node.id].copy()
+        value = bindings[node.id]
+        if isinstance(value, tuple):
+            _reject("Index a numeric vector; whole-vector operations are unsupported.", node)
+        return value.copy()
     if isinstance(node, ast.Constant) and type(node.value) in (int, float):
         try:
             value = _finite(float(node.value), node)
@@ -173,6 +197,21 @@ def _extract(
         return {(): value} if value else {}
     if isinstance(node, ast.Subscript):
         index = node.slice
+        if isinstance(node.value, ast.Name) and node.value.id != parameter:
+            vector = bindings.get(node.value.id)
+            if (
+                isinstance(vector, tuple)
+                and isinstance(index, ast.Constant)
+                and type(index.value) is int
+                and 0 <= index.value < len(vector)
+            ):
+                value = vector[index.value]
+                return {(): value} if value else {}
+            _reject(
+                "Use a declared numeric vector with a literal index in range.",
+                node,
+                "INVALID_INDEX",
+            )
         if not (
             isinstance(node.value, ast.Name)
             and node.value.id == parameter
@@ -214,14 +253,18 @@ def _extract(
     _reject("Unsupported expression; calls and attributes are forbidden.", node)
 
 
-def _interpret(node: ast.expr, assignment: tuple[int, ...], bindings: dict[str, float]) -> float:
+def _interpret(node: ast.expr, assignment: tuple[int, ...], bindings: NumericBindings) -> float:
     """Independent interpreter, called only on an already validated expression."""
     if isinstance(node, ast.Constant):
         return float(node.value)
     if isinstance(node, ast.Name):
-        return bindings[node.id]
+        value = bindings[node.id]
+        if isinstance(value, tuple):
+            _reject("Index a numeric vector before using its value.", node)
+        return value
     if isinstance(node, ast.Subscript):
-        return float(assignment[int(_interpret(node.slice, assignment, bindings))])
+        vector = bindings.get(node.value.id, assignment)
+        return float(vector[int(_interpret(node.slice, assignment, bindings))])
     if isinstance(node, ast.UnaryOp):
         value = _interpret(node.operand, assignment, bindings)
         return -value if isinstance(node.op, ast.USub) else value
@@ -242,7 +285,7 @@ def _interpret(node: ast.expr, assignment: tuple[int, ...], bindings: dict[str, 
 
 
 def _interpret_statements(
-    statements: list[ast.stmt], assignment: tuple[int, ...], bindings: dict[str, float]
+    statements: list[ast.stmt], assignment: tuple[int, ...], bindings: NumericBindings
 ) -> None:
     """Interpret validated source control flow, independently of AST loop lowering."""
     for statement in statements:
@@ -253,9 +296,16 @@ def _interpret_statements(
                 bindings[statement.target.id] = value
                 _interpret_statements(statement.body, assignment, bindings)
         elif isinstance(statement, ast.Assign):
-            bindings[statement.targets[0].id] = _finite(
-                _interpret(statement.value, assignment, bindings), statement.value
-            )
+            if isinstance(statement.value, (ast.List, ast.Tuple)):
+                # Interpret the original literal elements independently of symbolic extraction.
+                bindings[statement.targets[0].id] = tuple(
+                    _finite(_interpret(item, assignment, bindings), item)
+                    for item in statement.value.elts
+                )
+            else:
+                bindings[statement.targets[0].id] = _finite(
+                    _interpret(statement.value, assignment, bindings), statement.value
+                )
         else:  # Validated numeric +=, -=, or *=; no user object mutation.
             left = bindings[statement.target.id]
             right = _interpret(statement.value, assignment, bindings)
@@ -277,10 +327,12 @@ def analyze_source(source: str) -> CompilerAnalyzeResult:
             assignments, lowered_expression = lower_body(statements, expression, parameter)
         except LoweringError as exc:
             _reject(exc.message, exc.node, exc.code)
-        symbolic_bindings: dict[str, Polynomial] = {}
+        symbolic_bindings: SymbolicBindings = {}
         for statement in assignments:
-            symbolic_bindings[statement.targets[0].id] = _extract(
-                statement.value, parameter, num_bits, symbolic_bindings
+            symbolic_bindings[statement.targets[0].id] = (
+                _vector_literal(statement.value)
+                if isinstance(statement.value, (ast.List, ast.Tuple))
+                else _extract(statement.value, parameter, num_bits, symbolic_bindings)
             )
         polynomial = _extract(lowered_expression, parameter, num_bits, symbolic_bindings)
         sign = -1 if sense == "maximize" else 1
@@ -299,7 +351,7 @@ def analyze_source(source: str) -> CompilerAnalyzeResult:
             original_sense=sense,
         )
         for assignment in itertools.product((0, 1), repeat=num_bits):
-            numeric_bindings: dict[str, float] = {}
+            numeric_bindings: NumericBindings = {}
             _interpret_statements(statements, assignment, numeric_bindings)
             expected = _finite(
                 sign * _interpret(expression, assignment, numeric_bindings), expression
