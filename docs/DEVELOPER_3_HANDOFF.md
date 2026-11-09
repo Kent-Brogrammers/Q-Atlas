@@ -71,6 +71,20 @@ tiny QUBO, including constant offsets, both original senses, and multiple layers
 They do not evolve quantum states or establish correctness of a future Qiskit
 adapter, optimizer, sampling procedure, or hardware implementation.
 
+## Generated Python export
+
+The compiler now exposes `POST /api/compiler/generate` and a frontend `.py` download.
+It serializes `build_qaoa_preview(qubo, p)` into standalone Qiskit construction calls,
+including the declared parameters and global phase. No new phase/mixer formulas,
+optimizer, measurement wiring, or execution engine were introduced. It does not import
+Qiskit or run the downloaded file during generation/tests.
+
+The export replaces an explicit `@qatlas.circuit` factory while preserving surrounding
+Python as text. Actual runner signatures, bit order, objective sense, timing, and
+mocked execution constraints remain unchanged. Continue consuming the shared gate
+models for the runner rather than parsing generated strings. See
+[COMPILER_SCRIPT_GENERATION.md](COMPILER_SCRIPT_GENERATION.md).
+
 ## Runner contract to implement later
 
 Existing signatures and ownership remain:

@@ -38,6 +38,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/compiler/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate */
+        post: operations["generate_api_compiler_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/compiler/benchmark": {
         parameters: {
             query?: never;
@@ -218,6 +235,29 @@ export interface components {
             metrics: components["schemas"]["OptimizationMetrics"];
             metadata: components["schemas"]["OptimizationMetadata"];
         };
+        /** CompilerGenerateRequest */
+        CompilerGenerateRequest: {
+            /** Source */
+            source: string;
+            /**
+             * P
+             * @default 1
+             */
+            p?: number;
+        };
+        /** CompilerGenerateResult */
+        CompilerGenerateResult: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "supported" | "rejected";
+            /** Diagnostics */
+            diagnostics: components["schemas"]["Diagnostic"][];
+            qubo?: components["schemas"]["QUBO"] | null;
+            circuit?: components["schemas"]["CircuitPreview"] | null;
+            artifact?: components["schemas"]["GeneratedPythonArtifact"] | null;
+        };
         /** Diagnostic */
         Diagnostic: {
             /** Code */
@@ -255,6 +295,27 @@ export interface components {
              */
             status?: "error";
             error: components["schemas"]["ErrorDetail"];
+        };
+        /** GeneratedPythonArtifact */
+        GeneratedPythonArtifact: {
+            /**
+             * Filename
+             * @default q_atlas_generated.py
+             * @constant
+             */
+            filename?: "q_atlas_generated.py";
+            /** Source */
+            source: string;
+            /** Entrypoint */
+            entrypoint: string;
+            /** Replaced Function */
+            replaced_function?: string | null;
+            /**
+             * Executed
+             * @default false
+             * @constant
+             */
+            executed?: false;
         };
         /**
          * GraphEdge
@@ -851,6 +912,75 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CompilerAnalyzeResult"];
+                };
+            };
+            /** @description Route not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method not allowed */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Feature not implemented */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    generate_api_compiler_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompilerGenerateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompilerGenerateResult"];
                 };
             };
             /** @description Route not found */

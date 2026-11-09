@@ -75,6 +75,10 @@ class CompilerBenchmarkRequest(CompilerAnalyzeRequest):
     config: QAOAConfig = Field(default_factory=QAOAConfig)
 
 
+class CompilerGenerateRequest(CompilerAnalyzeRequest):
+    p: int = Field(default=1, ge=1, le=8)
+
+
 class GraphEdge(QuadraticTerm):
     """i/j are vertices; coefficient is the finite edge weight."""
 
@@ -323,6 +327,24 @@ class CompilerAnalyzeResult(Contract):
             raise ValueError("supported analysis requires a normalized QUBO")
         if self.status == "rejected" and (self.qubo is not None or self.circuit is not None):
             raise ValueError("rejected analysis cannot include a QUBO or circuit")
+        return self
+
+
+class GeneratedPythonArtifact(Contract):
+    filename: Literal["q_atlas_generated.py"] = "q_atlas_generated.py"
+    source: str = Field(min_length=1, max_length=150_000)
+    entrypoint: str = Field(min_length=1)
+    replaced_function: str | None = None
+    executed: Literal[False] = False
+
+
+class CompilerGenerateResult(CompilerAnalyzeResult):
+    artifact: GeneratedPythonArtifact | None = None
+
+    @model_validator(mode="after")
+    def validate_artifact(self) -> Self:
+        if (self.status == "supported") != (self.artifact is not None):
+            raise ValueError("only supported generation requires an artifact")
         return self
 
 

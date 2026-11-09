@@ -47,6 +47,22 @@ def _check_tree(tree: ast.AST) -> None:
         pending.extend((child, depth + 1) for child in ast.iter_child_nodes(node))
 
 
+def parse_source(source: str) -> ast.Module:
+    """Parse bounded source as data; callers decide which nodes may be translated."""
+    if not 1 <= len(source) <= MAX_SOURCE_LENGTH:
+        raise Rejected("SOURCE_LIMIT", "Source must contain 1 to 20,000 characters.")
+    try:
+        tree = ast.parse(source)
+    except (SyntaxError, ValueError) as exc:
+        failure = Rejected("SYNTAX_ERROR", "Source is not valid Python syntax.")
+        if isinstance(exc, SyntaxError):
+            failure.diagnostic.line = max(1, exc.lineno or 1)
+            failure.diagnostic.column = max(1, exc.offset or 1)
+        raise failure from None
+    _check_tree(tree)
+    return tree
+
+
 def _objective(tree: ast.Module) -> tuple[list[ast.stmt], ast.expr, str, int, str]:
     if len(tree.body) != 1 or not isinstance(tree.body[0], ast.FunctionDef):
         _reject(
@@ -255,20 +271,7 @@ def _interpret_statements(
 def analyze_source(source: str) -> CompilerAnalyzeResult:
     """Exhaustively verify every accepted 1–6-bit objective against its QUBO."""
     try:
-        if not 1 <= len(source) <= MAX_SOURCE_LENGTH:
-            raise Rejected("SOURCE_LIMIT", "Source must contain 1 to 20,000 characters.")
-        try:
-            tree = ast.parse(source)
-        except (SyntaxError, ValueError) as exc:
-            diagnostic = Diagnostic(
-                code="SYNTAX_ERROR",
-                message="Source is not valid Python syntax.",
-                severity="error",
-                line=max(1, exc.lineno or 1) if isinstance(exc, SyntaxError) else None,
-                column=max(1, exc.offset or 1) if isinstance(exc, SyntaxError) else None,
-            )
-            return CompilerAnalyzeResult(status="rejected", diagnostics=[diagnostic])
-        _check_tree(tree)
+        tree = parse_source(source)
         statements, expression, parameter, num_bits, sense = _objective(tree)
         try:
             assignments, lowered_expression = lower_body(statements, expression, parameter)
