@@ -87,6 +87,19 @@ models for the runner rather than parsing generated strings. See
 
 ## Runner contract to implement later
 
+The full-file compiler now supports local numeric weight vectors and reuses static
+generation before handing its verified QUBO/config to these same runner interfaces.
+`POST /api/compiler/benchmark/plan` prepares hashes, the canonical instance ID, config,
+preview, and runner references without invoking either runner. The frontend uses only
+that planning endpoint and keeps execution disabled. Tests exercise full-file runner
+handoffs only through mocks; no test imports or executes a submitted/generated script.
+
+The planned comparison scope is `objective_optimization`, not whole-application
+runtime. A trusted full-application execution/timing boundary remains separate work;
+do not add arbitrary uploaded-Python execution to the shared solver. See
+[COMPILER_BENCHMARK_PLAN.md](COMPILER_BENCHMARK_PLAN.md). Input/output signatures,
+canonical sense, bit order, shared gates, timing flags, and ownership remain unchanged.
+
 Existing signatures and ownership remain:
 
 ```python
