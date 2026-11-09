@@ -108,3 +108,35 @@ The backend suite now passes 310 cases, including 31 checker transport/validatio
 cases and the additional classical-error/mutation-then-timeout cases. Frontend
 file-reading tests, generated-type checks, TypeScript checks, production build, and
 Ruff checks also passed. These operation checks use no simulator or supercomputer.
+
+## Full-file script generation and frontend, 2026-11-09
+
+The temporary API ran on port 8011 and Vite on 5179 with that local origin allowed.
+Real HTTP generation requests for all seven objective fixtures returned their
+independently specified QUBOs, two-layer symbolic previews, and unexecuted Python
+artifacts. Source files and downloaded Python were handled only as data.
+
+Firefox 159.0 checked the actual compiler page:
+
+- The default full-script example generated a `build_circuit()` replacement. Its
+  download Blob matched `artifact.source` exactly, omitted the old X-gate body,
+  and preserved the caller. The download name was `example_qaoa.py`.
+- Loading `script_replacement.py` cleared the old download. Selecting two layers
+  produced matching two-layer code/preview and `script_replacement_qaoa.py`.
+- Rejected source had no code/download or stale success output. Its original-file
+  line diagnostic selected the correct source line.
+- Editing during a delayed generation request prevented its old result from
+  restoring a download. A new request used the new coefficient and appended a builder
+  for objective-only source without a replacement marker.
+- Changing layers/workflows invalidated the output. Objective-only Analyze still
+  returned a supported result through its original endpoint.
+- The page fit a 375px viewport without page-level horizontal overflow. No uncaught
+  browser errors occurred, and only compiler Analyze/Generate API routes were requested.
+
+The backend suite passed 339 tests; six frontend tests, generated-type checks,
+TypeScript checks, Ruff, and the production build passed. Added static regression
+cases cover parenthesized/multiline decorators, original line locations, CRLF/bare-CR
+preservation, source name collisions, missing final newlines, and marker ambiguity.
+These checks did not execute exported/user Python, import Qiskit, or run a simulator,
+supercomputer, hardware, or solver job. Actual Qiskit execution remains unverified
+under the current instruction. The temporary browser harness remains outside the repo.

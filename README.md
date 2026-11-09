@@ -5,8 +5,9 @@ scientifically honest comparisons with classical methods. It combines a restrict
 Python optimization compiler, small spin-system experiments, QAOA optimization, and
 Grover search in one React application.
 
-**Current state: compiler analysis plus development foundation.** Health and safe
-Python-to-QUBO analysis and symbolic QAOA circuit previews work. Compiler benchmarking
+**Current state: compiler analysis and Python script generation.** Health, safe
+Python-to-QUBO analysis, symbolic QAOA circuit previews, and downloadable Qiskit
+builder code work. Compiler benchmarking
 uses the shared runner interfaces, which remain Developer 3 stubs; supported benchmark requests and the
 other experiment routes return HTTP 501. Execution is mocked in compiler tests only.
 There are no solver implementations or experimental measurements; circuit previews
@@ -26,6 +27,12 @@ Start with the seven
 and their expected QUBOs. Submitted source is parsed and verified, never executed.
 The compiler page now loads local `.py` text files and displays line-linked
 diagnostics, coefficient tables, and a gate preview labeled **Not executed**.
+In **Generate script**, it preserves surrounding Python and replaces an explicitly
+marked `@qatlas.circuit` factory with generated QAOA construction code. Select
+1–8 layers, inspect the Python, and click **Download .py**. Start with
+[script_replacement.py](examples/compiler/script_replacement.py) and the
+[script-generation guide](docs/COMPILER_SCRIPT_GENERATION.md). Existing unmarked
+circuits are preserved; mark the factory you intend to replace. Generation submits no jobs.
 See [the manual validation record](docs/COMPILER_MANUAL_CHECKS.md) and
 [Developer 5's integration handoff](docs/DEVELOPER_5_HANDOFF.md).
 

@@ -1,5 +1,6 @@
 import type {
   CompilerAnalyzeRequest, CompilerAnalyzeResult, CompilerBenchmarkRequest, CompilerBenchmarkResult,
+  CompilerGenerateRequest, CompilerGenerateResult,
   ErrorResponse, HealthResponse, MaterialsRequest, MaterialsResult,
   OptimizationRequest, OptimizationResult, SearchRequest, SearchResult,
 } from '../types';
@@ -32,6 +33,7 @@ async function request<T>(path: string, body?: unknown): Promise<T> {
 export const api = {
   health: () => request<HealthResponse>('/health'),
   analyze: (body: CompilerAnalyzeRequest) => request<CompilerAnalyzeResult>('/compiler/analyze', body),
+  generateScript: (body: CompilerGenerateRequest) => request<CompilerGenerateResult>('/compiler/generate', body),
   compilerBenchmark: (body: CompilerBenchmarkRequest) => request<CompilerBenchmarkResult>('/compiler/benchmark', body),
   optimization: (body: OptimizationRequest) => request<OptimizationResult>('/optimization/run', body),
   search: (body: SearchRequest) => request<SearchResult>('/search/run', body),
