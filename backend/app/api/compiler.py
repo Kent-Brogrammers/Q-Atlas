@@ -5,12 +5,15 @@ from fastapi.responses import JSONResponse
 
 from app.api.errors import error_response, not_implemented
 from app.compiler.analysis import analyze_source
+from app.compiler.generation import generate_source
 from app.compiler.pipeline import CompilationError, benchmark_source
 from app.schemas.contracts import (
     CompilerAnalyzeRequest,
     CompilerAnalyzeResult,
     CompilerBenchmarkRequest,
     CompilerBenchmarkResult,
+    CompilerGenerateRequest,
+    CompilerGenerateResult,
     ErrorDetail,
     ErrorResponse,
 )
@@ -21,6 +24,11 @@ router = APIRouter(prefix="/compiler", tags=["compiler"])
 @router.post("/analyze", response_model=CompilerAnalyzeResult)
 def analyze(request: CompilerAnalyzeRequest) -> CompilerAnalyzeResult:
     return analyze_source(request.source)
+
+
+@router.post("/generate", response_model=CompilerGenerateResult)
+def generate(request: CompilerGenerateRequest) -> CompilerGenerateResult:
+    return generate_source(request.source, request.p)
 
 
 @router.post(

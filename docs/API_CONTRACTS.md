@@ -18,6 +18,7 @@ OpenAPI precisely records required keys, enums, defaults, and numeric bounds.
 | --- | --- | --- | --- |
 | GET `/api/health` | none | `HealthResponse` | Developer 5/integration |
 | POST `/api/compiler/analyze` | `CompilerAnalyzeRequest` | `CompilerAnalyzeResult` | Developer 2 |
+| POST `/api/compiler/generate` | `CompilerGenerateRequest` | `CompilerGenerateResult` | Developer 2, frontend integration authorized |
 | POST `/api/compiler/benchmark` | `CompilerBenchmarkRequest` | `CompilerBenchmarkResult` | Developer 2, consuming Developer 3 runners |
 | POST `/api/optimization/run` | `OptimizationRequest` | `OptimizationResult` | Developer 3 |
 | POST `/api/search/run` | `SearchRequest` | `SearchResult` | Developer 4 |
@@ -100,6 +101,11 @@ Never use an integer conversion that discards leading zeros or silently reverse 
   `NONFINITE_COEFFICIENT`. There is no automatic penalty-weight selection or constraint schema.
 - `CompilerBenchmarkRequest`: same `source`, plus default `config: QAOAConfig`.
   Benchmarking must revalidate/extract source on the server; no trusted client-extracted objective.
+- `CompilerGenerateRequest`: required `source` with the same character/AST bounds,
+  plus `p` (default 1, range 1–8). Accepts a complete script containing one top-level
+  marked objective and an optional `@qatlas.circuit` zero-argument factory. Surrounding
+  Python is preserved as opaque text; only the objective is interpreted and verified.
+  This additive endpoint leaves Analyze/Benchmark source semantics unchanged.
 - `OptimizationRequest`: required discriminated `problem`, plus default QAOA config.
   `{"kind":"qubo","qubo":...}` uses the canonical QUBO. A graph uses
   `{"kind":"graph","num_vertices":3,"edges":[{"i":0,"j":1,"coefficient":1}]}`.
@@ -145,6 +151,22 @@ execution target), and adds:
 preview contains no measurements, samples, optimization results, or execution timing.
 Rejected analysis still returns `circuit=null`. See
 [the Developer 3 handoff](DEVELOPER_3_HANDOFF.md) for gate/sign conventions and shared helpers.
+
+## Generated Python response
+
+`CompilerGenerateResult` extends the analysis fields with nullable `artifact`.
+Supported generation requires the artifact; rejected generation requires null
+artifact/QUBO/circuit. The returned preview uses the requested p rather than Analyze's
+fixed one layer. Nothing executes on this endpoint.
+
+`GeneratedPythonArtifact` contains complete rewritten `source` (1–150,000 characters),
+default filename `q_atlas_generated.py`, nonempty `entrypoint`, nullable
+`replaced_function`, and `executed=false`. The browser derives a download name from
+the uploaded filename. No backend path is accepted and no file is stored server-side.
+The objective marker is removed; an explicitly marked circuit factory is replaced,
+or a fresh builder is appended if none is marked. Surrounding Python is opaque
+passthrough content, not an approved executable program. See
+[script-generation semantics](COMPILER_SCRIPT_GENERATION.md) for accepted markers and limits.
 
 ## Shared benchmark results
 
