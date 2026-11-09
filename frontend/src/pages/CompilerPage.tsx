@@ -1,22 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { ApiError, api } from '../api/client';
-import type { CompilerAnalyzeResult, CompilerBenchmarkResult, GeneratedPythonArtifact } from '../types';
+import type { CompilerAnalyzeResult, CompilerBenchmarkPlan, GeneratedPythonArtifact } from '../types';
 import { DEFAULT_SCRIPT, DEFAULT_SOURCE, MAX_SOURCE_LENGTH, readObjectiveFile } from '../compiler/source';
+import { PROGRAM_EXAMPLES } from '../compiler/examples';
 import CompilerAnalysisPanel from '../components/CompilerAnalysisPanel';
 import GeneratedScript from '../components/GeneratedScript';
-import ResponsePanel from '../components/ResponsePanel';
+import BenchmarkPlanPanel from '../components/BenchmarkPlanPanel';
 
 export default function CompilerPage() {
   const [source, setSource] = useState(DEFAULT_SCRIPT);
   const [fileName, setFileName] = useState('example.py');
   const [mode, setMode] = useState<'generate' | 'analyze'>('generate');
   const [layers, setLayers] = useState(1);
+  const [example, setExample] = useState('default');
   const [analysis, setAnalysis] = useState<CompilerAnalyzeResult>();
   const [artifact, setArtifact] = useState<GeneratedPythonArtifact>();
-  const [comparison, setComparison] = useState<CompilerBenchmarkResult>();
+  const [plan, setPlan] = useState<CompilerBenchmarkPlan>();
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState<'generate' | 'analyze' | 'benchmark' | null>(null);
+  const [loading, setLoading] = useState<'generate' | 'analyze' | 'plan' | null>(null);
   const [reading, setReading] = useState(false);
   const editor = useRef<HTMLTextAreaElement>(null);
   const revision = useRef(0);
@@ -33,7 +35,7 @@ export default function CompilerPage() {
     revision.current++;
     setAnalysis(undefined);
     setArtifact(undefined);
-    setComparison(undefined);
+    setPlan(undefined);
     setError('');
   }
 
@@ -65,15 +67,15 @@ export default function CompilerPage() {
     }
   }
 
-  async function run(kind: 'generate' | 'analyze' | 'benchmark') {
+  async function run(kind: 'generate' | 'analyze' | 'plan') {
     if (pending.current || reading || !source.trim()) return;
-    if (kind === 'benchmark' && analysis?.status !== 'supported') return;
+    if (kind === 'plan' && analysis?.status !== 'supported') return;
     pending.current = true;
     const currentRevision = revision.current;
     setLoading(kind);
     setError('');
-    setComparison(undefined);
-    if (kind !== 'benchmark') { setAnalysis(undefined); setArtifact(undefined); }
+    setPlan(undefined);
+    if (kind !== 'plan') { setAnalysis(undefined); setArtifact(undefined); }
     try {
       if (kind === 'generate') {
         const result = await api.generateScript({ source, p: layers });
@@ -85,14 +87,12 @@ export default function CompilerPage() {
         const result = await api.analyze({ source });
         if (mounted.current && revision.current === currentRevision) setAnalysis(result);
       } else {
-        const result = await api.compilerBenchmark({ source });
-        if (mounted.current && revision.current === currentRevision) setComparison(result);
+        const result = await api.prepareCompilerBenchmark({ source, config: { p: mode === 'generate' ? layers : 1 } });
+        if (mounted.current && revision.current === currentRevision) setPlan(result);
       }
     } catch (caught) {
       if (mounted.current && revision.current === currentRevision) {
-        if (caught instanceof ApiError && caught.status === 501) {
-          setError('Comparison is waiting for the shared solvers from Developer 3. Your analysis and symbolic preview are still available.');
-        } else if (caught instanceof ApiError) {
+        if (caught instanceof ApiError) {
           const diagnostics = caught.body.error.diagnostics ?? [];
           setError([caught.body.error.message, ...diagnostics.map((item) =>
             `${item.line ? `Line ${item.line}: ` : ''}${item.message}`)].join('\n'));
@@ -120,20 +120,30 @@ export default function CompilerPage() {
     <>
       <h1 className="text-2xl font-semibold">Python-to-circuit compiler</h1>
       <p className="my-3 text-slate-600">Load a .py file, translate a marked binary objective, and download Python with a new QAOA circuit builder.</p>
-      <p className="mb-5 text-sm text-slate-500">Supports 1–6 bits, numeric local variables, bounded literal range loops, and squared penalties. Source is parsed and verified; it is never executed.</p>
+      <p className="mb-5 text-sm text-slate-500">Supports 1–6 bits, numeric locals and weight vectors, bounded literal range loops, and squared penalties. Marked objectives are parsed and verified; source files are never executed. Comparison preparation runs no scripts or quantum jobs.</p>
       <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Compiler workflow">
         <button type="button" aria-pressed={mode === 'generate'} className={mode === 'generate' ? '' : 'bg-white text-indigo-700 ring-1 ring-indigo-200 hover:bg-indigo-50'} disabled={busy} onClick={() => { invalidate(); setMode('generate'); }}>Generate script</button>
         <button type="button" aria-pressed={mode === 'analyze'} className={mode === 'analyze' ? '' : 'bg-white text-indigo-700 ring-1 ring-indigo-200 hover:bg-indigo-50'} disabled={busy} onClick={() => { invalidate(); setMode('analyze'); }}>Analyze objective only</button>
       </div>
       {mode === 'generate' ? (
         <p className="mb-4 text-sm text-slate-600">Keep one <code>@qatlas.objective(num_bits=N)</code> function. Mark an existing zero-argument circuit factory with <code>@qatlas.circuit</code> to replace it. Other Python stays in place. Without a circuit marker, a new builder is appended.</p>
-      ) : <p className="mb-4 text-sm text-slate-600">Analyze accepts a single marked objective without surrounding script code. Live comparison awaits the shared solvers.</p>}
+      ) : <p className="mb-4 text-sm text-slate-600">Analyze accepts a single marked objective without surrounding script code. Comparison execution is disabled.</p>}
       <div className="mb-4 flex flex-wrap items-end gap-4">
         <div>
           <label htmlFor="objective-file" className="block text-sm font-medium">Load a Python file</label>
           <input id="objective-file" type="file" accept=".py,text/plain,text/x-python" disabled={reading} onChange={(event) => void loadFile(event)} className="mt-1 block max-w-full text-sm" />
         </div>
-        <button type="button" disabled={busy} onClick={() => changeSource(mode === 'generate' ? DEFAULT_SCRIPT : DEFAULT_SOURCE, 'example.py')}>Load example</button>
+        {mode === 'generate' && <div className="min-w-0 max-w-full">
+          <label htmlFor="program-example" className="block text-sm font-medium">Example program</label>
+          <select id="program-example" value={example} disabled={busy} onChange={event => setExample(event.target.value)} className="mt-1 max-w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm">
+            <option value="default">Basic circuit replacement</option>
+            {PROGRAM_EXAMPLES.map(item => <option key={item.filename} value={item.filename}>{item.label}</option>)}
+          </select>
+        </div>}
+        <button type="button" disabled={busy} onClick={() => {
+          const selected = mode === 'generate' ? PROGRAM_EXAMPLES.find(item => item.filename === example) : undefined;
+          changeSource(selected?.source ?? (mode === 'generate' ? DEFAULT_SCRIPT : DEFAULT_SOURCE), selected?.filename ?? 'example.py');
+        }}>Load example</button>
         {mode === 'generate' && <div>
           <label htmlFor="circuit-layers" className="block text-sm font-medium">QAOA layers</label>
           <select id="circuit-layers" value={layers} disabled={busy} onChange={(event) => { invalidate(); setLayers(Number(event.target.value)); }} className="mt-1 rounded border border-slate-300 bg-white px-3 py-2 text-sm">
@@ -146,16 +156,16 @@ export default function CompilerPage() {
       <p className="mt-2 break-words text-xs text-slate-500">{fileName} · {source.length.toLocaleString()} / 20,000 characters</p>
       <div className="mt-3 flex flex-wrap gap-3">
         <button type="button" disabled={busy || !source.trim()} onClick={() => void run(mode)}>{mode === 'generate' ? 'Generate Python script' : 'Analyze'}</button>
-        {mode === 'analyze' && <button type="button" disabled={busy || analysis?.status !== 'supported'} onClick={() => void run('benchmark')}>Run comparison</button>}
+        <button type="button" disabled={busy || analysis?.status !== 'supported'} onClick={() => void run('plan')}>Prepare comparison</button>
       </div>
       <div aria-live="polite" aria-busy={busy}>
         {reading && <p role="status" className="mt-4">Reading the selected file as text…</p>}
-        {loading && <p role="status" className="mt-4">{loading === 'generate' ? 'Generating Python script…' : loading === 'analyze' ? 'Analyzing objective…' : 'Requesting comparison…'} Changes to the source invalidate these results.</p>}
+        {loading && <p role="status" className="mt-4">{loading === 'generate' ? 'Generating Python script…' : loading === 'analyze' ? 'Analyzing objective…' : 'Preparing comparison without execution…'} Changes to the source invalidate these results.</p>}
         {error && <p role="alert" className="mt-4 whitespace-pre-wrap rounded-md bg-amber-50 p-4 text-sm text-amber-900">{error}</p>}
         {artifact && <GeneratedScript artifact={artifact} inputName={fileName} />}
+        {plan && <BenchmarkPlanPanel plan={plan} />}
         {analysis && <CompilerAnalysisPanel analysis={analysis} selectLine={selectLine} />}
       </div>
-      {comparison && <ResponsePanel result={comparison} error="" loading={false} />}
     </>
   );
 }

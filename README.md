@@ -33,6 +33,11 @@ marked `@qatlas.circuit` factory with generated QAOA construction code. Select
 [script_replacement.py](examples/compiler/script_replacement.py) and the
 [script-generation guide](docs/COMPILER_SCRIPT_GENERATION.md). Existing unmarked
 circuits are preserved; mark the factory you intend to replace. Generation submits no jobs.
+The page also offers [five full-program examples](examples/compiler/programs/README.md),
+two [generated output scripts](examples/compiler/programs/README.md#generated-output-files),
+and **Prepare comparison** with a downloadable, nonexecuting classical/QAOA plan.
+Local numeric weight vectors are supported inside objectives. Quantum/script execution
+stays disabled in the compiler page; see [benchmark planning](docs/COMPILER_BENCHMARK_PLAN.md).
 See [the manual validation record](docs/COMPILER_MANUAL_CHECKS.md) and
 [Developer 5's integration handoff](docs/DEVELOPER_5_HANDOFF.md).
 

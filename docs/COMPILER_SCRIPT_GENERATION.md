@@ -18,14 +18,22 @@ Start the API and frontend using [README.md](../README.md), then open
 5. Select 1–8 QAOA layers, then click **Generate Python script**.
 6. Review the generated Python, normalized QUBO, and symbolic gate plan.
 7. Click **Download .py**. A file named `model.py` downloads as `model_qaoa.py`.
+8. Optionally click **Prepare comparison** for a reproducibility manifest. It calls
+   neither solver and leaves quantum/script execution disabled. See
+   [benchmark planning](COMPILER_BENCHMARK_PLAN.md).
+
+The **Example program** chooser contains two supported weighted programs and three
+deliberate rejection cases. See [program examples](../examples/compiler/programs/README.md)
+for independent expected values and two statically generated `.py` output snapshots.
 
 Try [script_replacement.py](../examples/compiler/script_replacement.py). The original
 source stays in the editor. Editing it, loading another file, or changing layers or
 workflow clears the prior download; late requests cannot restore old results.
 
-The separate **Analyze objective only** workflow retains the original single-function
-analysis/comparison behavior. Whole scripts belong in Generate, and the original
-Analyze/Benchmark endpoints still accept only their existing objective subset.
+The separate **Analyze objective only** workflow retains single-function analysis and
+can also prepare a comparison. Whole files belong in Generate. The benchmark adapter
+now accepts supported complete files through the same static generation path; it
+hands off only the verified QUBO/config and never executes the source file.
 
 ## Input markers and replacement behavior
 
@@ -51,7 +59,8 @@ if __name__ == "__main__":
 ```
 
 The objective follows the existing [supported language](COMPILER.md): 1–6 bits,
-binary quadratic arithmetic, supported locals, bounded loops, and squared penalties.
+binary quadratic arithmetic, supported locals, bounded loops, squared penalties, and
+local list/tuple numeric weight vectors with literal or unrolled loop indices.
 It cannot depend on surrounding globals, imports, or helper calls. Its values are
 independently verified against the normalized QUBO on every binary assignment.
 

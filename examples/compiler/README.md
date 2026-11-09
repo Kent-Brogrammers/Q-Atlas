@@ -59,3 +59,8 @@ QAOA construction code. Nothing is executed while generating or testing the exam
 This file is intentionally outside the seven-case analysis smoke manifest. Its
 generation test reuses the independent `exactly_one.py` expected QUBO. Read the
 [script-generation guide](../../docs/COMPILER_SCRIPT_GENERATION.md) before adapting it.
+
+The [full-program catalog](programs/README.md) adds two weighted supported applications,
+three deliberate rejections, independent expectations, and two generated `.py` snapshots.
+They are available in the frontend's **Example program** chooser. **Prepare comparison**
+produces a manifest for a future shared-runner comparison without executing anything.
