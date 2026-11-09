@@ -110,6 +110,18 @@ npm ci
 npm run dev
 ```
 
+From the repository root, after installing dependencies, start both servers from one
+terminal (Bash 4.3+):
+
+```sh
+./dev.sh
+```
+
+The launcher works from any current directory when invoked by its path. Both servers
+share the terminal output; **Ctrl+C stops both**, including their worker processes.
+If either server exits, the other is stopped too. It uses the existing backend virtual
+environment and frontend dependencies without installing packages or running experiments.
+
 Open <http://127.0.0.1:5173>. Backend docs are at <http://127.0.0.1:8000/docs>;
 health is <http://127.0.0.1:8000/api/health>. Start either server independently.
 The frontend serves `/`, `/compiler`, `/materials`, `/optimization`, and `/search`.
