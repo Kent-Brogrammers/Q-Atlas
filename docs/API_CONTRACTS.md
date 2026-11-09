@@ -19,6 +19,7 @@ OpenAPI precisely records required keys, enums, defaults, and numeric bounds.
 | GET `/api/health` | none | `HealthResponse` | Developer 5/integration |
 | POST `/api/compiler/analyze` | `CompilerAnalyzeRequest` | `CompilerAnalyzeResult` | Developer 2 |
 | POST `/api/compiler/generate` | `CompilerGenerateRequest` | `CompilerGenerateResult` | Developer 2, frontend integration authorized |
+| POST `/api/compiler/benchmark/plan` | `CompilerBenchmarkRequest` | `CompilerBenchmarkPlan` | Developer 2, no execution |
 | POST `/api/compiler/benchmark` | `CompilerBenchmarkRequest` | `CompilerBenchmarkResult` | Developer 2, consuming Developer 3 runners |
 | POST `/api/optimization/run` | `OptimizationRequest` | `OptimizationResult` | Developer 3 |
 | POST `/api/search/run` | `SearchRequest` | `SearchResult` | Developer 4 |
@@ -100,12 +101,18 @@ Never use an integer conversion that discards leading zeros or silently reverse 
   in a monomial is rejected as `HIGHER_ORDER`; overflow is rejected as
   `NONFINITE_COEFFICIENT`. There is no automatic penalty-weight selection or constraint schema.
 - `CompilerBenchmarkRequest`: same `source`, plus default `config: QAOAConfig`.
-  Benchmarking must revalidate/extract source on the server; no trusted client-extracted objective.
+  Benchmarking revalidates supported complete files through static generation,
+  including marker checks, and passes only the verified QUBO/config to shared runners.
+  No trusted client-extracted objective or Python script execution is involved.
+  The planning endpoint reuses this request without calling either runner.
 - `CompilerGenerateRequest`: required `source` with the same character/AST bounds,
   plus `p` (default 1, range 1–8). Accepts a complete script containing one top-level
   marked objective and an optional `@qatlas.circuit` zero-argument factory. Surrounding
   Python is preserved as opaque text; only the objective is interpreted and verified.
-  This additive endpoint leaves Analyze/Benchmark source semantics unchanged.
+  Analyze remains objective-only; Generate and the benchmark adapter accept supported
+  full-file wrappers. Local numeric list/tuple literals of 1–64 finite signed elements
+  can supply objective weights. Element access is literal or a bounded unrolled-loop
+  index; whole-vector arithmetic, aliasing, slicing, mutation, and dynamic input are rejected.
 - `OptimizationRequest`: required discriminated `problem`, plus default QAOA config.
   `{"kind":"qubo","qubo":...}` uses the canonical QUBO. A graph uses
   `{"kind":"graph","num_vertices":3,"edges":[{"i":0,"j":1,"coefficient":1}]}`.
@@ -167,6 +174,18 @@ The objective marker is removed; an explicitly marked circuit factory is replace
 or a fresh builder is appended if none is marked. Surrounding Python is opaque
 passthrough content, not an approved executable program. See
 [script-generation semantics](COMPILER_SCRIPT_GENERATION.md) for accepted markers and limits.
+
+## Nonexecuting compiler comparison plan
+
+`POST /api/compiler/benchmark/plan` returns `CompilerBenchmarkPlan` after full-file
+static generation. Unsupported source/config returns structured HTTP 422 before
+any runner call. The response includes `status=planned`,
+`comparison_scope=objective_optimization`, literal false `script_execution_enabled`
+and `quantum_execution_enabled`, stable canonical `problem_id`, source/generated
+SHA-256 hashes, builder `entrypoint`, QUBO, effective QAOA config, matching unexecuted
+preview, shared runner names, and remaining blockers. There are no measurement fields.
+The preview width and p must match the QUBO/config. No request flag enables execution.
+Nothing is persisted or run. See [benchmark planning](COMPILER_BENCHMARK_PLAN.md).
 
 ## Shared benchmark results
 

@@ -8,12 +8,13 @@ from collections.abc import Callable
 from importlib.metadata import PackageNotFoundError, version
 from typing import TypeVar
 
-from app.compiler.analysis import analyze_source
+from app.compiler.generation import generate_source
 from app.experiments.optimization import solvers
 from app.quantum import qaoa
 from app.quantum.qubo import evaluate_qubo
 from app.schemas.contracts import (
     QUBO,
+    CompilerBenchmarkPlan,
     CompilerBenchmarkResult,
     Diagnostic,
     OptimizationMetadata,
@@ -50,6 +51,35 @@ def _call_shared_runner(
     return result
 
 
+def _problem_id(qubo: QUBO) -> str:
+    canonical = json.dumps(qubo.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
+    return "compiler-" + hashlib.sha256(canonical.encode()).hexdigest()[:24]
+
+
+def prepare_benchmark(source: str, config: QAOAConfig) -> CompilerBenchmarkPlan:
+    """Validate the complete source and record a handoff; never call either runner."""
+    generated = generate_source(source, p=config.p)
+    if generated.status == "rejected":
+        raise CompilationError(generated.diagnostics)
+    return CompilerBenchmarkPlan(
+        problem_id=_problem_id(generated.qubo),
+        source_sha256=hashlib.sha256(source.encode("utf-8")).hexdigest(),
+        generated_source_sha256=hashlib.sha256(
+            generated.artifact.source.encode("utf-8")
+        ).hexdigest(),
+        entrypoint=generated.artifact.entrypoint,
+        qubo=generated.qubo,
+        config=config.model_copy(deep=True),
+        circuit=generated.circuit,
+        blockers=[
+            "Execution is disabled; preparing this plan runs neither script nor solver.",
+            "Developer 3 must supply and validate the shared classical and QAOA runners.",
+            "Any execution needs a separately authorized mode and deadline enforcement.",
+            "Whole-application timing needs a separate trusted execution boundary and contract.",
+        ],
+    )
+
+
 def benchmark_qubo(qubo: QUBO, config: QAOAConfig) -> CompilerBenchmarkResult:
     """Pass the same canonical instance/config to both shared runners.
 
@@ -79,9 +109,8 @@ def benchmark_qubo(qubo: QUBO, config: QAOAConfig) -> CompilerBenchmarkResult:
             versions[package] = version(package)
         except PackageNotFoundError:
             pass
-    canonical = json.dumps(qubo.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
     return CompilerBenchmarkResult(
-        problem_id="compiler-" + hashlib.sha256(canonical.encode()).hexdigest()[:24],
+        problem_id=_problem_id(qubo),
         backend=config.backend,
         classical=classical,
         quantum=quantum,
@@ -98,7 +127,7 @@ def benchmark_qubo(qubo: QUBO, config: QAOAConfig) -> CompilerBenchmarkResult:
 
 
 def benchmark_source(source: str, config: QAOAConfig) -> CompilerBenchmarkResult:
-    analysis = analyze_source(source)
+    analysis = generate_source(source, p=config.p)
     if analysis.status == "rejected":
         raise CompilationError(analysis.diagnostics)
     return benchmark_qubo(analysis.qubo, config)

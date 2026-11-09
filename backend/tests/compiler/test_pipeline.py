@@ -1,5 +1,6 @@
 """Synthetic integration fixtures only: no quantum jobs or measured results."""
 
+import hashlib
 from unittest.mock import Mock
 
 import pytest
@@ -8,6 +9,7 @@ from app.compiler import pipeline
 from app.compiler.analysis import analyze_source
 from app.schemas.contracts import (
     QUBO,
+    CompilerBenchmarkPlan,
     CompilerBenchmarkResult,
     QAOAConfig,
     QAOAResult,
@@ -325,3 +327,58 @@ def test_mutation_then_timeout_preserves_original_inputs_and_structured_failure(
     assert response.status_code == 504
     assert response.json()["error"]["code"] == "TIMEOUT"
     assert "private details" not in response.text and "quantum" not in response.json()
+
+
+def test_full_script_plan_is_nonexecuting_and_matches_mocked_benchmark(
+    client, mock_runners, tmp_path
+):
+    sentinel = tmp_path / "must-not-exist"
+    source = (
+        f"from pathlib import Path\nPath({str(sentinel)!r}).write_text('not executed')\n"
+        + SOURCE
+        + "\n\n@qatlas.circuit\ndef build_circuit():\n    raise RuntimeError('old')\n"
+    )
+    payload = {"source": source, "config": {"shots": 32, "seed": 7, "p": 2}}
+    response = client.post("/api/compiler/benchmark/plan", json=payload)
+    assert response.status_code == 200
+    plan = CompilerBenchmarkPlan.model_validate(response.json())
+    assert plan.status == "planned" and plan.comparison_scope == "objective_optimization"
+    assert plan.script_execution_enabled is plan.quantum_execution_enabled is False
+    assert plan.source_sha256 == hashlib.sha256(source.encode()).hexdigest()
+    from app.compiler.generation import generate_source
+
+    generated = generate_source(source, p=2)
+    assert (
+        plan.generated_source_sha256
+        == hashlib.sha256(generated.artifact.source.encode()).hexdigest()
+    )
+    assert plan.circuit.p == plan.config.p == 2
+    assert plan.qubo == generated.qubo and plan.entrypoint == "build_circuit"
+    assert "elapsed_ms" not in response.text and source not in response.text
+    for runner in mock_runners:
+        runner.assert_not_called()
+    # Only the explicitly mocked handoff is exercised; never execute the uploaded script.
+    compared = client.post("/api/compiler/benchmark", json=payload)
+    assert compared.status_code == 200
+    assert compared.json()["problem_id"] == plan.problem_id
+    assert compared.json()["metadata"]["qubo"] == plan.qubo.model_dump(mode="json")
+    assert not sentinel.exists()
+
+
+def test_bad_benchmark_plans_fail_without_calling_runners(client, mock_runners):
+    rejected = client.post(
+        "/api/compiler/benchmark/plan", json={"source": "print('not an objective')"}
+    )
+    assert rejected.status_code == 422
+    assert rejected.json()["error"]["code"] == "VALIDATION_ERROR"
+    invalid = client.post(
+        "/api/compiler/benchmark/plan", json={"source": SOURCE, "config": {"p": 9}}
+    )
+    assert invalid.status_code == 422
+    for field in ("execute", "quantum_execution_enabled", "script_execution_enabled"):
+        attempted = client.post(
+            "/api/compiler/benchmark/plan", json={"source": SOURCE, field: True}
+        )
+        assert attempted.status_code == 422
+    for runner in mock_runners:
+        runner.assert_not_called()

@@ -6,10 +6,11 @@ from fastapi.responses import JSONResponse
 from app.api.errors import error_response, not_implemented
 from app.compiler.analysis import analyze_source
 from app.compiler.generation import generate_source
-from app.compiler.pipeline import CompilationError, benchmark_source
+from app.compiler.pipeline import CompilationError, benchmark_source, prepare_benchmark
 from app.schemas.contracts import (
     CompilerAnalyzeRequest,
     CompilerAnalyzeResult,
+    CompilerBenchmarkPlan,
     CompilerBenchmarkRequest,
     CompilerBenchmarkResult,
     CompilerGenerateRequest,
@@ -29,6 +30,21 @@ def analyze(request: CompilerAnalyzeRequest) -> CompilerAnalyzeResult:
 @router.post("/generate", response_model=CompilerGenerateResult)
 def generate(request: CompilerGenerateRequest) -> CompilerGenerateResult:
     return generate_source(request.source, request.p)
+
+
+@router.post("/benchmark/plan", response_model=CompilerBenchmarkPlan)
+def benchmark_plan(request: CompilerBenchmarkRequest) -> CompilerBenchmarkPlan | JSONResponse:
+    try:
+        return prepare_benchmark(request.source, request.config)
+    except CompilationError as exc:
+        return error_response(
+            422,
+            ErrorDetail(
+                code="VALIDATION_ERROR",
+                message="Source is outside the supported compiler subset.",
+                diagnostics=exc.diagnostics,
+            ),
+        )
 
 
 @router.post(

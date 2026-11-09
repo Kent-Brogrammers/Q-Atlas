@@ -348,6 +348,33 @@ class CompilerGenerateResult(CompilerAnalyzeResult):
         return self
 
 
+class CompilerBenchmarkPlan(Contract):
+    """A reproducible future comparison, with no execution or measured results."""
+
+    status: Literal["planned"] = "planned"
+    comparison_scope: Literal["objective_optimization"] = "objective_optimization"
+    script_execution_enabled: Literal[False] = False
+    quantum_execution_enabled: Literal[False] = False
+    problem_id: str = Field(min_length=1, max_length=128)
+    source_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    generated_source_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    entrypoint: str = Field(min_length=1)
+    qubo: QUBO
+    config: QAOAConfig
+    circuit: CircuitPreview
+    classical_runner: Literal["app.experiments.optimization.solvers.run_classical"] = (
+        "app.experiments.optimization.solvers.run_classical"
+    )
+    quantum_runner: Literal["app.quantum.qaoa.run_qaoa"] = "app.quantum.qaoa.run_qaoa"
+    blockers: list[str] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def validate_plan(self) -> Self:
+        if self.circuit.p != self.config.p or self.circuit.num_qubits != self.qubo.num_variables:
+            raise ValueError("planned circuit must match the QUBO width and configuration")
+        return self
+
+
 class ErrorDetail(Contract):
     code: Literal[
         "NOT_IMPLEMENTED",

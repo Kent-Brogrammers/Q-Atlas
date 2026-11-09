@@ -55,6 +55,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/compiler/benchmark/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Benchmark Plan */
+        post: operations["benchmark_plan_api_compiler_benchmark_plan_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/compiler/benchmark": {
         parameters: {
             query?: never;
@@ -202,6 +219,61 @@ export interface components {
             diagnostics: components["schemas"]["Diagnostic"][];
             qubo?: components["schemas"]["QUBO"] | null;
             circuit?: components["schemas"]["CircuitPreview"] | null;
+        };
+        /**
+         * CompilerBenchmarkPlan
+         * @description A reproducible future comparison, with no execution or measured results.
+         */
+        CompilerBenchmarkPlan: {
+            /**
+             * Status
+             * @default planned
+             * @constant
+             */
+            status?: "planned";
+            /**
+             * Comparison Scope
+             * @default objective_optimization
+             * @constant
+             */
+            comparison_scope?: "objective_optimization";
+            /**
+             * Script Execution Enabled
+             * @default false
+             * @constant
+             */
+            script_execution_enabled?: false;
+            /**
+             * Quantum Execution Enabled
+             * @default false
+             * @constant
+             */
+            quantum_execution_enabled?: false;
+            /** Problem Id */
+            problem_id: string;
+            /** Source Sha256 */
+            source_sha256: string;
+            /** Generated Source Sha256 */
+            generated_source_sha256: string;
+            /** Entrypoint */
+            entrypoint: string;
+            qubo: components["schemas"]["QUBO"];
+            config: components["schemas"]["QAOAConfig"];
+            circuit: components["schemas"]["CircuitPreview"];
+            /**
+             * Classical Runner
+             * @default app.experiments.optimization.solvers.run_classical
+             * @constant
+             */
+            classical_runner?: "app.experiments.optimization.solvers.run_classical";
+            /**
+             * Quantum Runner
+             * @default app.quantum.qaoa.run_qaoa
+             * @constant
+             */
+            quantum_runner?: "app.quantum.qaoa.run_qaoa";
+            /** Blockers */
+            blockers: string[];
         };
         /** CompilerBenchmarkRequest */
         CompilerBenchmarkRequest: {
@@ -981,6 +1053,75 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CompilerGenerateResult"];
+                };
+            };
+            /** @description Route not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method not allowed */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Feature not implemented */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    benchmark_plan_api_compiler_benchmark_plan_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompilerBenchmarkRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompilerBenchmarkPlan"];
                 };
             };
             /** @description Route not found */
