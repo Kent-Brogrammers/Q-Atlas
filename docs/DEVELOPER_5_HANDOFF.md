@@ -12,6 +12,8 @@ Other experiment pages, shared fetch behavior, and the application shell are unc
 | `frontend/src/components/CompilerAnalysisPanel.tsx` | Diagnostics with line selection, canonical coefficients, original/solver sense, raw JSON |
 | `frontend/src/components/CircuitPreview.tsx` | Ordered symbolic gate table, explicit parameter order/global phase, logical depth |
 | `frontend/src/components/GeneratedScript.tsx` | Read-only generated Python, download Blob lifecycle, replacement/entrypoint explanation |
+| `frontend/src/components/BenchmarkPlanPanel.tsx` | Nonexecuting comparison scope/settings, disabled execution control, reproducibility manifest download |
+| `frontend/src/compiler/examples.ts` | Five shared program fixtures imported as raw source text, with expected support/rejection labels |
 | `frontend/src/compiler/source.ts` | Example source, bounded file-text loading, parameter-angle formatting |
 | `frontend/tests/compiler-source.test.mjs` | Six built-in Node checks for file-reading, download names, and example behavior |
 
@@ -19,7 +21,9 @@ Other experiment pages, shared fetch behavior, and the application shell are unc
 It adds no frontend testing package or runtime dependency. The additive
 `POST /api/compiler/generate` endpoint uses `CompilerGenerateRequest` and
 `CompilerGenerateResult`/`GeneratedPythonArtifact`; OpenAPI types were regenerated.
-The existing Analyze/Benchmark contracts are unchanged.
+The additive `/compiler/benchmark/plan` uses the existing benchmark request and new
+`CompilerBenchmarkPlan` response. The benchmark adapter now validates complete scripts
+through generation; the page never calls its execution endpoint.
 
 ## Behavior to preserve
 
@@ -45,10 +49,15 @@ The existing Analyze/Benchmark contracts are unchanged.
   late API responses and stale file reads; an older read cannot replace a newer edit.
 - Suppress duplicate submissions while a request is pending. A supported analysis
   belongs to that source revision; editing it requires analysis again before comparison.
-- Ordinary request errors preserve the submitted source. A 501 comparison explains
-  the missing shared solver dependency and leaves its supported analysis visible.
-- Benchmark requests currently use server-default QAOA configuration. Parameter
-  controls and structured benchmark charts are future work.
+- Ordinary request errors preserve the submitted source and successful generation.
+- **Prepare comparison** sends source and selected p (one in objective-only mode)
+  through `api.prepareCompilerBenchmark`. Other config fields use server defaults.
+  The returned plan has false execution flags and no measurements. Preserve the
+  disabled execution control and objective-optimization scope label; whole-application
+  timing is not implemented. Never fabricate timings, solution values, or charts.
+- Editing/loading source or changing layers/workflow clears plans and revokes Blob
+  URLs. Ignore stale plan responses, as with generation. Example selection alone
+  does not replace source; **Load example** loads the selected raw text.
 - Keep maximization coefficients/solver values canonical, and show original sense
   separately. Do not negate canonical gaps when displaying an original maximization.
 - The preview is a symbolic description: label **Not executed**, distinguish logical
@@ -58,14 +67,16 @@ The existing Analyze/Benchmark contracts are unchanged.
 
 See [COMPILER_SCRIPT_GENERATION.md](COMPILER_SCRIPT_GENERATION.md) for input/output
 examples, marker restrictions, and generation request/result semantics.
+See [COMPILER_BENCHMARK_PLAN.md](COMPILER_BENCHMARK_PLAN.md) for planning and the future
+trusted execution boundary. No execution handler is attached to the disabled control.
 
 ## Review and remaining frontend work
 
 - [ ] Review the compiler page in the team's intended layout/style.
 - [ ] If needed, replace the gate table with an SVG circuit diagram using the same
   returned plan. Do not rebuild cost/mixer formulas in the frontend.
-- [ ] Add accessible benchmark controls/results when Developer 3 supplies actual
-  runners. The current endpoint safely returns 501; no per-runner capability field exists.
+- [ ] Agree an explicit execution opt-in and add actual result controls only after
+  separate authorization and shared-runner availability. Planning must remain nonexecuting.
 - [ ] Coordinate any readiness/configuration contract extensions with backend owners
   and regenerate types. Health's `experiments_ready=false` is not a compiler capability flag.
 - [ ] Fit future browser regressions into the team's chosen frontend test stack.

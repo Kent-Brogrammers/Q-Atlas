@@ -1,6 +1,7 @@
 import type {
   CompilerAnalyzeRequest, CompilerAnalyzeResult, CompilerBenchmarkRequest, CompilerBenchmarkResult,
   CompilerGenerateRequest, CompilerGenerateResult,
+  CompilerBenchmarkPlan,
   ErrorResponse, HealthResponse, MaterialsRequest, MaterialsResult,
   OptimizationRequest, OptimizationResult, SearchRequest, SearchResult,
 } from '../types';
@@ -35,6 +36,7 @@ export const api = {
   analyze: (body: CompilerAnalyzeRequest) => request<CompilerAnalyzeResult>('/compiler/analyze', body),
   generateScript: (body: CompilerGenerateRequest) => request<CompilerGenerateResult>('/compiler/generate', body),
   compilerBenchmark: (body: CompilerBenchmarkRequest) => request<CompilerBenchmarkResult>('/compiler/benchmark', body),
+  prepareCompilerBenchmark: (body: CompilerBenchmarkRequest) => request<CompilerBenchmarkPlan>('/compiler/benchmark/plan', body),
   optimization: (body: OptimizationRequest) => request<OptimizationResult>('/optimization/run', body),
   search: (body: SearchRequest) => request<SearchResult>('/search/run', body),
   materials: (body: MaterialsRequest) => request<MaterialsResult>('/materials/run', body),

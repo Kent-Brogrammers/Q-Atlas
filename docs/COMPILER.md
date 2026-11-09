@@ -27,9 +27,15 @@ Start the API and frontend as described in [README.md](../README.md), then open
 7. Editing/loading source or changing generation layers/workflow clears previous
    results and downloads; a late response or file read cannot overwrite a newer edit.
    A pending request finishes before resubmission.
-8. In objective-only mode, **Run comparison** requires a supported analysis of the
-   current source. It currently explains the missing shared-runner dependency after
-   HTTP 501, while preserving the working analysis.
+8. Click **Prepare comparison** after a supported analysis/generation to inspect and
+   download the future classical/QAOA manifest. This submits no execution request.
+   **Run comparison — execution disabled** stays disabled. See
+   [benchmark planning](COMPILER_BENCHMARK_PLAN.md) for the scope and remaining work.
+
+The **Example program** chooser loads two supported complete scripts and three
+deliberate rejection cases. It shares raw source files with the backend's
+[program fixtures](../examples/compiler/programs/README.md); the API still validates
+every example. Generated output snapshots are provided for the supported cases.
 
 File loading reads text in the browser and sends it through the existing `{source}`
 request. It does not import Python, run a decorator, or write uploaded files on the
@@ -107,6 +113,13 @@ The initial compiler accepts:
   preserve the value at assignment time. The binary-vector parameter cannot be rebound.
 - Numeric local accumulation with `+=`, `-=`, and `*=`. The local must already be
   assigned. Attribute/subscript mutation remains unsupported.
+- Local numeric list/tuple literals with 1–64 finite signed numeric elements, such
+  as `weights = (3, 1, 4, 2)`. Read elements with literal indices or bounded loop
+  indices/offsets, e.g. `weights[i]*x[i]` after index substitution. Whole-vector
+  arithmetic, aliasing, element mutation, slicing, runtime-loaded data, and dynamic
+  indices remain unsupported. Reassigning the whole local vector is supported.
+  Every literal element is validated, including unused vectors. The independent
+  numeric verifier reads the original vectors instead of reusing their extracted values.
 - Fixed `for i in range(...)` loops with 1–3 literal integer arguments (signed
   literals are allowed). Bounds/step have magnitude at most 64, step is nonzero,
   and each range must contain 1–64 values. Empty ranges are rejected in this initial

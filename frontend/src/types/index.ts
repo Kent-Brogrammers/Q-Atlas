@@ -15,6 +15,7 @@ export type CompilerGenerateResult = Schemas['CompilerGenerateResult'];
 export type GeneratedPythonArtifact = Schemas['GeneratedPythonArtifact'];
 export type CompilerBenchmarkRequest = Schemas['CompilerBenchmarkRequest'];
 export type CompilerBenchmarkResult = Schemas['CompilerBenchmarkResult'];
+export type CompilerBenchmarkPlan = Schemas['CompilerBenchmarkPlan'];
 export type OptimizationRequest = Schemas['OptimizationRequest'];
 export type OptimizationResult = Schemas['OptimizationResult'];
 export type SearchRequest = Schemas['SearchRequest'];

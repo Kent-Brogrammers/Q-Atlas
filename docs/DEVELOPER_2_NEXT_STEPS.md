@@ -10,6 +10,13 @@ the result. Read [COMPILER_SCRIPT_GENERATION.md](COMPILER_SCRIPT_GENERATION.md) 
 enabled by this feature. For a broader existing-file pattern, record a concrete input
 before extending circuit discovery or factory signatures.
 
+The next increment is also implemented: **local numeric weight vectors**, a
+[five-program catalog with two generated output scripts](../examples/compiler/programs/README.md),
+and **Prepare comparison** with a downloadable nonexecuting manifest. The full-file
+adapter is connected to the existing shared-runner handoff and tested through mocks.
+Read [COMPILER_BENCHMARK_PLAN.md](COMPILER_BENCHMARK_PLAN.md) for the current comparison
+scope and the separate trusted boundary needed before timing a whole application.
+
 Your compiler is ready for manual source-analysis testing. The next milestone is to
 validate objectives you actually want to submit and finish the shared-runner
 integration when Developer 3 supplies it. More Python syntax is optional work driven
@@ -25,6 +32,7 @@ This document distinguishes completed operations from the remaining integration 
 | Area | Already available | Where to look |
 | --- | --- | --- |
 | Safe Python analysis | One marked objective, local variables, bounded literal-range loops, numeric accumulation, squared penalties | `backend/app/compiler/analysis.py`, `lowering.py` |
+| Weighted source inputs | Local numeric list/tuple literals with 1–64 elements and literal/unrolled indices | `backend/tests/compiler/test_vectors.py` |
 | QUBO extraction | Canonical minimization, full constant offsets, normalized binary terms, original-sense metadata | `backend/app/schemas/contracts.py` |
 | Correctness verification | All binary inputs for 1–6 bits; absolute tolerance 1e-9 without relative scaling | `backend/tests/compiler/` |
 | Circuit construction | Shared symbolic gate plan, parameter order, global phase, logical depth | `backend/app/quantum/circuits.py` |
@@ -34,9 +42,10 @@ This document distinguishes completed operations from the remaining integration 
 | Python script output | Full-file passthrough, explicit circuit-factory replacement, 1–8 layers, code preview/download | `backend/app/compiler/generation.py`, `frontend/src/components/GeneratedScript.tsx` |
 | Reproducible inputs | Seven source files with expected QUBOs and arithmetic reference values | [examples/compiler](../examples/compiler/README.md) |
 | Repeatable API check | Health, seven examples, and a rejection case over HTTP, with no execution routes | `backend/scripts/check_compiler_api.py` |
+| Comparison preparation | Complete-file validation, source/generated hashes, canonical instance/config, disabled execution | `POST /api/compiler/benchmark/plan`, `BenchmarkPlanPanel.tsx` |
 | Actual optimization | Classical and QAOA entrypoints are still stubs on this branch | Developer 3 dependency |
 
-The last recorded validation passed **339 backend tests**, six frontend source/file
+The last recorded validation passed **368 backend tests**, six frontend source/file
 checks, Ruff, generated-type checks, TypeScript checks, and the production build.
 An earlier real HTTP/Firefox session checked all seven examples and the compiler UI;
 see [COMPILER_MANUAL_CHECKS.md](COMPILER_MANUAL_CHECKS.md) for the cases and later
@@ -50,6 +59,8 @@ Current endpoints:
 | Analyze unsupported source | HTTP 200, rejected diagnostics, no QUBO/circuit |
 | Generate a supported script | HTTP 200, verified QUBO, selected-layer preview, unexecuted Python artifact |
 | Generate an invalid/ambiguous script | HTTP 200, rejected diagnostics and no artifact |
+| Prepare a supported comparison | HTTP 200, nonexecuting plan with false script/quantum flags and no measurements |
+| Prepare a rejected script | Structured HTTP 422 before either runner is called |
 | Submit an invalid request payload/config | HTTP 422, structured validation error |
 | Benchmark unsupported source | HTTP 422 before any solver call |
 | Benchmark supported source while runners are stubs | HTTP 501, shared runner unavailable |
@@ -70,8 +81,10 @@ needs a new explicit request; this roadmap does not authorize it.
 Local API/UI startup, AST analysis, mathematical verification, symbolic planning,
 and the existing mocked compiler tests do not submit quantum jobs. Once real runners
 are merged, review test selection and execution controls before running anything
-that could invoke them. In particular, a working Run comparison button may stop
-returning 501 after integration; do not treat that as permission to execute it.
+that could invoke them. The compiler page now submits only planning requests and
+keeps its execution button disabled. Its underlying benchmark API still consumes
+shared runner stubs; review execution controls before replacing them. A future
+working runner or frontend control does not supply execution authorization.
 
 ## 2. What to do next, in order
 
@@ -79,6 +92,8 @@ returning 501 after integration; do not treat that as permission to execute it.
 | --- | --- | --- | --- | --- |
 | P0 | Analyze one real objective you want to use | You, Developer 2 | None | Reproducible source plus expected/actual analysis |
 | P1, done | Generate and download a replacement circuit script in the frontend | You, frontend integration authorized | Shared gate plan | Real API/Firefox checks cover upload, replacement, matching download contents, layers, and stale results |
+| P1, done | Add weighted complete programs and supported/rejected examples | You | Bounded literal vectors | Five catalog outcomes and two generated snapshots verified statically |
+| P1, done | Prepare the eventual classical/QAOA comparison | You | Full-file extraction and shared runner interfaces | Plans call no runners; full-file comparison adapter passes mocked handoffs |
 | P0 | Relay the selected runner contract | You and Developer 3 | Teammate review | Documented agreement on the existing handoff |
 | P1, done | Make the analysis-only API smoke check repeatable | You | Current analyzer and local API | Nine real HTTP checks pass; stopped-server failure is verified |
 | P1, done | Close identified integration-test gaps | You | Existing mocked tests | Both runner error paths and mutation-then-timeout are covered |
@@ -420,8 +435,8 @@ For each proposed language feature:
 - [ ] Update COMPILER.md and examples without changing shared conventions silently.
 - [ ] Keep one feature per reviewable change.
 
-Possible candidates, if a real objective needs them, include bounded constant weight
-vectors, additional compile-time integer forms, or empty-range semantics with full
+Possible candidates, if a real objective needs them, include immutable numeric module
+constants, additional compile-time integer forms, or empty-range semantics with full
 validation. None is a required next feature or implemented promise. Imports, arbitrary
 helper calls, data-dependent loops, larger variable counts, and general quadratization
 are separate scope decisions; do not bundle them into integration work.

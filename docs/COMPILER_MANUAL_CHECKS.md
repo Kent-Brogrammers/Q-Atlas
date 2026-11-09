@@ -140,3 +140,35 @@ preservation, source name collisions, missing final newlines, and marker ambigui
 These checks did not execute exported/user Python, import Qiskit, or run a simulator,
 supercomputer, hardware, or solver job. Actual Qiskit execution remains unverified
 under the current instruction. The temporary browser harness remains outside the repo.
+
+## Weight vectors, program catalog, and comparison planning
+
+The next increment passed **368 backend tests**, six frontend source/file tests,
+generated-type checks, TypeScript checks, Ruff, and the production build. Tests
+cover literal-vector math on every binary assignment, invalid/mutated vectors,
+independent verification, five documented program outcomes, generated snapshot ASTs,
+and full-file benchmark handoffs with both runners mocked. Plan contracts reject
+true execution flags and circuit/config inconsistencies.
+
+Real local HTTP checks used the five catalog programs: two returned verified
+generation plus HTTP 200 plans, and three returned the documented rejection code
+plus HTTP 422 planning errors. Source/generated hashes matched their exact text,
+plan p matched the preview, and plans contained no timing measurements.
+
+Firefox 159.0 checked the actual example chooser and planning UI against that API:
+
+- Each chooser option loaded source text identical to its repository fixture.
+- Both supported examples generated Python and a comparison-plan download whose
+  JSON exactly matched the API response. The execution button remained disabled.
+- All three rejected examples had no output download and could not prepare a plan.
+- Three selected QAOA layers appeared consistently in generation and planning.
+- Editing source during a delayed planning response prevented stale manifests and
+  generated scripts from reappearing.
+- The full plan fit a 375px viewport; no uncaught browser errors occurred.
+- The browser requested only compiler generation and `/benchmark/plan` endpoints.
+  It never requested the benchmark execution endpoint.
+
+Two output `.py` snapshots were generated/formatted as text and compared by AST only.
+No input/output script, solver, simulator, hardware, or supercomputer job was run.
+The temporary local servers were used only for these static operations. No live
+performance measurements or quantum-advantage claims follow from these checks.
