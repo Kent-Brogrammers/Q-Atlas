@@ -5,7 +5,7 @@ into the compiler editor or send them as the `source` field to
 `POST /api/compiler/analyze`. Do not run or import them: `qatlas.objective` is a marker
 inspected by the parser, with no runtime decorator package required.
 
-All seven examples should return `status=supported`, a normalized QUBO matching
+The seven objective-only examples below should return `status=supported`, a normalized QUBO matching
 [expected_qubos.json](expected_qubos.json), and an unexecuted symbolic circuit preview.
 The JSON contains mathematical expectations, not sampled or measured solver results.
 
@@ -46,3 +46,16 @@ or return a separate constraint-feasibility result.
 The benchmark endpoint still depends on Developer 3's shared runner stubs; these
 examples do not submit jobs or provide mock production measurements. See
 [the compiler guide](../../docs/COMPILER.md) for the supported subset and limits.
+
+## Whole-script replacement example
+
+[script_replacement.py](script_replacement.py) contains the same exactly-one objective,
+an old circuit factory marked `@qatlas.circuit`, and a caller that prints its circuit.
+Use **Generate script** on the compiler page or `POST /api/compiler/generate`, rather
+than the objective-only Analyze endpoint. The download keeps the ordinary Python,
+removes the marker decorators, and replaces the old X-gate factory with generated
+QAOA construction code. Nothing is executed while generating or testing the example.
+
+This file is intentionally outside the seven-case analysis smoke manifest. Its
+generation test reuses the independent `exactly_one.py` expected QUBO. Read the
+[script-generation guide](../../docs/COMPILER_SCRIPT_GENERATION.md) before adapting it.

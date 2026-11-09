@@ -1,7 +1,7 @@
 # Compiler page integration handoff
 
 The user authorized implementing the compiler-page integration after the Developer 2
-pipeline. These changes are kept in a separate frontend commit for Developer 5 review.
+pipeline, including the November 9 file-to-generated-script workflow for Developer 5 review.
 Other experiment pages, shared fetch behavior, and the application shell are unchanged.
 
 ## Implemented files
@@ -11,17 +11,29 @@ Other experiment pages, shared fetch behavior, and the application shell are unc
 | `frontend/src/pages/CompilerPage.tsx` | Typed analysis/comparison state, source input, local file reading, async request guards |
 | `frontend/src/components/CompilerAnalysisPanel.tsx` | Diagnostics with line selection, canonical coefficients, original/solver sense, raw JSON |
 | `frontend/src/components/CircuitPreview.tsx` | Ordered symbolic gate table, explicit parameter order/global phase, logical depth |
+| `frontend/src/components/GeneratedScript.tsx` | Read-only generated Python, download Blob lifecycle, replacement/entrypoint explanation |
 | `frontend/src/compiler/source.ts` | Example source, bounded file-text loading, parameter-angle formatting |
-| `frontend/tests/compiler-source.test.mjs` | Four built-in Node checks for file-reading behavior |
+| `frontend/tests/compiler-source.test.mjs` | Six built-in Node checks for file-reading, download names, and example behavior |
 
 `npm run test:compiler` runs the small test module with native Node type stripping.
-It adds no frontend testing package or runtime dependency. Existing generated
-compiler/circuit types are reused, with no new backend endpoint or schema change.
+It adds no frontend testing package or runtime dependency. The additive
+`POST /api/compiler/generate` endpoint uses `CompilerGenerateRequest` and
+`CompilerGenerateResult`/`GeneratedPythonArtifact`; OpenAPI types were regenerated.
+The existing Analyze/Benchmark contracts are unchanged.
 
 ## Behavior to preserve
 
-- Pasted or file-loaded Python is text submitted through `api.analyze({source})`.
+- In objective-only mode, pasted or file-loaded Python is text submitted through `api.analyze({source})`.
   Do not import, execute, or dynamically evaluate it on either side.
+- The default **Generate script** workflow sends `api.generateScript({source,p})`.
+  It accepts surrounding Python as opaque passthrough text and replaces only an
+  explicit `@qatlas.circuit` zero-argument factory. The displayed gate plan uses the
+  requested p. The separate **Analyze objective only** mode retains one-layer analysis.
+- Show generated code and a named `.py` download only when `artifact` exists. Clear
+  it on source/layer/workflow changes and ignore late generation responses. Revoke
+  Blob URLs when the artifact disappears or the component unmounts.
+- Keep the generated/unexecuted label and explain that the builder returns an
+  unbound Qiskit circuit. Preserved Python is not validated as a runnable application.
 - File input accepts `.py`/text. The extension is a convenience, not validation.
   Reject empty source and source over 20,000 characters; refuse reads over 80,000
   bytes before reading. Preserve the editor contents on a failed read.
@@ -43,6 +55,9 @@ compiler/circuit types are reused, with no new backend endpoint or schema change
   depth from unavailable transpiled depth, and use the returned parameter ordering.
 - Raw JSON is optional detail. The main display uses diagnostics/coefficient tables
   and a gate table, without fake timings, measurements, or success charts.
+
+See [COMPILER_SCRIPT_GENERATION.md](COMPILER_SCRIPT_GENERATION.md) for input/output
+examples, marker restrictions, and generation request/result semantics.
 
 ## Review and remaining frontend work
 

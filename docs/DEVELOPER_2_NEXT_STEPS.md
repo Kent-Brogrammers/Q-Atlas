@@ -1,6 +1,14 @@
 # Developer 2: remaining work and integration roadmap
 
-Updated: 2026-11-08. Compiler code checkpoint: `6df303d` on `Connor`.
+Updated: 2026-11-09. Branch: `Connor`.
+
+The **file-to-generated-script frontend flow is implemented**. Use **Generate script**
+to load a `.py` file, replace an explicitly marked `@qatlas.circuit` factory with
+generated Qiskit construction code, preserve the surrounding Python, and download
+the result. Read [COMPILER_SCRIPT_GENERATION.md](COMPILER_SCRIPT_GENERATION.md) and try
+[script_replacement.py](../examples/compiler/script_replacement.py). No execution is
+enabled by this feature. For a broader existing-file pattern, record a concrete input
+before extending circuit discovery or factory signatures.
 
 Your compiler is ready for manual source-analysis testing. The next milestone is to
 validate objectives you actually want to submit and finish the shared-runner
@@ -23,11 +31,12 @@ This document distinguishes completed operations from the remaining integration 
 | Benchmark adapter | Revalidates source, isolates each runner's inputs, checks objectives and provenance | `backend/app/compiler/pipeline.py` |
 | Browser input | Paste Python or load a local text file; source is never executed | `frontend/src/pages/CompilerPage.tsx` |
 | Browser output | Line-linked diagnostics, coefficient tables, original/canonical sense, unexecuted gate table | `frontend/src/components/CompilerAnalysisPanel.tsx`, `CircuitPreview.tsx` |
+| Python script output | Full-file passthrough, explicit circuit-factory replacement, 1–8 layers, code preview/download | `backend/app/compiler/generation.py`, `frontend/src/components/GeneratedScript.tsx` |
 | Reproducible inputs | Seven source files with expected QUBOs and arithmetic reference values | [examples/compiler](../examples/compiler/README.md) |
 | Repeatable API check | Health, seven examples, and a rejection case over HTTP, with no execution routes | `backend/scripts/check_compiler_api.py` |
 | Actual optimization | Classical and QAOA entrypoints are still stubs on this branch | Developer 3 dependency |
 
-The last recorded validation passed **310 backend tests**, four frontend file-reading
+The last recorded validation passed **339 backend tests**, six frontend source/file
 checks, Ruff, generated-type checks, TypeScript checks, and the production build.
 An earlier real HTTP/Firefox session checked all seven examples and the compiler UI;
 see [COMPILER_MANUAL_CHECKS.md](COMPILER_MANUAL_CHECKS.md) for the cases and later
@@ -39,13 +48,16 @@ Current endpoints:
 | --- | --- |
 | Analyze supported source | HTTP 200, supported QUBO and symbolic circuit |
 | Analyze unsupported source | HTTP 200, rejected diagnostics, no QUBO/circuit |
+| Generate a supported script | HTTP 200, verified QUBO, selected-layer preview, unexecuted Python artifact |
+| Generate an invalid/ambiguous script | HTTP 200, rejected diagnostics and no artifact |
 | Submit an invalid request payload/config | HTTP 422, structured validation error |
 | Benchmark unsupported source | HTTP 422 before any solver call |
 | Benchmark supported source while runners are stubs | HTTP 501, shared runner unavailable |
 | A mocked runner exceeds its budget | HTTP 504 |
 | A mocked runner returns inconsistent values or changes its inputs | Sanitized HTTP 500 |
 
-The analysis preview is always one layer. It is not evidence of transpilation,
+The Analyze preview is always one layer; Generate uses the selected 1–8 layers.
+Neither is evidence of transpilation,
 sampling, optimization, solver quality, or runtime advantage.
 
 ### Execution constraint
@@ -66,6 +78,7 @@ returning 501 after integration; do not treat that as permission to execute it.
 | Priority | Task | Owner | Dependency | Completion evidence |
 | --- | --- | --- | --- | --- |
 | P0 | Analyze one real objective you want to use | You, Developer 2 | None | Reproducible source plus expected/actual analysis |
+| P1, done | Generate and download a replacement circuit script in the frontend | You, frontend integration authorized | Shared gate plan | Real API/Firefox checks cover upload, replacement, matching download contents, layers, and stale results |
 | P0 | Relay the selected runner contract | You and Developer 3 | Teammate review | Documented agreement on the existing handoff |
 | P1, done | Make the analysis-only API smoke check repeatable | You | Current analyzer and local API | Nine real HTTP checks pass; stopped-server failure is verified |
 | P1, done | Close identified integration-test gaps | You | Existing mocked tests | Both runner error paths and mutation-then-timeout are covered |
@@ -109,7 +122,10 @@ for the default local setup.
 - [ ] Select a small binary objective with 3–6 variables and an expected meaning.
 - [ ] Begin with one supported marked function. Keep imports, general helper calls,
   and data-dependent control flow out of the submitted function.
-- [ ] Load it as text using **Load a Python file**, then click **Analyze**.
+- [ ] For a complete script, use **Generate script** and mark its zero-argument circuit
+  factory with `@qatlas.circuit`. Confirm the downloaded Python replaces that factory
+  and preserves the surrounding code. For an objective-only check, select **Analyze
+  objective only**, load it with **Load a Python file**, and click **Analyze**.
 - [ ] Check the constant, indexed linear terms, pairs, original sense, and width.
 - [ ] Verify a few assignments independently by arithmetic. For important tiny
   instances, record every binary assignment or an independently known optimum.
@@ -466,6 +482,7 @@ Project_Spec.md, existing API conventions, and other owners' modules.
 - [x] Reproducible examples, diagnostics, numerical checks, and mocked handoffs exist.
 - [ ] Your intended objective has been tried and its result or exact unsupported form recorded.
 - [x] The analysis-only smoke command is implemented and reproducible.
+- [x] Full-file text input can generate/download Python with an explicit circuit-factory replacement.
 - [ ] Developers 3 and 5 have received/reviewed their respective handoffs.
 
 ### Ready later: full compiler benchmark acceptance

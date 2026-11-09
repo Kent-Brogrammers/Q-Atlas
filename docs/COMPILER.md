@@ -2,24 +2,34 @@
 
 The compiler implements source parsing, allowlist validation, binary polynomial
 extraction, QUBO normalization, exhaustive verification, diagnostics, and the
-benchmark adapter. It never executes submitted Python. The project specification
-is unchanged; the analysis response now includes a typed symbolic circuit preview.
+benchmark adapter. It also generates Python scripts by replacing an explicitly
+marked circuit factory using the shared gate plan. It never executes submitted
+Python. The project specification is unchanged.
 
 ## Using the compiler page
 
 Start the API and frontend as described in [README.md](../README.md), then open
-`/compiler`. The page starts with a three-bit squared-penalty example.
+`/compiler`. The page starts in **Generate script** with a complete three-bit example.
 
 1. Edit the source, choose **Load a Python file**, or restore it with **Load example**.
-2. Click **Analyze** to see supported/rejected status and the server diagnostics.
-3. Click a diagnostic line button to select that line in the editor.
-4. For supported source, inspect the constant, indexed coefficients, objective
+2. Keep one marked objective. Mark the zero-argument circuit factory you want to
+   replace with `@qatlas.circuit`. Select 1–8 QAOA layers and click **Generate Python script**.
+3. Inspect the generated Python and click **Download .py**. Surrounding Python stays
+   in place, the objective marker is removed, and the marked circuit is replaced.
+   Without a circuit marker, a new builder is appended. See
+   [the generation guide](COMPILER_SCRIPT_GENERATION.md) for the exact contract.
+4. For the original single-function workflow, select **Analyze objective only**,
+   load an objective-only example, and click **Analyze**.
+5. Click a diagnostic line button to select that line in the original editor.
+6. For supported source, inspect the constant, indexed coefficients, objective
    sense, and symbolic gate table. The preview explicitly shows **Not executed**.
-5. Editing/loading source clears previous results; a late response or file read
-   cannot overwrite a newer edit. A pending request finishes before resubmission.
-6. **Run comparison** requires a supported analysis of the current source. It
-   currently explains the missing shared-runner dependency after HTTP 501, while
-   preserving the working analysis.
+   Generate uses your selected layer count; Analyze always uses one layer.
+7. Editing/loading source or changing generation layers/workflow clears previous
+   results and downloads; a late response or file read cannot overwrite a newer edit.
+   A pending request finishes before resubmission.
+8. In objective-only mode, **Run comparison** requires a supported analysis of the
+   current source. It currently explains the missing shared-runner dependency after
+   HTTP 501, while preserving the working analysis.
 
 File loading reads text in the browser and sends it through the existing `{source}`
 request. It does not import Python, run a decorator, or write uploaded files on the
