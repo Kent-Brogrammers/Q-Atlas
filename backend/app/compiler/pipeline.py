@@ -52,8 +52,17 @@ def _call_shared_runner(
     result = runner(runner_qubo, runner_config)
     if runner_qubo != qubo or runner_config != config:
         raise ValueError("shared runner changed its input QUBO or configuration")
+    if not isinstance(result, result_type):
+        raise ValueError("shared runner must return a solver result, not an angle-search record")
     # Shared models are mutable: validate nested fields again at the trust boundary.
-    return result_type.model_validate(result.model_dump(mode="python"))
+    validated = result_type.model_validate(result.model_dump(mode="python"))
+    if validated.elapsed_ms > config.timeout_seconds * 1000:
+        raise TimeoutError("shared runner reported execution beyond timeout_seconds")
+    for field in ("queue_ms", "transpilation_ms", "optimizer_ms", "sampling_ms"):
+        duration = getattr(validated.timing, field)
+        if duration is not None and duration > validated.elapsed_ms + 1e-9:
+            raise ValueError("shared runner timing component exceeds its end-to-end interval")
+    return validated
 
 
 def _problem_id(qubo: QUBO) -> str:
@@ -79,7 +88,7 @@ def prepare_benchmark(source: str, config: QAOAConfig) -> CompilerBenchmarkPlan:
         blockers=[
             "Execution is disabled; preparing this plan runs neither script nor solver.",
             "The shared classical baseline is implemented; Developer 3 must finish and validate "
-            "the shared QAOA runner.",
+            "sampling and result assembly in run_qaoa; the angle optimizer is available.",
             "Any execution needs a separately authorized mode and deadline enforcement.",
             "Whole-application timing needs a separate trusted execution boundary and contract.",
         ],
@@ -99,6 +108,9 @@ def benchmark_qubo(qubo: QUBO, config: QAOAConfig) -> CompilerBenchmarkResult:
     _validate_solution(qubo, quantum)
     if quantum.metrics.num_qubits != qubo.num_variables or quantum.metrics.shots != config.shots:
         raise ValueError("shared QAOA metrics do not match the problem and requested shots")
+    evaluations = quantum.metrics.optimizer_evaluations
+    if evaluations is not None and evaluations > config.max_iterations:
+        raise ValueError("shared QAOA result exceeds the configured evaluation budget")
     metrics = quantum.metrics.model_copy(deep=True)
     metrics.optimality_gap = None
     if classical.algorithm == "brute_force" and classical.objective is not None:

@@ -382,3 +382,49 @@ def test_bad_benchmark_plans_fail_without_calling_runners(client, mock_runners):
         assert attempted.status_code == 422
     for runner in mock_runners:
         runner.assert_not_called()
+
+
+def test_angle_optimizer_record_is_not_a_sampled_solver_result(mock_runners):
+    from app.quantum.qaoa_optimization import AngleOptimizationResult
+
+    mock_runners[1].return_value = AngleOptimizationResult(
+        angles=(0.2, 0.3),
+        expectation=3.5,
+        evaluations=4,
+        converged=False,
+        stop_reason="evaluation_limit",
+        elapsed_ms=2,
+        optimizer_ms=1,
+    )
+    with pytest.raises(ValueError, match="angle-search record"):
+        pipeline.benchmark_source(SOURCE, QAOAConfig(shots=32))
+
+
+def test_shared_qaoa_evaluation_limit_is_checked(mock_runners):
+    mock_runners[1].return_value.metrics.optimizer_evaluations = 5
+    with pytest.raises(ValueError, match="evaluation budget"):
+        pipeline.benchmark_source(SOURCE, QAOAConfig(shots=32, max_iterations=4))
+
+
+@pytest.mark.parametrize("runner_index", [0, 1])
+def test_shared_reported_deadline_overrun_is_not_a_completed_result(
+    client, mock_runners, runner_index
+):
+    mock_runners[runner_index].return_value.elapsed_ms = 1001
+    response = client.post(
+        "/api/compiler/benchmark",
+        json={"source": SOURCE, "config": {"shots": 32, "timeout_seconds": 1}},
+    )
+    assert response.status_code == 504
+    assert response.json()["error"]["code"] == "TIMEOUT"
+    if runner_index == 0:
+        mock_runners[1].assert_not_called()
+
+
+@pytest.mark.parametrize("runner_index", [0, 1])
+def test_shared_timing_components_cannot_exceed_total(mock_runners, runner_index):
+    mock_runners[runner_index].return_value.timing.optimizer_ms = 3
+    with pytest.raises(ValueError, match="timing component"):
+        pipeline.benchmark_source(SOURCE, QAOAConfig(shots=32))
+    if runner_index == 0:
+        mock_runners[1].assert_not_called()
