@@ -1,8 +1,9 @@
 # Developer 4: Grover search benchmark
 
-The local benchmark compares a measured Grover circuit with classical search in
-the existing shared result format. The search HTTP endpoint remains an explicit
-501 stub pending the next milestone. Shared contracts and frontend types are unchanged.
+The benchmark compares a measured Grover circuit with classical search in the
+existing shared result format. `POST /api/search/run` now exposes the bounded runner.
+Shared model fields are unchanged; generated frontend types document the route's
+503/504 errors. The Search page is not connected yet.
 
 ## Windows setup
 
@@ -126,8 +127,65 @@ The earlier `.demo` command remains a simple single-target circuit demonstration
 
 ## Remaining milestones
 
-1. Expose the bounded runner at the existing search endpoint with structured errors.
-2. Add the iteration sweep and connect real results on the Search page with Developer 5.
+Add the iteration sweep and connect real results on the Search page with Developer 5.
+
+## Search API
+
+Start the backend from `backend/`:
+
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+Visit `http://127.0.0.1:8000/docs`, expand `POST /api/search/run`, and use **Try it out**.
+For a PowerShell request in a second terminal:
+
+```powershell
+$searchBody = @{
+    num_qubits = 3
+    marked_states = @('001')
+    iterations = 2
+    config = @{ shots = 1024; seed = 42; timeout_seconds = 30 }
+} | ConvertTo-Json -Depth 4
+Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:8000/api/search/run' `
+    -ContentType 'application/json' -Body $searchBody | ConvertTo-Json -Depth 10
+```
+
+Requests use the existing `SearchRequest`. Omit `iterations` or send null for
+automatic selection. HTTP 200 returns a validated `SearchResult`; failure responses
+contain only the shared error envelope, never fabricated solver measurements:
+
+| HTTP status | Code | Meaning |
+| --- | --- | --- |
+| 422 | `VALIDATION_ERROR` | Malformed inputs or unsupported resource limits |
+| 503 | `HTTP_ERROR` | Install the optional backend quantum dependencies |
+| 504 | `TIMEOUT` | Total worker runtime budget exhausted; worker is stopped |
+| 500 | `INTERNAL_ERROR` | Unexpected failure, with sanitized public details |
+
+Resource diagnostics are checked before a worker starts. Exceptions never expose
+internal details in public responses. API startup still works without Qiskit/Aer;
+execution requires the quantum extra. A failed request does not fall back to examples.
+
+The API tests cover real single/multiple-target runs, malformed and unsupported
+requests, worker timeouts, dependency errors, sanitized failures, and dependency-free
+startup. Shared availability tests no longer classify search as a stub. The stale
+compiler-stub assertions in the materials test were removed because the compiler has
+its own implemented API tests.
+
+### Refreshing API types on Windows
+
+The existing `npm run types:export` command uses `.venv/bin/python` (Unix layout).
+From `frontend/`, use the same exporter/generator with the Windows interpreter:
+
+```powershell
+..\backend\.venv\Scripts\python.exe ..\backend\scripts\export_openapi.py |
+    Set-Content -Encoding utf8 openapi.json
+npm.cmd run generate --workspace @q-atlas/api-types
+npm.cmd run generate --workspace @q-atlas/api-types -- --check
+```
+
+`openapi.json` is ignored intermediate output. Commit the generated TypeScript when
+the documented operation changes. No new dependency or transport client is required.
 
 The four follow-up commit groups are classical baseline, benchmark runner, API,
 then probability curves/frontend integration. Review and approval precede each commit.
