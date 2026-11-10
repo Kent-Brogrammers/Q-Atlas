@@ -52,3 +52,8 @@ export function formatAngle(angle: CircuitAngle): string {
   if (angle.coefficient === -1) return `-${angle.parameter}`;
   return `${angle.coefficient} × ${angle.parameter}`;
 }
+
+export function formatOptionalMs(value: number | null | undefined): string {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) return 'Not measured';
+  return `${value.toLocaleString('en-US', { maximumFractionDigits: 3 })} ms`;
+}

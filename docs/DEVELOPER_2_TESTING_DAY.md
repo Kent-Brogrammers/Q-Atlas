@@ -3,6 +3,13 @@
 Updated 2026-11-10. This is the current operational checklist; it supersedes the
 historical next-steps plan. Preserve `Project_Spec.md` as the architectural authority.
 
+Send/receive costs are now reserved in the plan and analytics as **unmeasured**
+placeholders. Follow [the communication timing guide](COMPILER_COMMUNICATION_TIMING.md)
+to measure submission, ready-result retrieval, provider queue/processing and complete
+round-trip time tomorrow. Keep actual QPU quota usage separate and do not double count
+components already inside a round trip. Downloaded plans/offline bundles contain the
+nullable fields; filling actual benchmark results still requires the provider adapter.
+
 ## 1. What is ready, and what still prevents a hardware test
 
 The compiler accepts a Python file as text, locates one marked binary objective,

@@ -29,6 +29,16 @@ by this compiler HTTP guard. Hardware requires separate policy/provenance agreem
 
 ## Shared helpers to consume
 
+### Proposed provider communication measurement handoff
+
+D2 has added a compiler-plan-only `communication_timing` block, defaulting all fields
+to null. No shared solver timer semantics change. D3/D5 should review the field
+boundaries and future measured-result integration in
+[COMPILER_COMMUNICATION_TIMING.md](COMPILER_COMMUNICATION_TIMING.md): submission,
+ready-result retrieval, queue, remote processing, and full round trip. Instrument the
+future provider adapter; do not substitute Aer runtime for remote transfer or add
+overlapping intervals to an already inclusive total.
+
 The compiler now accepts arbitrary function/vector names and declared named scalar
 inputs, with `@qatlas.objective` width inference. Scalars map to existing canonical
 indices in signature order. The new INPUT_MAPPING diagnostic exposes that association;
