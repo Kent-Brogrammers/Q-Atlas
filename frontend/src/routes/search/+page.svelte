@@ -12,9 +12,17 @@
   } from '#lib/search/live.ts';
   import { api, ApiError } from '../../api/client.ts';
   import type { SearchResult } from '../../types/index.ts';
+  import { measureTrials, summarizeTrials, trialCurve } from '#lib/search/trials.ts';
+  import { buildSearchExport, loadRecordedDemo } from '#lib/search/recorded.ts';
+  import type { RecordingProvenance } from '#lib/search/recorded.ts';
+
+  type RunMode = 'single' | 'curve' | 'trials';
 
   let settings = $state(defaultSettings());
   let maxIteration = $state<number | undefined>(6);
+  let repetitions = $state<number | undefined>(3);
+  let completedMode = $state<RunMode>('single');
+  let recording = $state<RecordingProvenance | null>(null);
   let results = $state<SearchResult[]>([]);
   let selectedIndex = $state(0);
   let loading = $state(false);
@@ -22,7 +30,10 @@
   let progress = $state('');
   let controller: AbortController | undefined;
   let selected = $derived(results[selectedIndex]);
-  let points = $derived(curvePoints(results));
+  let summary = $derived(
+    completedMode === 'trials' && results.length ? summarizeTrials(results) : null
+  );
+  let points = $derived(summary ? trialCurve(summary) : curvePoints(results));
   onDestroy(() => controller?.abort());
 
   function clearResults() {
@@ -30,32 +41,70 @@
     selectedIndex = 0;
     error = '';
     progress = '';
+    completedMode = 'single';
+    recording = null;
   }
 
-  async function run(sweep: boolean) {
+  function loadRecording(mode: 'curve' | 'trials') {
+    if (loading) return;
+    clearResults();
+    try {
+      const saved = loadRecordedDemo(mode);
+      results = saved.results;
+      completedMode = mode;
+      recording = saved.provenance;
+      selectedIndex = mode === 'curve' ? 2 : 0;
+      const parameters = saved.results[selectedIndex].metadata.parameters;
+      settings = {
+        numQubits: parameters.num_qubits,
+        targets: parameters.marked_states.join(', '),
+        automatic: false,
+        iterations: parameters.iterations ?? undefined,
+        shots: parameters.config?.shots,
+        seed: parameters.config?.seed,
+        timeout: parameters.config?.timeout_seconds
+      };
+      if (mode === 'curve') maxIteration = saved.results.length - 1;
+      if (mode === 'trials') repetitions = saved.results.length;
+      progress = 'Previously measured demo loaded. No live request was made.';
+    } catch (cause) {
+      error = cause instanceof Error ? cause.message : 'The recorded demo could not load.';
+    }
+  }
+
+  async function run(mode: RunMode) {
     if (loading) return;
     clearResults();
     loading = true;
     controller = new AbortController();
     const signal = controller.signal;
     try {
-      const measured = sweep
-        ? await measureSweep(settings, maxIteration, api.search, signal, (done, total) => {
-            progress = `Measured ${done} of ${total} iteration points.`;
-          })
-        : [await api.search(buildRequest(settings), signal)];
+      const measured =
+        mode === 'curve'
+          ? await measureSweep(settings, maxIteration, api.search, signal, (done, total) => {
+              progress = `Measured ${done} of ${total} iteration points.`;
+            })
+          : mode === 'trials'
+            ? await measureTrials(settings, repetitions, api.search, signal, (done, total) => {
+                progress = `Completed ${done} of ${total} seeded trials.`;
+              })
+            : [await api.search(buildRequest(settings), signal)];
       signal.throwIfAborted();
       curvePoints(measured);
       results = measured;
-      selectedIndex = sweep ? Math.min(2, results.length - 1) : 0;
-      progress = sweep
-        ? `Curve complete: ${results.length} measured points.`
-        : 'Comparison complete.';
+      completedMode = mode;
+      selectedIndex = mode === 'curve' ? Math.min(2, results.length - 1) : 0;
+      progress =
+        mode === 'curve'
+          ? `Curve complete: ${results.length} measured points.`
+          : mode === 'trials'
+            ? `Repeated trials complete: ${results.length} recorded runs.`
+            : 'Comparison complete.';
     } catch (cause) {
       results = [];
       progress = '';
       error = signal.aborted
-        ? 'Stopped. No incomplete curve is displayed.'
+        ? 'Stopped. No incomplete results are displayed.'
         : cause instanceof ApiError
           ? [
               cause.message,
@@ -70,13 +119,16 @@
   }
 
   function download() {
-    const blob = new Blob([JSON.stringify({ source: 'live_search_api', results }, null, 2)], {
-      type: 'application/json'
-    });
+    const blob = new Blob(
+      [JSON.stringify(buildSearchExport(completedMode, results, recording), null, 2)],
+      {
+        type: 'application/json'
+      }
+    );
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'q-atlas-search-results.json';
+    link.download = recording ? 'q-atlas-search-recorded-demo.json' : 'q-atlas-search-results.json';
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
@@ -96,7 +148,7 @@
     <h1>Find the target. Explore the probability.</h1>
     <p>Compare Grover amplification with classical search, one small instance at a time.</p>
   </div>
-  <span class="badge">Local Aer simulator</span>
+  <span class="badge">{recording ? 'Previously measured demo' : 'Local Aer simulator'}</span>
 </header>
 <p class="notice">
   Targets are supplied to construct the oracle. This demonstrates search under an oracle model;
@@ -106,8 +158,8 @@
     <strong>Search could not complete.</strong>
     {error}
     <p>
-      For connection errors, start the backend at http://127.0.0.1:8000. Errors never load example
-      results.
+      For connection errors, start the backend and check its configured address. Recorded results
+      load only when you select a demo button.
     </p>
   </div>{/if}
 
@@ -118,7 +170,7 @@
         novalidate
         onsubmit={(event) => {
           event.preventDefault();
-          void run(false);
+          void run('single');
         }}
         oninput={clearResults}
       >
@@ -195,7 +247,7 @@
               step="1"
               required
               bind:value={maxIteration}
-            /><button class="button" type="button" onclick={() => void run(true)}
+            /><button class="button" type="button" onclick={() => void run('curve')}
               >Measure probability curve</button
             >
           </div>
@@ -203,6 +255,24 @@
             A curve runs up to 13 independent requests in sequence, using the same shots and seed.
             More iterations can reduce success.
           </p>
+          <div class="curve-controls">
+            <label for="repetitions">Repeated trials (same iteration setting)</label>
+            <input
+              id="repetitions"
+              type="number"
+              min="2"
+              max="5"
+              step="1"
+              bind:value={repetitions}
+            />
+            <button class="button" type="button" onclick={() => void run('trials')}
+              >Run repeated trials</button
+            >
+            <p class="hint">
+              Two to five runs at the single-run iteration setting. Seeds increment from your chosen
+              seed; every raw run is retained.
+            </p>
+          </div>
         </fieldset>
       </form>
       {#if loading}<div class="running">
@@ -211,10 +281,33 @@
             The current backend worker may finish or reach its timeout after you stop.
           </p>
         </div>{/if}
+      <div class="recorded-controls">
+        <strong>Previously measured demo</strong>
+        <p class="hint">
+          Explicit offline fallback with recorded settings and timings. These buttons make no live
+          requests.
+        </p>
+        <button class="button small" disabled={loading} onclick={() => loadRecording('curve')}
+          >Load recorded curve</button
+        >
+        <button class="button small" disabled={loading} onclick={() => loadRecording('trials')}
+          >Load recorded trials</button
+        >
+      </div>
     </Panel>
   </aside>
 
   <div class="results" aria-busy={loading}>
+    {#if recording}<div class="recorded-banner" role="status">
+        <strong>Previously measured demo — not a live run</strong>
+        <p>
+          Recorded {recording.recorded_at_utc}. Source revision {recording.source_revision.slice(
+            0,
+            7
+          )}{recording.working_tree_dirty ? ' (working tree had pending changes)' : ''}. Timings
+          belong to the recorded simulator environment. Changing inputs clears this recording.
+        </p>
+      </div>{/if}
     <p class="progress" role="status" aria-live="polite">
       {loading ? progress || 'Running the local search benchmark…' : progress}
     </p>
@@ -222,12 +315,65 @@
       title="Success probability"
       subtitle="Measured outcomes and ideal theory at each iteration"
     >
-      <SearchProbabilityChart {points} />
+      <SearchProbabilityChart
+        {points}
+        measurementLabel={summary ? 'Mean success across trials' : 'Measured Aer shots'}
+      />
     </Panel>
+    {#if summary}
+      <Panel
+        title="Repeated-run summary"
+        subtitle={`${summary.trialCount} seeded trials at iteration ${summary.iteration}`}
+      >
+        <div class="metrics trial-metrics">
+          <div>
+            <span>Mean success</span><strong>{percentage(summary.meanSuccessProbability)}</strong>
+          </div>
+          <div>
+            <span>Observed min / max</span><strong
+              >{percentage(summary.minimumSuccessProbability)} / {percentage(
+                summary.maximumSuccessProbability
+              )}</strong
+            >
+          </div>
+          <div>
+            <span>Sample standard deviation</span><strong
+              >{(summary.sampleStandardDeviation * 100).toFixed(2)} pp</strong
+            >
+          </div>
+          <div><span>Total shots</span><strong>{summary.totalShots}</strong></div>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <caption
+              >Median solver time across all recorded trials. No warm-up run is excluded.</caption
+            >
+            <thead
+              ><tr><th scope="col">Classical search</th><th scope="col">Grover shot batch</th></tr
+              ></thead
+            >
+            <tbody
+              ><tr
+                ><td>{milliseconds(summary.medianClassicalMs)}</td><td
+                  >{milliseconds(summary.medianQuantumMs)}</td
+                ></tr
+              ></tbody
+            >
+          </table>
+        </div>
+        <p class="explanation">
+          Seeds: {summary.seeds.join(', ')}. {summary.shotsPerTrial} shots per trial. The range and sample
+          standard deviation describe variation across these runs; pp means percentage points. Neither
+          is a confidence interval. Repeated simulator runs do not establish quantum speedup.
+        </p>
+      </Panel>
+    {/if}
     {#if selected}
       <Panel
-        title={`Iteration ${selected.metadata.parameters.iterations}`}
-        subtitle="Real backend results · one simulator run per point"
+        title={`${summary ? `Trial ${selectedIndex + 1} · ` : ''}Iteration ${selected.metadata.parameters.iterations}`}
+        subtitle={recording
+          ? 'Previously measured backend results · not a live run'
+          : 'Real backend results · one simulator run per point'}
       >
         <div class="metrics">
           <div>
@@ -279,6 +425,22 @@
                 ></tr
               >
               <tr
+                ><th scope="row">Observed classical checks</th><td
+                  >{selected.metrics.classical_observed_queries ?? 'Not available'}</td
+                ><td>Not applicable</td></tr
+              >
+              <tr
+                ><th scope="row">Successful shots / total shots</th><td>Not applicable</td><td
+                  >{selected.metrics.successful_shots ?? 'Not available'} / {selected.metrics
+                    .shots ?? 'Not available'}</td
+                ></tr
+              >
+              <tr
+                ><th scope="row">Oracle calls across shot batch</th><td>Not applicable</td><td
+                  >{selected.metrics.quantum_total_oracle_queries ?? 'Not available'}</td
+                ></tr
+              >
+              <tr
                 ><th scope="row">Solver wall time</th><td
                   >{milliseconds(selected.classical?.elapsed_ms)}</td
                 ><td>{milliseconds(selected.quantum?.elapsed_ms)}</td></tr
@@ -299,24 +461,30 @@
         <p class="explanation">
           The classical run stops at its first match. Quantum wall time includes the whole shot
           batch; the query count is per circuit execution. The most frequent quantum output may be
-          unmarked. These timings are not matched-success speedup measurements.
+          unmarked. Total quantum oracle calls are iteration count times shots, not primitive gates
+          or measured simulator operations. These timings are not matched-success speedup
+          measurements.
         </p>
       </Panel>
       <Panel
-        title="Iteration measurements"
-        subtitle="Select an iteration to inspect its comparison"
+        title={summary ? 'Individual trial measurements' : 'Iteration measurements'}
+        subtitle={summary
+          ? 'Select a trial to inspect its raw comparison'
+          : 'Select an iteration to inspect its comparison'}
       >
         <div class="table-scroll">
           <table>
             <caption
-              >{results.length} measured point{results.length === 1 ? '' : 's'}; no illustrative
-              results.</caption
+              >{results.length} measured {summary
+                ? 'trials'
+                : `point${results.length === 1 ? '' : 's'}`}; no illustrative results.</caption
             >
             <thead
               ><tr
-                ><th scope="col">Iteration</th><th scope="col">Measured</th><th scope="col"
-                  >Theory</th
-                ><th scope="col">Shots</th><th scope="col">Depth</th></tr
+                ><th scope="col">{summary ? 'Trial / iteration' : 'Iteration'}</th><th scope="col"
+                  >Seed</th
+                ><th scope="col">Measured</th><th scope="col">Theory</th><th scope="col">Shots</th
+                ><th scope="col">Depth</th></tr
               ></thead
             >
             <tbody
@@ -326,13 +494,14 @@
                       class="point-button"
                       aria-pressed={selectedIndex === index}
                       onclick={() => (selectedIndex = index)}
-                      >Iteration {result.metadata.parameters.iterations}</button
+                      >{summary ? `Trial ${index + 1} / ` : 'Iteration '}{result.metadata.parameters
+                        .iterations}</button
                     ></th
-                  ><td>{percentage(result.metrics.success_probability)}</td><td
-                    >{percentage(result.metrics.theoretical_success_probability)}</td
-                  ><td>{result.metrics.shots ?? 'Not available'}</td><td
-                    >{result.metrics.circuit_depth ?? 'Not available'}</td
-                  ></tr
+                  ><td>{result.metadata.seed ?? 'Not available'}</td><td
+                    >{percentage(result.metrics.success_probability)}</td
+                  ><td>{percentage(result.metrics.theoretical_success_probability)}</td><td
+                    >{result.metrics.shots ?? 'Not available'}</td
+                  ><td>{result.metrics.circuit_depth ?? 'Not available'}</td></tr
                 >{/each}</tbody
             >
           </table>
@@ -355,9 +524,11 @@
             .join(' · ')}
         </p>
         <p>
-          Curves use the same seed at every iteration. Shot noise remains; no confidence interval or
-          repeated-run distribution is claimed. Editing inputs clears previous results. Downloaded
-          JSON contains every completed point and its settings.
+          {summary
+            ? 'Repeated trials use distinct recorded seeds at the same iteration setting.'
+            : 'Curves use the same seed at every iteration.'} Shot noise remains; no confidence interval
+          is claimed. Editing inputs clears previous results. Downloaded JSON contains every completed
+          point and its settings.
         </p>
       </details>
     {/if}
@@ -479,6 +650,26 @@
   .running {
     padding: 0 24px 18px;
   }
+  .recorded-controls {
+    padding: 18px 24px;
+    border-top: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .recorded-controls .button {
+    margin: 4px 4px 4px 0;
+  }
+  .recorded-banner {
+    border: 1px solid #d9b963;
+    background: #fff8e6;
+    padding: 16px 20px;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+  .recorded-banner p {
+    line-height: 1.6;
+    margin-bottom: 0;
+    overflow-wrap: anywhere;
+  }
   .metrics {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -493,6 +684,13 @@
   }
   .metrics strong {
     font: 23px var(--mono);
+  }
+  .trial-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .trial-metrics strong {
+    font-size: clamp(14px, 1.6vw, 20px);
+    overflow-wrap: anywhere;
   }
   .table-scroll {
     overflow-x: auto;

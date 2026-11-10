@@ -188,6 +188,55 @@ class SearchMetrics(BenchmarkMetrics):
     quantum_oracle_queries: int | None = Field(default=None, ge=0)
     classical_expected_queries: NonNegative | None = None
     classical_worst_case_queries: int | None = Field(default=None, ge=0)
+    successful_shots: int | None = Field(
+        default=None,
+        ge=0,
+        le=100_000,
+        strict=True,
+        description="Number of sampled outcomes in the marked set; not postselected shots.",
+    )
+    classical_observed_queries: int | None = Field(
+        default=None,
+        ge=1,
+        strict=True,
+        description="Actual predicate checks until the first classical match for this instance.",
+    )
+    quantum_total_oracle_queries: int | None = Field(
+        default=None,
+        ge=0,
+        strict=True,
+        description="Combined-oracle applications across all shots: iterations times shots.",
+    )
+
+    @model_validator(mode="after")
+    def validate_search_evidence(self) -> Self:
+        if self.successful_shots is not None:
+            if self.shots is None or self.successful_shots > self.shots:
+                raise ValueError("successful_shots requires shots and must not exceed it")
+            if self.success_probability is not None and not math.isclose(
+                self.success_probability,
+                self.successful_shots / self.shots,
+                rel_tol=0,
+                abs_tol=1e-12,
+            ):
+                raise ValueError("success_probability must equal successful_shots / shots")
+        if self.quantum_total_oracle_queries is not None:
+            if self.shots is None or self.quantum_oracle_queries is None:
+                raise ValueError("total oracle queries require shots and per-shot oracle queries")
+            if self.quantum_total_oracle_queries != self.quantum_oracle_queries * self.shots:
+                raise ValueError("total oracle queries must equal per-shot queries times shots")
+        if self.classical_observed_queries is not None:
+            if (
+                self.num_qubits is not None
+                and self.classical_observed_queries > 1 << self.num_qubits
+            ):
+                raise ValueError("observed classical queries must not exceed the search space")
+            if (
+                self.classical_worst_case_queries is not None
+                and self.classical_observed_queries > self.classical_worst_case_queries
+            ):
+                raise ValueError("observed classical queries must not exceed the worst case")
+        return self
 
 
 class MaterialsObservables(Contract):

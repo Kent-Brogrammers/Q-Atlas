@@ -1,0 +1,787 @@
+{
+  "bundle_version": 1,
+  "source": "previously_measured_search_demo",
+  "recorded_at_utc": "2026-11-10T18:31:09.647234+00:00",
+  "recording_method": "local_fastapi_testclient",
+  "source_revision": "2ebc81f32334a977cfaa5b3ff4fcc683e8510e43",
+  "working_tree_dirty": true,
+  "source_sha256": {
+    "backend/app/experiments/search/__init__.py": "691de76ca02b8bbecb6e393e63ee401c4fe3847b328e65881c60d714b2af6d15",
+    "backend/app/experiments/search/__main__.py": "5d856c56bd99ae8030003e8844a65d3c199f7bdcc1fee7149feb331e1947d756",
+    "backend/app/experiments/search/circuits.py": "1834f93a381c790960294ce39f87a59ae8dfba383772dd9d35cae4f01257cf25",
+    "backend/app/experiments/search/classical.py": "d60f2c0567ecb6d92fca1c566470301753bb4ea39f75e24e35ce1253b4452776",
+    "backend/app/experiments/search/demo.py": "2fde25054c46800f661b9a92c78345200b7ad9c10c05a4d0b7903ac00956b490",
+    "backend/app/experiments/search/experiment.py": "03669aad1549aaf8d398195e49e641b9fa78adcf41b45bef7475a6e49c8eae79",
+    "backend/app/experiments/search/runner.py": "634cd6d4d361670127937460fc1a303e538483e5544e1cdcd6577dd20a2ee5bc",
+    "backend/app/experiments/search/settings.py": "f43dd82ae92398ce4d5f3743c14b075ac5e0982cb04025b603c751a1d78321d7",
+    "backend/app/api/search.py": "9198859455d1e593a78a48374dc60dc18044086a41c599e50f37d062e7f95ff4",
+    "backend/app/schemas/contracts.py": "77921545ec6075e52b6125fcdbec44888e9cedc89850b08e025991155dcf3148"
+  },
+  "environment": {
+    "python": "3.12.16",
+    "system": "Windows"
+  },
+  "notice": "Previously measured local simulator results; never present as a live run or quantum speedup.",
+  "regression_checks": {
+    "curve": "passed",
+    "trials": "passed",
+    "multiple_targets": "passed",
+    "boundary_sizes": "passed",
+    "validation": "passed",
+    "timeout": "passed"
+  },
+  "curve": [
+    {
+      "experiment": "search",
+      "problem_id": "search-52ddd31429ea0d54",
+      "backend": "aer_simulator",
+      "status": "completed",
+      "classical": {
+        "algorithm": "lexicographic_search_without_replacement",
+        "elapsed_ms": 0.0262,
+        "objective": null,
+        "best_bitstring": "001",
+        "timing": {
+          "includes_queue": false,
+          "includes_transpilation": false,
+          "includes_optimizer": false,
+          "includes_sampling": false,
+          "queue_ms": null,
+          "transpilation_ms": null,
+          "optimizer_ms": null,
+          "sampling_ms": null
+        }
+      },
+      "quantum": {
+        "algorithm": "grover",
+        "elapsed_ms": 125.43120002374053,
+        "objective": null,
+        "best_bitstring": "110",
+        "timing": {
+          "includes_queue": false,
+          "includes_transpilation": true,
+          "includes_optimizer": false,
+          "includes_sampling": true,
+          "queue_ms": null,
+          "transpilation_ms": 114.58669998683035,
+          "optimizer_ms": null,
+          "sampling_ms": 9.691700106486678
+        }
+      },
+      "metrics": {
+        "num_qubits": 3,
+        "circuit_depth": 2,
+        "shots": 1024,
+        "success_probability": 0.1328125,
+        "theoretical_success_probability": 0.12500000000000003,
+        "quantum_oracle_queries": 0,
+        "classical_expected_queries": 4.5,
+        "classical_worst_case_queries": 8,
+        "successful_shots": 136,
+        "classical_observed_queries": 2,
+        "quantum_total_oracle_queries": 0
+      },
+      "metadata": {
+        "seed": 42,
+        "repetitions": 1,
+        "timing_scope": "end_to_end",
+        "simulated": true,
+        "simulation_method": "statevector",
+        "versions": {
+          "qiskit": "2.6.2",
+          "qiskit-aer": "0.18.2",
+          "numpy": "2.5.4"
+        },
+        "parameters": {
+          "num_qubits": 3,
+          "marked_states": ["001"],
+          "iterations": 0,
+          "config": {
+            "backend": "aer_simulator",
+            "shots": 1024,
+            "seed": 42,
+            "timeout_seconds": 15.0
+          }
+        },
+        "oracle_assumptions": "Targets are explicitly known to construct the combined phase oracle. One Grover iteration uses one combined oracle query per shot, not one gate. The sampling batch uses 0 oracle calls. Classical lexicographic search made 2 predicate checks. Classical expected queries assume uniformly distributed marked positions; worst case is without replacement, stopping at first success. Display order is qubit 0 first; Qiskit counts are reversed. Quantum best_bitstring is the most frequent observation and may be unmarked. Depth is after transpilation to Aer, not physical hardware. Solver timers include each solver's preparation and extraction, exclude worker startup, imports, result-envelope assembly, serialization and HTTP. Single ideal simulator run; query complexity does not establish runtime speedup."
+      }
+    },
+    {
+      "experiment": "search",
+      "problem_id": "search-52ddd31429ea0d54",
+      "backend": "aer_simulator",
+      "status": "completed",
+      "classical": {
+        "algorithm": "lexicographic_search_without_replacement",
+        "elapsed_ms": 0.0304,
+        "objective": null,
+        "best_bitstring": "001",
+        "timing": {
+          "includes_queue": false,
+          "includes_transpilation": false,
+          "includes_optimizer": false,
+          "includes_sampling": false,
+          "queue_ms": null,
+          "transpilation_ms": null,
+          "optimizer_ms": null,
+          "sampling_ms": null
+        }
+      },
+      "quantum": {
+        "algorithm": "grover",
+        "elapsed_ms": 103.91750000417233,
+        "objective": null,
+        "best_bitstring": "001",
+        "timing": {
+          "includes_queue": false,
+          "includes_transpilation": true,
+          "includes_optimizer": false,
+          "includes_sampling": true,
+          "queue_ms": null,
+          "transpilation_ms": 93.57429994270205,
+          "optimizer_ms": null,
+          "sampling_ms": 9.270800044760108
+        }
+      },
+      "metrics": {
+        "num_qubits": 3,
+        "circuit_depth": 6,
+        "shots": 1024,
+        "success_probability": 0.8037109375,
+        "theoretical_success_probability": 0.7812500000000001,
+        "quantum_oracle_queries": 1,
+        "classical_expected_queries": 4.5,
+        "classical_worst_case_queries": 8,
+        "successful_shots": 823,
+        "classical_observed_queries": 2,
+        "quantum_total_oracle_queries": 1024
+      },
+      "metadata": {
+        "seed": 42,
+        "repetitions": 1,
+        "timing_scope": "end_to_end",
+        "simulated": true,
+        "simulation_method": "statevector",
+        "versions": {
+          "qiskit": "2.6.2",
+          "qiskit-aer": "0.18.2",
+          "numpy": "2.5.4"
+        },
+        "parameters": {
+          "num_qubits": 3,
+          "marked_states": ["001"],
+          "iterations": 1,
+          "config": {
+            "backend": "aer_simulator",
+            "shots": 1024,
+            "seed": 42,
+            "timeout_seconds": 15.0
+          }
+        },
+        "oracle_assumptions": "Targets are explicitly known to construct the combined phase oracle. One Grover iteration uses one combined oracle query per shot, not one gate. The sampling batch uses 1024 oracle calls. Classical lexicographic search made 2 predicate checks. Classical expected queries assume uniformly distributed marked positions; worst case is without replacement, stopping at first success. Display order is qubit 0 first; Qiskit counts are reversed. Quantum best_bitstring is the most frequent observation and may be unmarked. Depth is after transpilation to Aer, not physical hardware. Solver timers include each solver's preparation and extraction, exclude worker startup, imports, result-envelope assembly, serialization and HTTP. Single ideal simulator run; query complexity does not establish runtime speedup."
+      }
+    },
+    {
+      "experiment": "search",
+      "problem_id": "search-52ddd31429ea0d54",
+      "backend": "aer_simulator",
+      "status": "completed",
+      "classical": {
+        "algorithm": "lexicographic_search_without_replacement",
+        "elapsed_ms": 0.028,
+        "objective": null,
+        "best_bitstring": "001",
+        "timing": {
+          "includes_queue": false,
+          "includes_transpilation": false,
+          "includes_optimizer": false,
+          "includes_sampling": false,
+          "queue_ms": null,
+          "transpilation_ms": null,
+          "optimizer_ms": null,
+          "sampling_ms": null
+        }
+      },
+      "quantum": {
+        "algorithm": "grover",
+        "elapsed_ms": 101.54960001818836,
+        "objective": null,
+        "best_bitstring": "001",
+        "timing": {
+          "includes_queue": false,
+          "includes_transpilation": true,
+          "includes_optimizer": false,
+          "includes_sampling": true,
+          "queue_ms": null,
+          "transpilation_ms": 92.24919998086989,
+          "optimizer_ms": null,
+          "sampling_ms": 8.338799932971597
+        }
+      },
+      "metrics": {
+        "num_qubits": 3,
+        "circuit_depth": 10,
+        "shots": 1024,
+        "success_probability": 0.962890625,
+        "theoretical_success_probability": 0.9453124999999999,
+        "quantum_oracle_queries": 2,
+        "classical_expected_queries": 4.5,
+        "classical_worst_case_queries": 8,
+        "successful_shots": 986,
+        "classical_observed_queries": 2,
+        "quantum_total_oracle_queries": 2048
+      },
+      "metadata": {
+        "seed": 42,
+        "repetitions": 1,
+        "timing_scope": "end_to_end",
+        "simulated": true,
+        "simulation_method": "statevector",
+        "versions": {
+          "qiskit": "2.6.2",
+          "qiskit-aer": "0.18.2",
+          "numpy": "2.5.4"
+        },
+        "parameters": {
+          "num_qubits": 3,
+          "marked_states": ["001"],
+          "iterations": 2,
+          "config": {
+            "backend": "aer_simulator",
+            "shots": 1024,
+            "seed": 42,
+            "timeout_seconds": 15.0
+          }
+        },
+        "oracle_assumptions": "Targets are explicitly known to construct the combined phase oracle. One Grover iteration uses one combined oracle query per shot, not one gate. The sampling batch uses 2048 oracle calls. Classical lexicographic search made 2 predicate checks. Classical expected queries assume uniformly distributed marked positions; worst case is without replacement, stopping at first success. Display order is qubit 0 first; Qiskit counts are reversed. Quantum best_bitstring is the most frequent observation and may be unmarked. Depth is after transpilation to Aer, not physical hardware. Solver timers include each solver's preparation and extraction, exclude worker startup, imports, result-envelope assembly, serialization and HTTP. Single ideal simulator run; query complexity does not establish runtime speedup."
+      }
+    },
+    {
+      "experiment": "search",
+      "problem_id": "search-52ddd31429ea0d54",
+      "backend": "aer_simulator",
+      "status": "completed",
+      "classical": {
+        "algorithm": "lexicographic_search_without_replacement",
+        "elapsed_ms": 0.0203,
+        "objective": null,
+        "best_bitstring": "001",
+        "timing": {
+          "includes_queue": false,
+          "includes_transpilation": false,
+          "includes_optimizer": false,
+          "includes_sampling": false,
+          "queue_ms": null,
+          "transpilation_ms": null,
+          "optimizer_ms": null,
+          "sampling_ms": null
+        }
+      },
+      "quantum": {
+        "algorithm": "grover",
+        "elapsed_ms": 106.01290012709796,
+        "objective": null,
+        "best_bitstring": "001",
+        "timing": {
+          "includes_queue": false,
+          "includes_transpilation": true,
+          "includes_optimizer": false,
+          "includes_sampling": true,
+          "queue_ms": null,
+          "transpilation_ms": 96.06390004046261,
+          "optimizer_ms": null,
+          "sampling_ms": 8.977800142019987
+        }
+      },
+      "metrics": {
+        "num_qubits": 3,
+        "circuit_depth": 14,
+        "shots": 1024,
+        "success_probability": 0.36328125,
+        "theoretical_success_probability": 0.330078125,
+        "quantum_oracle_queries": 3,
+        "classical_expected_queries": 4.5,
+        "classical_worst_case_queries": 8,
+        "successful_shots": 372,
+        "classical_observed_queries": 2,
+        "quantum_total_oracle_queries": 3072
+      },
+      "metadata": {
+        "seed": 42,
+        "repetitions": 1,
+        "timing_scope": "end_to_end",
+        "simulated": true,
+        "simulation_method": "statevector",
+        "versions": {
+          "qiskit": "2.6.2",
+          "qiskit-aer": "0.18.2",
+          "numpy": "2.5.4"
+        },
+        "parameters": {
+          "num_qubits": 3,
+          "marked_states": ["001"],
+          "iterations": 3,
+          "config": {
+            "backend": "aer_simulator",
+            "shots": 1024,
+            "seed": 42,
+            "timeout_seconds": 15.0
+          }
+        },
+        "oracle_assumptions": "Targets are explicitly known to construct the combined phase oracle. One Grover iteration uses one combined oracle query per shot, not one gate. The sampling batch uses 3072 oracle calls. Classical lexicographic search made 2 predicate checks. Classical expected queries assume uniformly distributed marked positions; worst case is without replacement, stopping at first success. Display order is qubit 0 first; Qiskit counts are reversed. Quantum best_bitstring is the most frequent observation and may be unmarked. Depth is after transpilation to Aer, not physical hardware. Solver timers include each solver's preparation and extraction, exclude worker startup, imports, result-envelope assembly, serialization and HTTP. Single ideal simulator run; query complexity does not establish runtime speedup."
+      }
+    },
+    {
+      "experiment": "search",
+      "problem_id": "search-52ddd31429ea0d54",
+      "backend": "aer_simulator",
+      "status": "completed",
+      "classical": {
+        "algorithm": "lexicographic_search_without_replacement",
+        "elapsed_ms": 0.0239,
+        "objective": null,
+        "best_bitstring": "001",
+        "timing": {
+          "includes_queue": false,
+          "includes_transpilation": false,
+          "includes_optimizer": false,
+          "includes_sampling": false,
+          "queue_ms": null,
+          "transpilation_ms": null,
+          "optimizer_ms": null,
+          "sampling_ms": null
+        }
+      },
+      "quantum": {
+        "algorithm": "grover",
+        "elapsed_ms": 113.31599997356534,
+        "objective": null,
+        "best_bitstring": "110",
+        "timing": {
+          "includes_queue": false,
+          "includes_transpilation": true,
+          "includes_optimizer": false,
+          "includes_sampling": true,
+          "queue_ms": null,
+          "transpilation_ms": 101.23079991899431,
+          "optimizer_ms": null,
+          "sampling_ms": 10.92369994148612
+        }
+      },
+      "metrics": {
+        "num_qubits": 3,
+        "circuit_depth": 18,
+        "shots": 1024,
+        "success_probability": 0.013671875,
+        "theoretical_success_probability": 0.01220703125000009,
+        "quantum_oracle_queries": 4,
+        "classical_expected_queries": 4.5,
+        "classical_worst_case_queries": 8,
+        "successful_shots": 14,
+        "classical_observed_queries": 2,
+        "quantum_total_oracle_queries": 4096
+      },
+      "metadata": {
+        "seed": 42,
+        "repetitions": 1,
+        "timing_scope": "end_to_end",
+        "simulated": true,
+        "simulation_method": "statevector",
+        "versions": {
+          "qiskit": "2.6.2",
+          "qiskit-aer": "0.18.2",
+          "numpy": "2.5.4"
+        },
+        "parameters": {
+          "num_qubits": 3,
+          "marked_states": ["001"],
+          "iterations": 4,
+          "config": {
+            "backend": "aer_simulator",
+            "shots": 1024,
+            "seed": 42,
+            "timeout_seconds": 15.0
+          }
+        },
+        "oracle_assumptions": "Targets are explicitly known to construct the combined phase oracle. One Grover iteration uses one combined oracle query per shot, not one gate. The sampling batch uses 4096 oracle calls. Classical lexicographic search made 2 predicate checks. Classical expected queries assume uniformly distributed marked positions; worst case is without replacement, stopping at first success. Display order is qubit 0 first; Qiskit counts are reversed. Quantum best_bitstring is the most frequent observation and may be unmarked. Depth is after transpilation to Aer, not physical hardware. Solver timers include each solver's preparation and extraction, exclude worker startup, imports, result-envelope assembly, serialization and HTTP. Single ideal simulator run; query complexity does not establish runtime speedup."
+      }
+    },
+    {
+      "experiment": "search",
+      "problem_id": "search-52ddd31429ea0d54",
+      "backend": "aer_simulator",
+      "status": "completed",
+      "classical": {
+        "algorithm": "lexicographic_search_without_replacement",
+        "elapsed_ms": 0.031,
+        "objective": null,
+        "best_bitstring": "001",
+        "timing": {
+          "includes_queue": false,
+          "includes_transpilation": false,
+          "includes_optimizer": false,
+          "includes_sampling": false,
+          "queue_ms": null,
+          "transpilation_ms": null,
+          "optimizer_ms": null,
+          "sampling_ms": null
+        }
+      },
+      "quantum": {
+        "algorithm": "grover",
+        "elapsed_ms": 98.48390007391572,
+        "objective": null,
+        "best_bitstring": "001",
+        "timing": {
+          "includes_queue": false,
+          "includes_transpilation": true,
+          "includes_optimizer": false,
+          "includes_sampling": true,
+          "queue_ms": null,
+          "transpilation_ms": 86.81060001254082,
+          "optimizer_ms": null,
+          "sampling_ms": 10.449400171637535
+        }
+      },
+      "metrics": {
+        "num_qubits": 3,
+        "circuit_depth": 22,
+        "shots": 1024,
+        "success_probability": 0.5791015625,
+        "theoretical_success_probability": 0.5479736328125003,
+        "quantum_oracle_queries": 5,
+        "classical_expected_queries": 4.5,
+        "classical_worst_case_queries": 8,
+        "successful_shots": 593,
+        "classical_observed_queries": 2,
+        "quantum_total_oracle_queries": 5120
+      },
+      "metadata": {
+        "seed": 42,
+        "repetitions": 1,
+        "timing_scope": "end_to_end",
+        "simulated": true,
+        "simulation_method": "statevector",
+        "versions": {
+          "qiskit": "2.6.2",
+          "qiskit-aer": "0.18.2",
+          "numpy": "2.5.4"
+        },
+        "parameters": {
+          "num_qubits": 3,
+          "marked_states": ["001"],
+          "iterations": 5,
+          "config": {
+            "backend": "aer_simulator",
+            "shots": 1024,
+            "seed": 42,
+            "timeout_seconds": 15.0
+          }
+        },
+        "oracle_assumptions": "Targets are explicitly known to construct the combined phase oracle. One Grover iteration uses one combined oracle query per shot, not one gate. The sampling batch uses 5120 oracle calls. Classical lexicographic search made 2 predicate checks. Classical expected queries assume uniformly distributed marked positions; worst case is without replacement, stopping at first success. Display order is qubit 0 first; Qiskit counts are reversed. Quantum best_bitstring is the most frequent observation and may be unmarked. Depth is after transpilation to Aer, not physical hardware. Solver timers include each solver's preparation and extraction, exclude worker startup, imports, result-envelope assembly, serialization and HTTP. Single ideal simulator run; query complexity does not establish runtime speedup."
+      }
+    },
+    {
+      "experiment": "search",
+      "problem_id": "search-52ddd31429ea0d54",
+      "backend": "aer_simulator",
+      "status": "completed",
+      "classical": {
+        "algorithm": "lexicographic_search_without_replacement",
+        "elapsed_ms": 0.0189,
+        "objective": null,
+        "best_bitstring": "001",
+        "timing": {
+          "includes_queue": false,
+          "includes_transpilation": false,
+          "includes_optimizer": false,
+          "includes_sampling": false,
+          "queue_ms": null,
+          "transpilation_ms": null,
+          "optimizer_ms": null,
+          "sampling_ms": null
+        }
+      },
+      "quantum": {
+        "algorithm": "grover",
+        "elapsed_ms": 108.10970002785325,
+        "objective": null,
+        "best_bitstring": "001",
+        "timing": {
+          "includes_queue": false,
+          "includes_transpilation": true,
+          "includes_optimizer": false,
+          "includes_sampling": true,
+          "queue_ms": null,
+          "transpilation_ms": 96.57580009661615,
+          "optimizer_ms": null,
+          "sampling_ms": 10.294900042936206
+        }
+      },
+      "metrics": {
+        "num_qubits": 3,
+        "circuit_depth": 26,
+        "shots": 1024,
+        "success_probability": 1.0,
+        "theoretical_success_probability": 0.9997863769531249,
+        "quantum_oracle_queries": 6,
+        "classical_expected_queries": 4.5,
+        "classical_worst_case_queries": 8,
+        "successful_shots": 1024,
+        "classical_observed_queries": 2,
+        "quantum_total_oracle_queries": 6144
+      },
+      "metadata": {
+        "seed": 42,
+        "repetitions": 1,
+        "timing_scope": "end_to_end",
+        "simulated": true,
+        "simulation_method": "statevector",
+        "versions": {
+          "qiskit": "2.6.2",
+          "qiskit-aer": "0.18.2",
+          "numpy": "2.5.4"
+        },
+        "parameters": {
+          "num_qubits": 3,
+          "marked_states": ["001"],
+          "iterations": 6,
+          "config": {
+            "backend": "aer_simulator",
+            "shots": 1024,
+            "seed": 42,
+            "timeout_seconds": 15.0
+          }
+        },
+        "oracle_assumptions": "Targets are explicitly known to construct the combined phase oracle. One Grover iteration uses one combined oracle query per shot, not one gate. The sampling batch uses 6144 oracle calls. Classical lexicographic search made 2 predicate checks. Classical expected queries assume uniformly distributed marked positions; worst case is without replacement, stopping at first success. Display order is qubit 0 first; Qiskit counts are reversed. Quantum best_bitstring is the most frequent observation and may be unmarked. Depth is after transpilation to Aer, not physical hardware. Solver timers include each solver's preparation and extraction, exclude worker startup, imports, result-envelope assembly, serialization and HTTP. Single ideal simulator run; query complexity does not establish runtime speedup."
+      }
+    }
+  ],
+  "trials": [
+    {
+      "experiment": "search",
+      "problem_id": "search-52ddd31429ea0d54",
+      "backend": "aer_simulator",
+      "status": "completed",
+      "classical": {
+        "algorithm": "lexicographic_search_without_replacement",
+        "elapsed_ms": 0.0187,
+        "objective": null,
+        "best_bitstring": "001",
+        "timing": {
+          "includes_queue": false,
+          "includes_transpilation": false,
+          "includes_optimizer": false,
+          "includes_sampling": false,
+          "queue_ms": null,
+          "transpilation_ms": null,
+          "optimizer_ms": null,
+          "sampling_ms": null
+        }
+      },
+      "quantum": {
+        "algorithm": "grover",
+        "elapsed_ms": 104.4577001594007,
+        "objective": null,
+        "best_bitstring": "001",
+        "timing": {
+          "includes_queue": false,
+          "includes_transpilation": true,
+          "includes_optimizer": false,
+          "includes_sampling": true,
+          "queue_ms": null,
+          "transpilation_ms": 94.29250005632639,
+          "optimizer_ms": null,
+          "sampling_ms": 9.305099956691265
+        }
+      },
+      "metrics": {
+        "num_qubits": 3,
+        "circuit_depth": 10,
+        "shots": 1024,
+        "success_probability": 0.962890625,
+        "theoretical_success_probability": 0.9453124999999999,
+        "quantum_oracle_queries": 2,
+        "classical_expected_queries": 4.5,
+        "classical_worst_case_queries": 8,
+        "successful_shots": 986,
+        "classical_observed_queries": 2,
+        "quantum_total_oracle_queries": 2048
+      },
+      "metadata": {
+        "seed": 42,
+        "repetitions": 1,
+        "timing_scope": "end_to_end",
+        "simulated": true,
+        "simulation_method": "statevector",
+        "versions": {
+          "qiskit": "2.6.2",
+          "qiskit-aer": "0.18.2",
+          "numpy": "2.5.4"
+        },
+        "parameters": {
+          "num_qubits": 3,
+          "marked_states": ["001"],
+          "iterations": 2,
+          "config": {
+            "backend": "aer_simulator",
+            "shots": 1024,
+            "seed": 42,
+            "timeout_seconds": 15.0
+          }
+        },
+        "oracle_assumptions": "Targets are explicitly known to construct the combined phase oracle. One Grover iteration uses one combined oracle query per shot, not one gate. The sampling batch uses 2048 oracle calls. Classical lexicographic search made 2 predicate checks. Classical expected queries assume uniformly distributed marked positions; worst case is without replacement, stopping at first success. Display order is qubit 0 first; Qiskit counts are reversed. Quantum best_bitstring is the most frequent observation and may be unmarked. Depth is after transpilation to Aer, not physical hardware. Solver timers include each solver's preparation and extraction, exclude worker startup, imports, result-envelope assembly, serialization and HTTP. Single ideal simulator run; query complexity does not establish runtime speedup."
+      }
+    },
+    {
+      "experiment": "search",
+      "problem_id": "search-52ddd31429ea0d54",
+      "backend": "aer_simulator",
+      "status": "completed",
+      "classical": {
+        "algorithm": "lexicographic_search_without_replacement",
+        "elapsed_ms": 0.0251,
+        "objective": null,
+        "best_bitstring": "001",
+        "timing": {
+          "includes_queue": false,
+          "includes_transpilation": false,
+          "includes_optimizer": false,
+          "includes_sampling": false,
+          "queue_ms": null,
+          "transpilation_ms": null,
+          "optimizer_ms": null,
+          "sampling_ms": null
+        }
+      },
+      "quantum": {
+        "algorithm": "grover",
+        "elapsed_ms": 114.27849996834993,
+        "objective": null,
+        "best_bitstring": "001",
+        "timing": {
+          "includes_queue": false,
+          "includes_transpilation": true,
+          "includes_optimizer": false,
+          "includes_sampling": true,
+          "queue_ms": null,
+          "transpilation_ms": 101.97059996426105,
+          "optimizer_ms": null,
+          "sampling_ms": 11.151100043207407
+        }
+      },
+      "metrics": {
+        "num_qubits": 3,
+        "circuit_depth": 10,
+        "shots": 1024,
+        "success_probability": 0.94921875,
+        "theoretical_success_probability": 0.9453124999999999,
+        "quantum_oracle_queries": 2,
+        "classical_expected_queries": 4.5,
+        "classical_worst_case_queries": 8,
+        "successful_shots": 972,
+        "classical_observed_queries": 2,
+        "quantum_total_oracle_queries": 2048
+      },
+      "metadata": {
+        "seed": 43,
+        "repetitions": 1,
+        "timing_scope": "end_to_end",
+        "simulated": true,
+        "simulation_method": "statevector",
+        "versions": {
+          "qiskit": "2.6.2",
+          "qiskit-aer": "0.18.2",
+          "numpy": "2.5.4"
+        },
+        "parameters": {
+          "num_qubits": 3,
+          "marked_states": ["001"],
+          "iterations": 2,
+          "config": {
+            "backend": "aer_simulator",
+            "shots": 1024,
+            "seed": 43,
+            "timeout_seconds": 15.0
+          }
+        },
+        "oracle_assumptions": "Targets are explicitly known to construct the combined phase oracle. One Grover iteration uses one combined oracle query per shot, not one gate. The sampling batch uses 2048 oracle calls. Classical lexicographic search made 2 predicate checks. Classical expected queries assume uniformly distributed marked positions; worst case is without replacement, stopping at first success. Display order is qubit 0 first; Qiskit counts are reversed. Quantum best_bitstring is the most frequent observation and may be unmarked. Depth is after transpilation to Aer, not physical hardware. Solver timers include each solver's preparation and extraction, exclude worker startup, imports, result-envelope assembly, serialization and HTTP. Single ideal simulator run; query complexity does not establish runtime speedup."
+      }
+    },
+    {
+      "experiment": "search",
+      "problem_id": "search-52ddd31429ea0d54",
+      "backend": "aer_simulator",
+      "status": "completed",
+      "classical": {
+        "algorithm": "lexicographic_search_without_replacement",
+        "elapsed_ms": 0.0176,
+        "objective": null,
+        "best_bitstring": "001",
+        "timing": {
+          "includes_queue": false,
+          "includes_transpilation": false,
+          "includes_optimizer": false,
+          "includes_sampling": false,
+          "queue_ms": null,
+          "transpilation_ms": null,
+          "optimizer_ms": null,
+          "sampling_ms": null
+        }
+      },
+      "quantum": {
+        "algorithm": "grover",
+        "elapsed_ms": 108.9635998941958,
+        "objective": null,
+        "best_bitstring": "001",
+        "timing": {
+          "includes_queue": false,
+          "includes_transpilation": true,
+          "includes_optimizer": false,
+          "includes_sampling": true,
+          "queue_ms": null,
+          "transpilation_ms": 99.94850005023181,
+          "optimizer_ms": null,
+          "sampling_ms": 8.21580016054213
+        }
+      },
+      "metrics": {
+        "num_qubits": 3,
+        "circuit_depth": 10,
+        "shots": 1024,
+        "success_probability": 0.951171875,
+        "theoretical_success_probability": 0.9453124999999999,
+        "quantum_oracle_queries": 2,
+        "classical_expected_queries": 4.5,
+        "classical_worst_case_queries": 8,
+        "successful_shots": 974,
+        "classical_observed_queries": 2,
+        "quantum_total_oracle_queries": 2048
+      },
+      "metadata": {
+        "seed": 44,
+        "repetitions": 1,
+        "timing_scope": "end_to_end",
+        "simulated": true,
+        "simulation_method": "statevector",
+        "versions": {
+          "qiskit": "2.6.2",
+          "qiskit-aer": "0.18.2",
+          "numpy": "2.5.4"
+        },
+        "parameters": {
+          "num_qubits": 3,
+          "marked_states": ["001"],
+          "iterations": 2,
+          "config": {
+            "backend": "aer_simulator",
+            "shots": 1024,
+            "seed": 44,
+            "timeout_seconds": 15.0
+          }
+        },
+        "oracle_assumptions": "Targets are explicitly known to construct the combined phase oracle. One Grover iteration uses one combined oracle query per shot, not one gate. The sampling batch uses 2048 oracle calls. Classical lexicographic search made 2 predicate checks. Classical expected queries assume uniformly distributed marked positions; worst case is without replacement, stopping at first success. Display order is qubit 0 first; Qiskit counts are reversed. Quantum best_bitstring is the most frequent observation and may be unmarked. Depth is after transpilation to Aer, not physical hardware. Solver timers include each solver's preparation and extraction, exclude worker startup, imports, result-envelope assembly, serialization and HTTP. Single ideal simulator run; query complexity does not establish runtime speedup."
+      }
+    }
+  ]
+}

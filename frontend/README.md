@@ -156,6 +156,26 @@ Windows commands and a demo rehearsal.
 `SearchProbabilityChart.svelte` plots returned probabilities. Tests use synthetic
 fixtures only in `tests/search-live.test.ts`, never in the live application.
 
+**Run repeated trials** measures the same single-run configuration two to five times,
+using sequential seeds incremented modulo `2^32`. `src/lib/search/trials.ts` validates
+the completed records and summarizes mean probability, observed min/max, sample
+standard deviation, median solver times, seeds, and total shots. The chart shows a
+mean point and observed-range whisker; this is not a confidence interval. The trial
+table preserves individual results and seeds. JSON exports include the presentation
+summary separately from raw API responses; each raw run still reports one repetition.
+Failures/cancellation publish no partial summary. Tests for aggregation, metadata,
+seed wraparound and request control are in `tests/search-trials.test.ts`.
+
+For rehearsals, **Load recorded curve/trials** explicitly loads previously measured
+local API responses with a dated banner and source revision. Nothing loads on page
+startup or as an automatic error fallback. Recorded downloads retain a distinct
+source label and provenance; editing controls clears the recording. The matching
+configuration is restored when loading it. The backend script
+`scripts/prepare_search_demo.py` regenerates the recording only after real endpoint
+checks pass; `--verify` checks a saved bundle without simulation. See the search guide
+for the full rehearsal checklist. `tests/search-recorded.test.ts` covers provenance,
+evidence consistency, independent copies and reactive-state JSON export.
+
 ## API types and integration
 
 After backend environment setup, run:
