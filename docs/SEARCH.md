@@ -260,11 +260,80 @@ probabilities and typed transport. Svelte checks cover accessibility/compiler di
 Configuration/results stack on narrow screens and sit side by side on desktop.
 
 Core search MVP, typed evidence fields, and bounded repeated-run statistics are implemented.
-The next improvement is demo/regression hardening. Coordinate further
+Demo/regression hardening is also implemented as described below. Coordinate further
 shared-schema changes with Developers 3/5. Hardware and practical quantum advantage
 are not claimed.
 
-## Search API
+## Demo preparation and regression checks
+
+From `backend/`, with the quantum extra installed, run:
+
+```powershell
+.\.venv\Scripts\python.exe scripts/prepare_search_demo.py
+.\.venv\Scripts\python.exe scripts/prepare_search_demo.py --verify
+```
+
+The first command exercises the actual FastAPI endpoint in-process through TestClient;
+no HTTP server, external network, IBM credentials or hardware is required. It records
+seven curve points and three trials, probes one/multiple targets and boundary sizes
+(including 6 qubits / 32 iterations), and checks validation and timeout errors.
+Only after all checks pass does it write
+`frontend/src/lib/search/previously-measured.json`. `--output PATH` selects another
+destination. The second command validates the saved evidence without running simulation.
+If committing a regenerated recording, run
+`npx.cmd prettier --write src/lib/search/previously-measured.json` from `frontend/`
+after recording. Formatting changes no measurements or provenance values.
+
+The recording identifies its timestamp, source revision, dirty working-tree flag,
+SHA-256 hashes of the relevant source files, Python/OS, and per-result package versions.
+Hashes describe the source bytes on the recording machine; line endings can differ on
+other checkouts. A recording from a dirty tree is disclosed in the banner and export.
+These checks establish format/evidence consistency, not that old timings apply to
+the current machine. Regenerate intentionally before a rehearsal; recordings do not
+refresh during page load or silently replace a failed experiment.
+
+### Explicit offline fallback
+
+The page's **Load recorded curve** and **Load recorded trials** buttons require an
+explicit action and make no API requests. They load real previously measured records,
+restore the matching configuration, and show a prominent **Previously measured demo —
+not a live run** banner, timestamp and revision. Editing inputs clears the recording
+and its provenance. Live runs always clear recorded data first. No error handler loads
+a recording automatically.
+
+Recorded downloads use source `previously_measured_search_demo`, include the recording
+provenance and raw results, and use filename `q-atlas-search-recorded-demo.json`.
+Live downloads retain source `live_search_api` and filename `q-atlas-search-results.json`.
+The same export builder handles reactive page state through JSON serialization;
+regression tests cover proxies as well as plain records.
+
+### Browser rehearsal checklist
+
+| Check | Expected behavior |
+| --- | --- |
+| Initial page | Empty charts; no auto-loaded measurements |
+| Run comparison | Real probabilities, timings and evidence fields |
+| Measure curve 0–6 | Seven results with the expected amplification oscillation |
+| Run 3 trials | Seeds 42, 43, 44; summary plus each raw run |
+| Stop an active curve | No partial result is published; controls become usable |
+| Run again after stopping | A fresh comparison succeeds without stale responses |
+| Edit controls | Previous results, summaries and recorded provenance disappear |
+| Invalid target | Clear validation error; no fabricated result |
+| Backend unavailable | Connection error and empty results; no automatic fallback |
+| Explicit recorded load | Dated banner and matching configuration, even without API |
+| Download live/recorded | Correct source label, raw records and provenance where applicable |
+
+Manual browser checks confirmed cancellation/recovery, connection failure without
+fallback, explicit recorded loading while disconnected, clearing on edits, restoring
+the saved configuration, and downloading a seven-record file with recorded provenance.
+Unit/API tests cover both supported modes and malformed evidence. No additional
+browser automation package is required for the checklist.
+
+The repository also has two pre-existing Windows-incompatible QAOA timeout tests in
+Developer 3's module; their `ctypes.CDLL(None).sleep` helper fails on Windows. Report
+those separately from search checks and coordinate their repair with Developer 3.
+
+## Search API usage
 
 Start the backend from `backend/`:
 

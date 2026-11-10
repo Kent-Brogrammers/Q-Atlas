@@ -13,6 +13,8 @@
   import { api, ApiError } from '../../api/client.ts';
   import type { SearchResult } from '../../types/index.ts';
   import { measureTrials, summarizeTrials, trialCurve } from '#lib/search/trials.ts';
+  import { buildSearchExport, loadRecordedDemo } from '#lib/search/recorded.ts';
+  import type { RecordingProvenance } from '#lib/search/recorded.ts';
 
   type RunMode = 'single' | 'curve' | 'trials';
 
@@ -20,6 +22,7 @@
   let maxIteration = $state<number | undefined>(6);
   let repetitions = $state<number | undefined>(3);
   let completedMode = $state<RunMode>('single');
+  let recording = $state<RecordingProvenance | null>(null);
   let results = $state<SearchResult[]>([]);
   let selectedIndex = $state(0);
   let loading = $state(false);
@@ -39,6 +42,34 @@
     error = '';
     progress = '';
     completedMode = 'single';
+    recording = null;
+  }
+
+  function loadRecording(mode: 'curve' | 'trials') {
+    if (loading) return;
+    clearResults();
+    try {
+      const saved = loadRecordedDemo(mode);
+      results = saved.results;
+      completedMode = mode;
+      recording = saved.provenance;
+      selectedIndex = mode === 'curve' ? 2 : 0;
+      const parameters = saved.results[selectedIndex].metadata.parameters;
+      settings = {
+        numQubits: parameters.num_qubits,
+        targets: parameters.marked_states.join(', '),
+        automatic: false,
+        iterations: parameters.iterations ?? undefined,
+        shots: parameters.config?.shots,
+        seed: parameters.config?.seed,
+        timeout: parameters.config?.timeout_seconds
+      };
+      if (mode === 'curve') maxIteration = saved.results.length - 1;
+      if (mode === 'trials') repetitions = saved.results.length;
+      progress = 'Previously measured demo loaded. No live request was made.';
+    } catch (cause) {
+      error = cause instanceof Error ? cause.message : 'The recorded demo could not load.';
+    }
   }
 
   async function run(mode: RunMode) {
@@ -89,13 +120,7 @@
 
   function download() {
     const blob = new Blob(
-      [
-        JSON.stringify(
-          { source: 'live_search_api', mode: completedMode, trial_summary: summary, results },
-          null,
-          2
-        )
-      ],
+      [JSON.stringify(buildSearchExport(completedMode, results, recording), null, 2)],
       {
         type: 'application/json'
       }
@@ -103,7 +128,7 @@
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'q-atlas-search-results.json';
+    link.download = recording ? 'q-atlas-search-recorded-demo.json' : 'q-atlas-search-results.json';
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
@@ -123,7 +148,7 @@
     <h1>Find the target. Explore the probability.</h1>
     <p>Compare Grover amplification with classical search, one small instance at a time.</p>
   </div>
-  <span class="badge">Local Aer simulator</span>
+  <span class="badge">{recording ? 'Previously measured demo' : 'Local Aer simulator'}</span>
 </header>
 <p class="notice">
   Targets are supplied to construct the oracle. This demonstrates search under an oracle model;
@@ -133,8 +158,8 @@
     <strong>Search could not complete.</strong>
     {error}
     <p>
-      For connection errors, start the backend at http://127.0.0.1:8000. Errors never load example
-      results.
+      For connection errors, start the backend and check its configured address. Recorded results
+      load only when you select a demo button.
     </p>
   </div>{/if}
 
@@ -256,10 +281,33 @@
             The current backend worker may finish or reach its timeout after you stop.
           </p>
         </div>{/if}
+      <div class="recorded-controls">
+        <strong>Previously measured demo</strong>
+        <p class="hint">
+          Explicit offline fallback with recorded settings and timings. These buttons make no live
+          requests.
+        </p>
+        <button class="button small" disabled={loading} onclick={() => loadRecording('curve')}
+          >Load recorded curve</button
+        >
+        <button class="button small" disabled={loading} onclick={() => loadRecording('trials')}
+          >Load recorded trials</button
+        >
+      </div>
     </Panel>
   </aside>
 
   <div class="results" aria-busy={loading}>
+    {#if recording}<div class="recorded-banner" role="status">
+        <strong>Previously measured demo — not a live run</strong>
+        <p>
+          Recorded {recording.recorded_at_utc}. Source revision {recording.source_revision.slice(
+            0,
+            7
+          )}{recording.working_tree_dirty ? ' (working tree had pending changes)' : ''}. Timings
+          belong to the recorded simulator environment. Changing inputs clears this recording.
+        </p>
+      </div>{/if}
     <p class="progress" role="status" aria-live="polite">
       {loading ? progress || 'Running the local search benchmark…' : progress}
     </p>
@@ -323,7 +371,9 @@
     {#if selected}
       <Panel
         title={`${summary ? `Trial ${selectedIndex + 1} · ` : ''}Iteration ${selected.metadata.parameters.iterations}`}
-        subtitle="Real backend results · one simulator run per point"
+        subtitle={recording
+          ? 'Previously measured backend results · not a live run'
+          : 'Real backend results · one simulator run per point'}
       >
         <div class="metrics">
           <div>
@@ -599,6 +649,26 @@
   }
   .running {
     padding: 0 24px 18px;
+  }
+  .recorded-controls {
+    padding: 18px 24px;
+    border-top: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .recorded-controls .button {
+    margin: 4px 4px 4px 0;
+  }
+  .recorded-banner {
+    border: 1px solid #d9b963;
+    background: #fff8e6;
+    padding: 16px 20px;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+  .recorded-banner p {
+    line-height: 1.6;
+    margin-bottom: 0;
+    overflow-wrap: anywhere;
   }
   .metrics {
     display: grid;
