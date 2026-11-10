@@ -87,8 +87,8 @@ def prepare_benchmark(source: str, config: QAOAConfig) -> CompilerBenchmarkPlan:
         circuit=generated.circuit,
         blockers=[
             "Execution is disabled; preparing this plan runs neither script nor solver.",
-            "The shared classical baseline is implemented; Developer 3 must finish and validate "
-            "sampling and result assembly in run_qaoa; the angle optimizer is available.",
+            "Shared classical and local Aer QAOA runners are implemented. Compiler API execution "
+            "requires explicit server opt-in; hardware/provider integration is separate.",
             "Any execution needs a separately authorized mode and deadline enforcement.",
             "Whole-application timing needs a separate trusted execution boundary and contract.",
         ],
@@ -98,7 +98,7 @@ def prepare_benchmark(source: str, config: QAOAConfig) -> CompilerBenchmarkPlan:
 def benchmark_qubo(qubo: QUBO, config: QAOAConfig) -> CompilerBenchmarkResult:
     """Pass the same canonical instance/config to both shared runners.
 
-    The shared QAOA entrypoint is still a stub. Tests inject synthetic
+    The shared QAOA entrypoint performs local Aer execution. Tests inject synthetic
     results at these two boundaries; production never substitutes mock measurements.
     Source analysis is outside both solvers' reported end-to-end timers.
     """

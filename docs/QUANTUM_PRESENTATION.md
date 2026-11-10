@@ -27,8 +27,10 @@ The compiler sends validated mathematical data to the runner. It never sends an
 uploaded script to a Python executor. Source names map to the existing canonical
 bit order; naming and width inference do not change that interface.
 
-Before enabling execution, Developer 3 must finish the shared runner and classical
-baseline integration, and Developers 3 and 5 must agree the provider configuration,
+The shared classical and local Aer QAOA runners are implemented as of PR #13.
+Compiler HTTP comparison defaults off (`QATLAS_ENABLE_COMPILER_AER=1` enables only the
+local Aer path after separate authorization); the page still converts/plans only.
+Before hardware execution, Developers 3 and 5 must agree the provider configuration,
 execution opt-in, queued-job/status handling, deadlines, and result contract. Current
 contracts permit only `backend=aer_simulator` and `simulated=true`: adding QPU output
 requires a coordinated schema/provenance change and regenerated frontend types.

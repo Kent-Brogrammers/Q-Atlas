@@ -191,8 +191,11 @@ Never use an integer conversion that discards leading zeros or silently reverse 
 `QAOAConfig` adds `p=1` (1–8 layers), `optimizer=COBYLA` (only initial optimizer),
 `max_iterations=100` (1–1000). Counts and seeds are unitless; timeouts are **seconds**.
 
-These are validated interface limits. Shared compiler/optimization runner stubs do
-no expensive work. Materials uses a spawned worker terminated/reaped on timeout,
+These are validated interface limits. The shared QAOA runner performs local Aer work
+inside a spawned worker with a whole-run deadline. Compiler HTTP execution defaults
+off unless `QATLAS_ENABLE_COMPILER_AER=1` is set on the backend; disabled comparisons
+return the existing HTTP 501 error envelope. Analysis, generation and plans remain
+nonexecuting. Materials uses a spawned worker terminated/reaped on timeout,
 including native work; startup counts against its deadline, outside numerical timers.
 Future runners must enforce deadlines throughout native calls. The compiler enforces
 source/node/depth limits and verifies all assignments for 1–6 bits; see [the compiler guide](COMPILER.md).
@@ -330,7 +333,7 @@ serialization only and must never appear in the UI as experimental evidence.
 from app.quantum.qaoa import run_qaoa
 from app.experiments.optimization.solvers import run_classical
 
-# Both are intentional NotImplementedError stubs in this foundation.
+# Both shared local runners are implemented; calling QAOA performs Aer simulation.
 # run_qaoa(qubo: QUBO, config: QAOAConfig) -> QAOAResult
 # run_classical(qubo: QUBO, config: QAOAConfig) -> SolverResult
 ```
