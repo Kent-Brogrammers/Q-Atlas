@@ -8,31 +8,24 @@ unchanged. Developers 3 and 5 are the impacted owners.
 ## Execution remains mocked
 
 Do not use the supercomputer, hardware, external quotas, credentials, or run simulator
-jobs under the current instruction. As of main `a1f413b`, `run_classical` is implemented;
-`run_qaoa` remains a stub. Compiler integration tests replace both with synthetic
-results. The new QAOA expectation scorer runs Aer and must not be included in the
-current compiler-only test selection. Nothing here authorizes execution.
+jobs under the current instruction. PR #13 (`8451ce2`) implements both shared local
+runners. Compiler tests replace either the runners or the actual QAOA worker with
+synthetic results; none run Aer. See [the testing-day runbook](DEVELOPER_2_TESTING_DAY.md).
 
-See [the testing-day runbook](DEVELOPER_2_TESTING_DAY.md) for the current completion
-checklist and proposed server execution gate/provider contract for D3/D5 review.
-The compiler now revalidates returned solver models, including mutable nested timing
-and metric fields, before accepting results. Its offline bundle exporter calls no runners.
+### Completed local QAOA handoff
 
-### Main PR #11 follow-up
+The compiler consumes your `run_qaoa` unchanged: bounded worker, angle optimization,
+final transpilation/sampling, x[0]-first measured assignment and canonical objective.
+It validates schema, objective/assignment, width/shots, optimizer evaluation cap,
+timing components and reported deadline. Angle-search records remain distinct from
+sampled solver results. Reported timing components may overlap and are not summed.
 
-The compiler has incorporated main `9cd4b2a`, including the new
-`optimize_qaoa_angles(qubo, config) -> AngleOptimizationResult` helper. Seeded COBYLA
-and its angle-search worker deadline are implemented. `run_qaoa` still raises
-`NotImplementedError`, so final sampling and `QAOAResult` assembly remain your boundary.
-The compiler continues calling that entrypoint with the existing QUBO/config contract.
-
-Do not return `AngleOptimizationResult` directly or report its expectation as the
-best sampled objective. Bind angles, sample, normalize bit order, evaluate the chosen
-assignment, and fill measured metrics/timings. Keep one complete-run deadline, including
-the phases after angle search. The compiler rejects the wrong result type, evaluation
-counts above `max_iterations`, reported elapsed time beyond the deadline, and timing
-components longer than the reported total. Overlapping components are not summed.
-All compiler regressions remain mocked; PR #11's real Aer test is excluded.
+The compiler HTTP benchmark now defaults off. Only the server environment setting
+`QATLAS_ENABLE_COMPILER_AER=1` opts into the local Aer path; the compiler page still
+prepares code/plans only. This adds no shared schema or provider changes. Missing
+optional dependencies map to sanitized HTTP 501; expiry maps to 504.
+Direct trusted Python runner calls and other experiment endpoints are not covered
+by this compiler HTTP guard. Hardware requires separate policy/provenance agreement.
 
 ## Shared helpers to consume
 
@@ -164,7 +157,7 @@ run_qaoa(qubo: QUBO, config: QAOAConfig) -> QAOAResult
   HTTP mapping is 504. No fake results on expiry or missing dependencies.
 - Report transpiled depth in benchmark metrics, never preview logical depth.
 
-Before enabling any real execution, replace the runner stubs and verify actual
+Before authorizing any real execution, verify actual
 circuit construction, phase conventions, API count ordering, reproducibility, and
 timings with separately authorized local checks. No performance claims follow
 from the synthetic fixtures or symbolic previews.
