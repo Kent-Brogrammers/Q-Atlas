@@ -18,15 +18,19 @@ OpenAPI precisely records required keys, enums, defaults, and numeric bounds.
 | --- | --- | --- | --- |
 | GET `/api/health` | none | `HealthResponse` | Developer 5/integration |
 | POST `/api/compiler/analyze` | `CompilerAnalyzeRequest` | `CompilerAnalyzeResult` | Developer 2 |
+| POST `/api/compiler/generate` | `CompilerGenerateRequest` | `CompilerGenerateResult` | Developer 2, frontend integration authorized |
+| POST `/api/compiler/benchmark/plan` | `CompilerBenchmarkRequest` | `CompilerBenchmarkPlan` | Developer 2, no execution |
 | POST `/api/compiler/benchmark` | `CompilerBenchmarkRequest` | `CompilerBenchmarkResult` | Developer 2, consuming Developer 3 runners |
 | POST `/api/optimization/run` | `OptimizationRequest` | `OptimizationResult` | Developer 3 |
 | POST `/api/search/run` | `SearchRequest` | `SearchResult` | Developer 4 |
 | POST `/api/materials/run` | `MaterialsRequest` | `MaterialsResult` | Developer 1 |
 
 Health returns `{"status":"ok","service":"q-atlas","backend":"aer_simulator","experiments_ready":false}`.
-This signals API readiness, not readiness of all experiments. Materials now returns
-real simulation results with **HTTP 200**; compiler, optimization, and search POST
-operations still validate first and return **HTTP 501**:
+This signals API readiness, not readiness of all experiments. Compiler analysis,
+generation, and nonexecuting comparison plans are available. Compiler benchmarking
+revalidates source and returns 422 for rejected source or 501 while shared runners
+are unavailable. Materials returns real simulation results with HTTP 200; optimization
+and search still validate first and return HTTP 501:
 
 ```json
 {"status":"error","error":{"code":"NOT_IMPLEMENTED","message":"Search benchmark is not implemented. Developer 4 owns this feature.","diagnostics":[]}}
@@ -34,9 +38,9 @@ operations still validate first and return **HTTP 501**:
 
 Invalid payloads return **422** with the same envelope and `VALIDATION_ERROR`.
 Routing/method errors return `NOT_FOUND`/`METHOD_NOT_ALLOWED` (404/405); unexpected
-exceptions return sanitized `INTERNAL_ERROR` (500). Materials returns `TIMEOUT` (504)
-when its bounded worker exceeds the budget and `HTTP_ERROR` (503) when its optional
-quantum dependencies are missing. `HTTP_ERROR` also covers other HTTP failures.
+exceptions return sanitized INTERNAL_ERROR (500). Compiler runner TimeoutError
+and materials worker timeouts map to TIMEOUT (504). Materials uses HTTP_ERROR (503)
+when optional quantum dependencies are missing; HTTP_ERROR covers other HTTP failures.
 Errors expose no stack traces or submitted field values. Each diagnostic has required
 `code`, `message`, `severity` (`error|warning|info`), and optional nullable one-based
 `line` and `column`. Validation diagnostic messages identify a field path.
@@ -83,8 +87,32 @@ Never use an integer conversion that discards leading zeros or silently reverse 
 
 - `CompilerAnalyzeRequest`: required `source`, 1–20,000 characters. The decorator marker
   remains text. Analysis never imports, evaluates, or executes it.
+  The marked function may contain a leading docstring, up to 64 source assignments
+  (including numeric `+=`, `-=`, `*=`), fixed literal-range loops, and one final return.
+  Loop ranges must be nonempty with 1–64 iterations, bounds/step within ±64, no shadowed
+  range/index variables, no else, and nesting at most two levels. Expansion is limited
+  to 256 assignments and 8,192 AST nodes. Sequential local reassignment is supported; undefined local
+  reads produce `UNDEFINED_NAME` and invalid targets produce `INVALID_ASSIGNMENT`.
+  The source subset remains limited to 1–6 bits and binary quadratics. Indices are
+  literals or substituted loop indices with bounded integer +/- offsets. Invalid
+  loop forms produce `INVALID_LOOP`; all source is still parsed/interpreted without execution.
+  Squared allowlisted expressions with literal exponent 2 are supported, including
+  named/loop-built linear penalties. Expansion involving more than two distinct bits
+  in a monomial is rejected as `HIGHER_ORDER`; overflow is rejected as
+  `NONFINITE_COEFFICIENT`. There is no automatic penalty-weight selection or constraint schema.
 - `CompilerBenchmarkRequest`: same `source`, plus default `config: QAOAConfig`.
-  Benchmarking must revalidate/extract source on the server; no trusted client-extracted objective.
+  Benchmarking revalidates supported complete files through static generation,
+  including marker checks, and passes only the verified QUBO/config to shared runners.
+  No trusted client-extracted objective or Python script execution is involved.
+  The planning endpoint reuses this request without calling either runner.
+- `CompilerGenerateRequest`: required `source` with the same character/AST bounds,
+  plus `p` (default 1, range 1–8). Accepts a complete script containing one top-level
+  marked objective and an optional `@qatlas.circuit` zero-argument factory. Surrounding
+  Python is preserved as opaque text; only the objective is interpreted and verified.
+  Analyze remains objective-only; Generate and the benchmark adapter accept supported
+  full-file wrappers. Local numeric list/tuple literals of 1–64 finite signed elements
+  can supply objective weights. Element access is literal or a bounded unrolled-loop
+  index; whole-vector arithmetic, aliasing, slicing, mutation, and dynamic input are rejected.
 - `OptimizationRequest`: required discriminated `problem`, plus default QAOA config.
   `{"kind":"qubo","qubo":...}` uses the canonical QUBO. A graph uses
   `{"kind":"graph","num_vertices":3,"edges":[{"i":0,"j":1,"coefficient":1}]}`.
@@ -112,22 +140,68 @@ Never use an integer conversion that discards leading zeros or silently reverse 
 `QAOAConfig` adds `p=1` (1–8 layers), `optimizer=COBYLA` (only initial optimizer),
 `max_iterations=100` (1–1000). Counts and seeds are unitless; timeouts are **seconds**.
 
-For compiler, optimization, and search these are validated limits, not runtime isolation.
-Their stubs do no expensive work. Materials runs in a spawned process that is terminated
-and reaped on timeout, including during native simulator work; startup/import time counts
-against that wall-clock budget, but not the benchmark's numerical timings.
-Future owners must enforce deadlines throughout their work, including native simulator
-calls, rather than wrapping a blocking call in a timer that cannot cancel it. The compiler
-owner must add AST node/depth limits along with the parser; no parser exists here.
+These are validated interface limits. Shared compiler/optimization runner stubs do
+no expensive work. Materials uses a spawned worker terminated/reaped on timeout,
+including native work; startup counts against its deadline, outside numerical timers.
+Future runners must enforce deadlines throughout native calls. The compiler enforces
+source/node/depth limits and verifies all assignments for 1–6 bits; see [the compiler guide](COMPILER.md).
 There is no asynchronous job API, request-body transport limiter, or hardware execution.
 
 ## Analysis response
 
+Source function names and binary-input names are arbitrary. The marker may be bare
+`@qatlas.objective` or an optional call with `num_bits`/`sense`. Named scalar
+parameters map to canonical bits in declaration order; a single vector can use any
+name and static indices. Without num_bits, width is the scalar count or highest
+statically used vector index plus one. Existing 1–6-bit/source limits still apply.
+`INPUT_MAPPING` is an informational diagnostic; no QUBO, bit-order, timing, or runner
+contract changed. Explicit num_bits retains trailing unused vector positions.
+
 `CompilerAnalyzeResult` requires `status` (`supported|rejected`) and `diagnostics`.
 `qubo` and `circuit` default null. `supported` requires a normalized QUBO; `rejected`
-cannot include a QUBO or circuit. Circuit metadata has required `num_qubits` and
-optional nullable `depth`, plus default backend `aer_simulator`. Circuit metadata is
-a preview description, not proof of execution or a benchmark.
+cannot include a QUBO or circuit. Supported analyses include a `CircuitPreview` for
+one QAOA layer. It retains `num_qubits` and backend `aer_simulator` (the intended
+execution target), and adds:
+
+- `kind=qaoa_logical_preview`, `executed=false`, `p=1` for analysis responses.
+- `parameters` in explicit `gamma_0, beta_0, ...` order.
+- `gates`: ordered `h|rz|cp|rx` operations with qubit indices. Angles are either null
+  for H, or `{parameter, coefficient}` meaning radians = coefficient × parameter.
+- `global_phase`: parameter-scaled phase terms, including constant objective offsets.
+- `logical_depth`: parallel layers of the symbolic gates before any transpilation.
+
+`depth` remains null: logical depth is not measured backend/transpiled depth. The
+preview contains no measurements, samples, optimization results, or execution timing.
+Rejected analysis still returns `circuit=null`. See
+[the Developer 3 handoff](DEVELOPER_3_HANDOFF.md) for gate/sign conventions and shared helpers.
+
+## Generated Python response
+
+`CompilerGenerateResult` extends the analysis fields with nullable `artifact`.
+Supported generation requires the artifact; rejected generation requires null
+artifact/QUBO/circuit. The returned preview uses the requested p rather than Analyze's
+fixed one layer. Nothing executes on this endpoint.
+
+`GeneratedPythonArtifact` contains complete rewritten `source` (1–150,000 characters),
+default filename `q_atlas_generated.py`, nonempty `entrypoint`, nullable
+`replaced_function`, and `executed=false`. The browser derives a download name from
+the uploaded filename. No backend path is accepted and no file is stored server-side.
+The objective marker is removed; an explicitly marked circuit factory is replaced,
+or a fresh builder is appended if none is marked. Surrounding Python is opaque
+passthrough content, not an approved executable program. See
+[script-generation semantics](COMPILER_SCRIPT_GENERATION.md) for accepted markers and limits.
+
+## Nonexecuting compiler comparison plan
+
+`POST /api/compiler/benchmark/plan` returns `CompilerBenchmarkPlan` after full-file
+static generation. Unsupported source/config returns structured HTTP 422 before
+any runner call. The response includes `status=planned`,
+`comparison_scope=objective_optimization`, literal false `script_execution_enabled`
+and `quantum_execution_enabled`, stable canonical `problem_id`, source/generated
+SHA-256 hashes, builder `entrypoint`, QUBO, effective QAOA config, matching unexecuted
+preview, shared runner names, and remaining blockers. There are no measurement fields.
+The preview width and p must match the QUBO/config. No request flag enables execution.
+Nothing is persisted or run. See [benchmark planning](COMPILER_BENCHMARK_PLAN.md).
 
 ## Shared benchmark results
 
@@ -215,4 +289,15 @@ them after safe AST validation/extraction. Inputs are canonical, outputs include
 timings and full objective offsets. Runners raise `TimeoutError` on budget expiry;
 future API owners map it to HTTP 504 `TIMEOUT`. Validation stays at the shared boundary.
 Source parsing, graph conversion, HTTP handling, and hardware execution do not belong
-inside the shared QAOA runner. Preview circuit helpers must be coordinated, not duplicated.
+inside the shared QAOA runner. Circuit construction is now shared via
+`app.quantum.circuits.build_qaoa_preview(qubo, p=1) -> CircuitPreview`; objective checking
+is shared via `app.quantum.qubo.evaluate_qubo(qubo, bitstring) -> float`. These pure
+helpers execute no jobs. Developer 3 should consume the plan instead of duplicating
+gate mapping. The compiler validates solver objective/assignment consistency and
+QAOA qubit/shot metrics before returning a completed comparison. Invalid shared
+results return sanitized HTTP 500, never an invented completed measurement.
+The compiler gives each runner independent copies of the validated instance/config
+and rejects persistent input mutations. Objective matching uses absolute tolerance
+`1e-9` with no relative tolerance, so large constant offsets cannot hide discrepancies.
+These checks do not change the QUBO representation, bit order, canonical sense, or
+solver timing flags. Common boundary validation/isolation is outside solver intervals.

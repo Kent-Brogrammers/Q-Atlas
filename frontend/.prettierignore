@@ -2,6 +2,7 @@ node_modules
 .svelte-kit
 .sites-runtime
 build
+dist
 package-lock.json
 
 react-scaffold

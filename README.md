@@ -6,10 +6,44 @@ Python optimization compiler, small spin-system experiments, QAOA optimization, 
 Grover search in a SvelteKit application. The original React scaffold is preserved
 in `frontend/react-scaffold/` for Developer 5 review; the shared specification is unchanged.
 
-**Current state: materials experiment plus shared development foundation.** Health works;
-materials runs a 2–4-spin transverse-field Ising experiment with exact, ideal circuit,
-and finite-shot results. Compiler, optimization, and search operations remain HTTP 501
-stubs. See [the materials guide](docs/MATERIALS.md) for physics, examples, limits, and tests.
+**Current state: compiler analysis and Python script generation.** Health, safe
+Python-to-QUBO analysis, symbolic QAOA circuit previews, and downloadable Qiskit
+builder code work. Compiler benchmarking consumes the shared runner entrypoints,
+which remain Developer 3 stubs; those benchmark requests and optimization/search
+routes return HTTP 501. Compiler execution tests stay mocked, and circuit previews
+are constructed without execution. Other developers' materials and classical work
+is preserved alongside the compiler.
+
+See [the compiler guide](docs/COMPILER.md) for supported syntax, diagnostics, limits,
+and the mocked QUBO-to-QAOA handoff. The
+[Developer 2 next steps](docs/DEVELOPER_2_NEXT_STEPS.md) cover the remaining integration
+work and owner handoffs under the current mocks-only constraint.
+The [Developer 3 handoff](docs/DEVELOPER_3_HANDOFF.md) records the selected circuit and
+solver contracts for optimization integration.
+
+The compiler accepts named local terms, numeric accumulation, bounded literal
+`range` loops, and squared penalty expressions inside a marked objective function.
+Start with the seven
+[pasteable Python examples](examples/compiler/README.md)
+and their expected QUBOs. Submitted source is parsed and verified, never executed.
+The Svelte compiler page at `/compiler/` uses **load Python → Convert Python →
+Download .py**. Put `@qatlas.objective` above the objective; function and input names
+are arbitrary, named scalar inputs need no indexing, and width is inferred without
+`num_bits`. No circuit function or quantum settings are required. Start with
+[named_decisions.py](examples/compiler/programs/named_decisions.py) and the
+[script-generation guide](docs/COMPILER_SCRIPT_GENERATION.md). The optional second
+`@qatlas.circuit` marker is only for replacing an existing circuit factory.
+The page also offers [six full-program examples](examples/compiler/programs/README.md),
+three [generated output scripts](examples/compiler/programs/README.md#generated-output-files),
+and advanced conversion details plus nonexecuting comparison planning.
+Local numeric weight vectors are supported inside objectives. Quantum/script execution
+stays disabled in the compiler page; see [benchmark planning](docs/COMPILER_BENCHMARK_PLAN.md).
+See [the manual validation record](docs/COMPILER_MANUAL_CHECKS.md) and
+[Developer 5's integration handoff](docs/DEVELOPER_5_HANDOFF.md).
+
+Materials now provides a 2–4-spin TFIM simulation with exact, ideal-circuit, and
+finite-shot results; see [the materials guide](docs/MATERIALS.md). No materials
+simulations are run as part of compiler validation.
 
 Read [the original specification](docs/Project_Spec.md) completely before implementing
 features. The original file and its casing are preserved.
@@ -80,16 +114,27 @@ npm ci
 npm run dev
 ```
 
+From the repository root, after installing dependencies, start both servers from one
+terminal (Bash 4.3+):
+
+```sh
+./dev.sh
+```
+
+The launcher works from any current directory when invoked by its path. Both servers
+share the terminal output; **Ctrl+C stops both**, including their worker processes.
+If either server exits, the other is stopped too. It uses the existing backend virtual
+environment and frontend dependencies without installing packages or running experiments.
+
 Open <http://127.0.0.1:5173>. Backend docs are at <http://127.0.0.1:8000/docs>;
 health is <http://127.0.0.1:8000/api/health>. Start either server independently.
 The frontend serves `/`, `/compiler`, `/materials`, `/optimization`, and `/search`.
-Use **Check API health** on the overview to test the connection. With the quantum extra
-installed, the Materials page submits configurable requests and displays returned
-simulation results, metrics, and time-series plots. Other experiment pages show real
-501 responses. SvelteKit displays example data only after an explicit example action;
-those examples are not used as live results. Main's original
-React health/request panels remain runnable from `frontend/react-scaffold/` on
-port 5174. See [frontend setup](frontend/README.md) for both applications.
+The Svelte compiler sends static generation/planning requests; conversion does not
+execute user code or run a benchmark. With the quantum extra installed, the Materials
+page submits configurable requests and displays returned simulation results, metrics,
+and time-series plots. Optimization and search benchmarks remain unavailable. React
+health/request panels remain runnable from `frontend/react-scaffold/` on port 5174.
+See [frontend setup](frontend/README.md) for both applications.
 
 No environment file or credentials are required. Optional overrides:
 
@@ -113,6 +158,7 @@ uv run --locked --all-extras ruff format --check .
 From `frontend/`:
 
 ```sh
+npm run test:compiler
 npm run types:check
 npm run check
 npm test
@@ -125,6 +171,16 @@ TypeScript matches. Backend setup is needed for this check, but the frontend ser
 and build run independently using the committed generated types. Following a contract
 change, run `npm run types:generate` from `frontend/`, review the generated diff, and
 commit the types with the backend change. `frontend/openapi.json` is ignored intermediate output.
+
+With the local API running, check the compiler over HTTP from `backend/`:
+
+```sh
+.venv/bin/python scripts/check_compiler_api.py
+```
+
+This checks health, all seven source examples, and one rejected input. It only calls
+health and Analyze, never a solver endpoint. Use `--base-url` for a different API root
+and `--timeout` for the socket timeout. See [compiler checks](docs/COMPILER.md).
 
 ## Developer handoff
 
