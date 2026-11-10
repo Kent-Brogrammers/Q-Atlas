@@ -84,10 +84,10 @@ Open <http://127.0.0.1:5173>. Backend docs are at <http://127.0.0.1:8000/docs>;
 health is <http://127.0.0.1:8000/api/health>. Start either server independently.
 The frontend serves `/`, `/compiler`, `/materials`, `/optimization`, and `/search`.
 Use **Check API health** on the overview to test the connection. With the quantum extra
-installed, the materials page's request panel displays real simulation results; its UI
-labels are still the integration owner's scaffold. Other experiment pages show real 501 responses.
-SvelteKit preserves the developed dashboard and displays example data only after
-an explicit example action; it sends no live experiment requests. Main's original
+installed, the Materials page submits configurable requests and displays returned
+simulation results, metrics, and time-series plots. Other experiment pages show real
+501 responses. SvelteKit displays example data only after an explicit example action;
+those examples are not used as live results. Main's original
 React health/request panels remain runnable from `frontend/react-scaffold/` on
 port 5174. See [frontend setup](frontend/README.md) for both applications.
 

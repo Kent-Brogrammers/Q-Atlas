@@ -1,5 +1,5 @@
 <script lang="ts">
-  import ExperimentFoundation from '#lib/components/ExperimentFoundation.svelte';
+  import MaterialsWorkspace from '#lib/components/MaterialsWorkspace.svelte';
 </script>
 
-<ExperimentFoundation experiment="materials" />
+<MaterialsWorkspace />
