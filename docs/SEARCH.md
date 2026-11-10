@@ -167,6 +167,8 @@ The overview also links to the page. Nothing runs automatically on page load.
 
 - **Run comparison** sends one existing `SearchRequest`, with optional automatic
   iteration selection. The backend reports the effective iteration count.
+- **Run repeated trials** measures the same single-run configuration two to five
+  times using distinct recorded seeds. See the statistics section below.
 - **Measure probability curve** sends iterations 0 through the chosen last value
   (0–12 inclusive), sequentially, overriding the manual single-run iteration setting.
   Points share the targets, shots, seed and per-point timeout. Every probability,
@@ -182,11 +184,61 @@ The overview also links to the page. Nothing runs automatically on page load.
   versions, timings and oracle assumptions, marked with source `live_search_api`.
   No measurement files or synthetic fixtures are bundled as application defaults.
 
-A sweep is one run per iteration, not repeated trials at one iteration. Its points
+A curve sweep is one run per iteration, not repeated trials at one iteration. Its points
 share a seed; no independent-run distribution or confidence interval is claimed.
 The 13-request cap and per-request timeout bound work, but the sequence can take up
 to 13 per-point budgets plus transport overhead. Quantum time includes a shot batch;
 classical time measures one search. Their ratio is not a matched-success speedup.
+
+## Repeated-run statistics
+
+Choose **Repeated trials** (2–5, default 3) and select **Run repeated trials**. This
+mode uses the single-run iteration setting, including backend automatic selection;
+it does not repeat the entire iteration curve. No new backend endpoint, dependency,
+or shared aggregate schema is introduced.
+
+The browser sends requests sequentially with seeds `(base_seed + trial_index) mod
+2^32`. Every request retains the same problem, shots, and manual/automatic iteration
+setting. The completed backend results must agree on effective iteration, instance,
+shot count, simulator method, timing scope, and package versions. Their seeds must
+match the requested seeds and be distinct. A mismatch or failure prevents publication
+of a partial batch. Cancellation stops subsequent requests; the current native worker
+can finish or reach its per-request deadline, as in curve mode.
+
+The summary reports:
+
+- Arithmetic mean of observed success probabilities across equal-shot trials.
+- Observed minimum and maximum success probabilities, also shown as a chart whisker.
+- Sample standard deviation: `sqrt(sum((p_i - mean)^2) / (r - 1))`, displayed in
+  percentage points (pp). This describes variability of the run probabilities, not
+  a standard error or confidence interval.
+- Median classical and quantum solver times, retaining all trials and excluding no
+  warm-up run. Even-sized medians average the two middle values. Solver timing scopes
+  remain as documented above; worker startup is outside reported solver durations.
+- Trial count, distinct seeds, shots per trial, and total shots across the batch.
+
+Missing timings make the corresponding median unavailable rather than averaging a
+subset. Missing probabilities or invalid/mismatched records prevent aggregation.
+If theoretical probabilities are unavailable, the summary does not fabricate them.
+The range and sample deviation are descriptive statistics over a small set of seeded
+simulator runs; neither bounds the true probability or establishes runtime advantage.
+
+The trial table lists every seed and measured probability and lets you inspect each
+raw response. Each raw record still has `metadata.repetitions=1`; the browser summary
+does not rewrite those records to imply backend aggregation. Editing controls clears
+the summary and all old results. The workload is capped at five requests and 50000
+shots, and can consume up to five per-request budgets plus transport overhead.
+
+JSON downloads now include `mode` (`single`, `curve`, or `trials`), `trial_summary`
+(null outside trials), and the unchanged `results` array. The source remains
+`live_search_api`. The summary is a presentation/export object, not a `SearchResult`.
+It records the actual seeds, probabilities, sample deviation, medians, and shot counts;
+all raw evidence is retained for independent review.
+
+Manual verification used the default three-qubit `001` configuration and seeds
+42, 43, 44, then verified the summary and three raw records in the downloaded JSON.
+Unit tests cover known statistics, odd/even medians, zeros, missing evidence,
+mismatched metadata, sequential limits, wraparound seeds, failures and cancellation.
 
 ### Demo rehearsal
 
@@ -207,8 +259,8 @@ validation, sequential limits, cancellation, failures, response metadata, zero/m
 probabilities and typed transport. Svelte checks cover accessibility/compiler diagnostics.
 Configuration/results stack on narrow screens and sit side by side on desktop.
 
-Core search MVP and typed evidence fields are implemented. Next improvements are
-bounded repeated-run statistics and demo/regression hardening. Coordinate further
+Core search MVP, typed evidence fields, and bounded repeated-run statistics are implemented.
+The next improvement is demo/regression hardening. Coordinate further
 shared-schema changes with Developers 3/5. Hardware and practical quantum advantage
 are not claimed.
 

@@ -153,6 +153,16 @@ Windows commands and a demo rehearsal.
 `SearchProbabilityChart.svelte` plots returned probabilities. Tests use synthetic
 fixtures only in `tests/search-live.test.ts`, never in the live application.
 
+**Run repeated trials** measures the same single-run configuration two to five times,
+using sequential seeds incremented modulo `2^32`. `src/lib/search/trials.ts` validates
+the completed records and summarizes mean probability, observed min/max, sample
+standard deviation, median solver times, seeds, and total shots. The chart shows a
+mean point and observed-range whisker; this is not a confidence interval. The trial
+table preserves individual results and seeds. JSON exports include the presentation
+summary separately from raw API responses; each raw run still reports one repetition.
+Failures/cancellation publish no partial summary. Tests for aggregation, metadata,
+seed wraparound and request control are in `tests/search-trials.test.ts`.
+
 ## API types and integration
 
 After backend environment setup, run:

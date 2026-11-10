@@ -19,6 +19,8 @@ with measured/theoretical success probabilities, query comparisons, and explicit
 timing metadata. See [the search guide](docs/SEARCH.md) for Windows commands, limits,
 and API examples. The live Search page at `/search/` provides controls, probability
 curves, query/runtime comparisons, errors, and measured JSON export.
+Repeated-trial mode adds two to five distinct seeded runs, probability variation,
+median runtimes, and raw-record export alongside the summary.
 
 See [the compiler guide](docs/COMPILER.md) for supported syntax, diagnostics, limits,
 and the mocked QUBO-to-QAOA handoff. The

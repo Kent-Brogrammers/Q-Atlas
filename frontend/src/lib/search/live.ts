@@ -63,6 +63,7 @@ export interface CurvePoint {
   iteration: number;
   measured: number | null;
   theoretical: number | null;
+  observedRange?: [number, number];
 }
 
 export function curvePoints(results: SearchResult[]): CurvePoint[] {
@@ -82,7 +83,7 @@ export function curvePoints(results: SearchResult[]): CurvePoint[] {
   });
 }
 
-type SearchCall = (request: SearchRequest, signal?: AbortSignal) => Promise<SearchResult>;
+export type SearchCall = (request: SearchRequest, signal?: AbortSignal) => Promise<SearchResult>;
 
 export async function measureSweep(
   settings: SearchSettings,
