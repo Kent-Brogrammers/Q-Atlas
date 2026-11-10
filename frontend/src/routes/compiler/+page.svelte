@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
+  import { onDestroy, tick } from 'svelte';
   import Icon from '#lib/components/Icon.svelte';
   import Panel from '#lib/components/Panel.svelte';
+  import Metric from '#lib/components/Metric.svelte';
   import { api, ApiError } from '../../api/client.ts';
   import type {
     CompilerAnalyzeResult,
@@ -13,9 +14,47 @@
     MAX_SOURCE_LENGTH,
     readObjectiveFile,
     generatedFilename,
+    formatOptionalMs,
     formatAngle
   } from '../../compiler/source.ts';
   import { PROGRAM_EXAMPLES } from '../../compiler/examples.ts';
+
+  const steps = [
+    { id: 'input', label: 'Python input', title: 'Start with your Python' },
+    { id: 'compiled', label: 'Compiled code', title: 'Review your compiled code' },
+    { id: 'test', label: 'Test', title: 'Prepare your comparison' },
+    { id: 'results', label: 'Results & analytics', title: 'Review your results and analytics' }
+  ] as const;
+  type Step = (typeof steps)[number]['id'];
+  const communicationFields = [
+    {
+      key: 'submission_ms',
+      label: 'Send / submit',
+      note: 'Request preparation to provider job acknowledgement'
+    },
+    {
+      key: 'result_retrieval_ms',
+      label: 'Receive results',
+      note: 'Ready-result download and decoding'
+    },
+    {
+      key: 'queue_ms',
+      label: 'Provider queue',
+      note: 'Remote waiting time, reported by the provider'
+    },
+    {
+      key: 'remote_processing_ms',
+      label: 'Remote processing',
+      note: 'Provider-reported processing · not QPU quota usage'
+    },
+    {
+      key: 'round_trip_ms',
+      label: 'Provider round trip',
+      note: 'Submit through received results, including waits and overhead'
+    }
+  ] as const;
+  let step = $state<Step>('input');
+  let stageHeading = $state<HTMLHeadingElement>();
 
   let source = $state(DEFAULT_SCRIPT);
   let fileName = $state('selection.py');
@@ -34,6 +73,20 @@
   let readSequence = 0;
   let active = true;
   const busy = $derived(loading !== null || reading);
+  const stepIndex = $derived(steps.findIndex((item) => item.id === step));
+
+  function canVisit(target: Step) {
+    return target === 'input' || (target === 'results' ? !!plan : !!artifact);
+  }
+  async function goToStep(target: Step) {
+    if (!canVisit(target)) return;
+    step = target;
+    await tick();
+    if (active && step === target) {
+      stageHeading?.focus({ preventScroll: true });
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }
 
   onDestroy(() => {
     active = false;
@@ -60,6 +113,7 @@
   });
 
   function invalidate() {
+    step = 'input';
     revision++;
     analysis = undefined;
     artifact = undefined;
@@ -107,10 +161,14 @@
         if (active && revision === currentRevision) {
           analysis = result;
           artifact = result.artifact ?? undefined;
+          if (artifact) await goToStep('compiled');
         }
       } else {
         const result = await api.prepareCompilerBenchmark({ source, config: { p: layers } });
-        if (active && revision === currentRevision) plan = result;
+        if (active && revision === currentRevision) {
+          plan = result;
+          await goToStep('results');
+        }
       }
     } catch (caught) {
       if (active && revision === currentRevision) {
@@ -159,224 +217,378 @@
   >
 </p>
 
-<div class="compiler-layout">
-  <aside aria-label="Compiler configuration">
-    <Panel title="Configuration" subtitle="Load a script or start with an example">
-      <div class="configuration">
-        <fieldset>
-          <legend>Source file</legend>
-          <div class="file-picker" class:disabled={reading}>
-            <input
-              class="sr-only"
-              id="objective-file"
-              type="file"
-              accept=".py,text/plain,text/x-python"
-              disabled={reading}
-              onchange={loadFile}
-            />
-            <label class="button" for="objective-file"
-              >Load a .py file<Icon name="plus" size={15} /></label
-            >
+<nav class="workflow-nav" aria-label="Compiler workflow">
+  <ol>
+    {#each steps as item, index}
+      <li>
+        <button
+          class:current={step === item.id}
+          class:complete={index < stepIndex}
+          aria-current={step === item.id ? 'step' : undefined}
+          disabled={busy || !canVisit(item.id)}
+          onclick={() => goToStep(item.id)}
+        >
+          <span class="step-number">{index + 1}</span><span>{item.label}</span>
+        </button>
+      </li>
+    {/each}
+  </ol>
+</nav>
+
+<section class="workflow-stage" aria-labelledby="compiler-stage-title" aria-busy={busy}>
+  <header class="stage-heading">
+    <p class="eyebrow">Step {stepIndex + 1} of {steps.length}</p>
+    <h2 id="compiler-stage-title" tabindex="-1" bind:this={stageHeading}>
+      {steps[stepIndex].title}
+    </h2>
+  </header>
+
+  <div
+    class="request-status"
+    class:has-status={reading || loading === 'plan' || !!error}
+    aria-live="polite"
+  >
+    {#if reading}<p role="status" class="availability">
+        <Icon name="clock" size={17} />Reading the selected file as text…
+      </p>{/if}
+    {#if loading === 'plan'}<p role="status" class="availability">
+        <Icon name="clock" size={17} />Preparing a comparison without execution…
+      </p>{/if}
+    {#if error}<p role="alert" class="availability error-notice">
+        <Icon name="info" size={17} /><span>{error}</span>
+      </p>{/if}
+  </div>
+
+  {#if step === 'input'}
+    <div class="compiler-layout">
+      <aside aria-label="Compiler configuration">
+        <Panel title="Configuration" subtitle="Load a script or start with an example">
+          <div class="configuration">
+            <fieldset>
+              <legend>Source file</legend>
+              <div class="file-picker" class:disabled={reading}>
+                <input
+                  class="sr-only"
+                  id="objective-file"
+                  type="file"
+                  accept=".py,text/plain,text/x-python"
+                  disabled={reading}
+                  onchange={loadFile}
+                />
+                <label class="button" for="objective-file"
+                  >Load a .py file<Icon name="plus" size={15} /></label
+                >
+              </div>
+              <p class="field-note">Or paste directly into the editor. Up to 20,000 characters.</p>
+            </fieldset>
+            <fieldset>
+              <legend>Example</legend>
+              <label for="program-example">Python program</label>
+              <select id="program-example" bind:value={example} disabled={busy}>
+                <option value="default">Ordinary Python · one decorator</option>
+                {#each PROGRAM_EXAMPLES as item}<option value={item.filename}>{item.label}</option
+                  >{/each}
+              </select>
+              <button
+                class="button"
+                disabled={busy}
+                onclick={() => {
+                  const selected = PROGRAM_EXAMPLES.find((item) => item.filename === example);
+                  replaceSource(
+                    selected?.source ?? DEFAULT_SCRIPT,
+                    selected?.filename ?? 'selection.py'
+                  );
+                }}>Load example<Icon name="reset" size={15} /></button
+              >
+            </fieldset>
+            <div class="marker-guide">
+              <h3>Mark your objective</h3>
+              <p>
+                Put <code>@qatlas.objective</code> above the function you want to convert. Keep your function
+                and input names. No circuit code is required.
+              </p>
+            </div>
+            <details class="advanced-options">
+              <summary>Advanced conversion options</summary>
+              <div class="advanced-body">
+                <label for="circuit-layers">Circuit layers</label>
+                <select
+                  id="circuit-layers"
+                  value={layers}
+                  disabled={busy}
+                  onchange={(event) => {
+                    layers = Number(event.currentTarget.value);
+                    invalidate();
+                  }}
+                >
+                  {#each Array.from({ length: 8 }, (_, i) => i + 1) as count}<option value={count}
+                      >{count}</option
+                    >{/each}
+                </select>
+                <p class="field-note">
+                  The default is one layer. If you have an existing zero-argument circuit factory,
+                  mark it with <code>@qatlas.circuit</code> to replace it. Otherwise the compiler adds
+                  the generated builder automatically.
+                </p>
+              </div>
+            </details>
           </div>
-          <p class="field-note">Or paste directly into the editor. Up to 20,000 characters.</p>
-        </fieldset>
-        <fieldset>
-          <legend>Example</legend>
-          <label for="program-example">Python program</label>
-          <select id="program-example" bind:value={example} disabled={busy}>
-            <option value="default">Ordinary Python · one decorator</option>
-            {#each PROGRAM_EXAMPLES as item}<option value={item.filename}>{item.label}</option
-              >{/each}
-          </select>
-          <button
-            class="button"
-            disabled={busy}
-            onclick={() => {
-              const selected = PROGRAM_EXAMPLES.find((item) => item.filename === example);
-              replaceSource(
-                selected?.source ?? DEFAULT_SCRIPT,
-                selected?.filename ?? 'selection.py'
-              );
-            }}>Load example<Icon name="reset" size={15} /></button
-          >
-        </fieldset>
-        <div class="marker-guide">
-          <h3>Mark your objective</h3>
-          <p>
-            Put <code>@qatlas.objective</code> above the function you want to convert. Keep your function
-            and input names. No circuit code is required.
-          </p>
-        </div>
-        <details class="advanced-options">
-          <summary>Advanced conversion options</summary>
-          <div class="advanced-body">
-            <label for="circuit-layers">Circuit layers</label>
-            <select
-              id="circuit-layers"
-              value={layers}
-              disabled={busy}
-              onchange={(event) => {
-                layers = Number(event.currentTarget.value);
+        </Panel>
+      </aside>
+
+      <div class="compiler-workspace">
+        <Panel title="Your Python script" subtitle="Keep your Python. Mark what to convert.">
+          {#snippet toolbar()}<span class="file-type">Python · .py</span>{/snippet}
+          <div class="source-editor">
+            <div class="editor-heading">
+              <label for="source">Python source</label>
+              <span class="file-name" title={fileName}>{fileName}</span>
+            </div>
+            <textarea
+              id="source"
+              bind:this={editor}
+              value={source}
+              rows="17"
+              maxlength={MAX_SOURCE_LENGTH}
+              spellcheck="false"
+              aria-describedby="source-scope"
+              oninput={(event) => {
+                source = event.currentTarget.value;
+                fileName = 'Pasted source';
                 invalidate();
               }}
-            >
-              {#each Array.from({ length: 8 }, (_, i) => i + 1) as count}<option value={count}
-                  >{count}</option
-                >{/each}
-            </select>
-            <p class="field-note">
-              The default is one layer. If you have an existing zero-argument circuit factory, mark
-              it with <code>@qatlas.circuit</code> to replace it. Otherwise the compiler adds the generated
-              builder automatically.
+            ></textarea>
+            <div class="editor-footer">
+              <span class="character-count"
+                >{source.length.toLocaleString()} / 20,000 characters</span
+              >
+              <button
+                class="button primary"
+                disabled={busy || !source.trim()}
+                onclick={() => run('generate')}
+              >
+                {loading === 'generate' ? 'Converting…' : 'Convert Python'}<Icon
+                  name="arrow"
+                  size={15}
+                />
+              </button>
+            </div>
+            <p class="field-note" id="source-scope">
+              Supports binary optimization objectives with 1–6 inputs. The surrounding program stays
+              in place.
             </p>
           </div>
-        </details>
-      </div>
-    </Panel>
-  </aside>
+        </Panel>
 
-  <div class="compiler-workspace">
-    <Panel title="Your Python script" subtitle="Keep your Python. Mark what to convert.">
-      {#snippet toolbar()}<span class="file-type">Python · .py</span>{/snippet}
-      <div class="source-editor">
-        <div class="editor-heading">
-          <label for="source">Python source</label>
-          <span class="file-name" title={fileName}>{fileName}</span>
-        </div>
-        <textarea
-          id="source"
-          bind:this={editor}
-          value={source}
-          rows="17"
-          maxlength={MAX_SOURCE_LENGTH}
-          spellcheck="false"
-          aria-describedby="source-scope"
-          oninput={(event) => {
-            source = event.currentTarget.value;
-            fileName = 'Pasted source';
-            invalidate();
-          }}
-        ></textarea>
-        <div class="editor-footer">
-          <span class="character-count">{source.length.toLocaleString()} / 20,000 characters</span>
-          <button
-            class="button primary"
-            disabled={busy || !source.trim()}
-            onclick={() => run('generate')}
+        {#if analysis?.status === 'rejected'}
+          <Panel
+            title="This region is not supported yet"
+            subtitle="Update the marked objective and try again"
           >
-            {loading === 'generate' ? 'Converting…' : 'Convert Python'}<Icon
-              name="arrow"
-              size={15}
-            />
-          </button>
-        </div>
-        <p class="field-note" id="source-scope">
-          Supports binary optimization objectives with 1–6 inputs. The surrounding program stays in
-          place.
-        </p>
+            <div class="output-body" role="status">
+              <p>
+                Keep the ordinary script around the marked function. The marked region currently
+                needs bounded binary arithmetic.
+              </p>
+              <ul class="diagnostics">
+                {#each analysis.diagnostics as diagnostic}<li>
+                    <p>{diagnostic.message}</p>
+                    {#if diagnostic.line}<button
+                        class="button small"
+                        onclick={() => selectLine(diagnostic.line!)}
+                        >Line {diagnostic.line}<Icon name="arrow" size={13} /></button
+                      >{/if}
+                  </li>{/each}
+              </ul>
+            </div>
+          </Panel>
+        {/if}
+        {#if artifact}
+          <div class="step-actions">
+            <p class="field-note">Your compiled code is saved for this source.</p>
+            <button class="button" disabled={busy} onclick={() => goToStep('compiled')}
+              >View compiled code<Icon name="arrow" size={15} /></button
+            >
+          </div>
+        {/if}
       </div>
-    </Panel>
-
-    <div
-      class="request-status"
-      class:has-status={reading || loading === 'plan' || !!error}
-      aria-live="polite"
-      aria-busy={busy}
-    >
-      {#if reading}<p role="status" class="availability">
-          <Icon name="clock" size={17} />Reading the selected file as text…
-        </p>{/if}
-      {#if loading === 'plan'}<p role="status" class="availability">
-          <Icon name="clock" size={17} />Preparing a comparison without execution…
-        </p>{/if}
-      {#if error}<p role="alert" class="availability error-notice">
-          <Icon name="info" size={17} /><span>{error}</span>
-        </p>{/if}
     </div>
-
-    <Panel
-      title="Converted script"
-      subtitle={artifact
-        ? 'Generated and verified · not executed'
-        : analysis?.status === 'rejected'
-          ? 'Conversion needs attention'
-          : 'Your output will appear here'}
-    >
+  {:else if step === 'compiled' && artifact}
+    <Panel title="Compiled Python" subtitle="Generated and verified · not executed">
       {#snippet toolbar()}
         {#if generatedUrl}<a
             class="button primary"
             href={generatedUrl}
-            download={generatedFilename(fileName)}
-          >
-            Download .py<Icon name="download" size={15} /></a
+            download={generatedFilename(fileName)}>Download .py<Icon name="download" size={15} /></a
           >{/if}
       {/snippet}
-      {#if artifact}
+      <div class="output-body">
+        <p>
+          Your program and function names are preserved.
+          {#if artifact.replaced_function}The marked {artifact.replaced_function}() factory was
+            replaced.
+          {:else}The generated builder was added automatically.{/if}
+        </p>
+        <p class="field-note">Review the generated code, then continue to test preparation.</p>
+      </div>
+      <div class="preview-body">
+        <label for="generated-python">Generated Python source</label>
+        <textarea
+          id="generated-python"
+          readonly
+          value={artifact.source}
+          rows="20"
+          spellcheck="false"
+        ></textarea>
+      </div>
+    </Panel>
+    <div class="step-actions">
+      <button class="button" disabled={busy} onclick={() => goToStep('input')}
+        >Back to Python</button
+      >
+      <button class="button primary" disabled={busy} onclick={() => goToStep('test')}
+        >Continue to test<Icon name="arrow" size={15} /></button
+      >
+    </div>
+  {:else if step === 'test' && artifact}
+    <Panel title="Test preparation" subtitle="Compare solvers on the same verified objective">
+      <div class="output-body">
+        <p>
+          Prepare a comparison for your marked objective. Your surrounding Python application is not
+          run or timed.
+        </p>
+        <dl class="test-summary">
+          <div>
+            <dt>Source</dt>
+            <dd>{fileName}</dd>
+          </div>
+          <div>
+            <dt>Comparison</dt>
+            <dd>Classical optimization and local QAOA</dd>
+          </div>
+          <div>
+            <dt>Circuit layers</dt>
+            <dd>{layers}</dd>
+          </div>
+          <div>
+            <dt>Execution</dt>
+            <dd>Disabled · preparation only</dd>
+          </div>
+        </dl>
+      </div>
+      <div class="output-placeholder">
+        <Icon name="info" size={24} />
+        <div>
+          <h3>Prepare now, run when authorized</h3>
+          <p>
+            This step validates the comparison settings and creates a downloadable plan. It runs
+            neither solver and uses no quantum time.
+          </p>
+          <div class="comparison-actions">
+            <button class="button" disabled>Run comparison — execution disabled</button>
+          </div>
+        </div>
+      </div>
+    </Panel>
+    <div class="step-actions">
+      <button class="button" disabled={busy} onclick={() => goToStep('compiled')}
+        >Back to compiled code</button
+      >
+      <button
+        class="button primary"
+        disabled={busy}
+        onclick={() => (plan ? goToStep('results') : run('plan'))}
+      >
+        {loading === 'plan'
+          ? 'Preparing…'
+          : plan
+            ? 'View results & analytics'
+            : 'Prepare test plan'}<Icon name="arrow" size={15} />
+      </button>
+    </div>
+  {:else if step === 'results' && plan && analysis?.status === 'supported'}
+    <div class="analytics-workspace">
+      <Panel title="Test status" subtitle="Comparison prepared · not executed">
+        {#snippet toolbar()}
+          {#if planUrl}<a class="button" href={planUrl} download="q_atlas_benchmark_plan.json"
+              >Download test plan<Icon name="download" size={15} /></a
+            >{/if}
+        {/snippet}
         <div class="output-body">
           <p role="status">
-            Your program and function names are preserved.
-            {#if artifact.replaced_function}The marked {artifact.replaced_function}() factory was
-              replaced.
-            {:else}The generated builder was added automatically.{/if}
+            Your comparison plan is ready. No script or solver has been executed, so measured
+            performance results are not available yet.
           </p>
-          <p class="field-note">
-            Generated code has not been run. Comparison execution remains disabled in this
-            workspace.
-          </p>
+          <dl class="test-summary">
+            <div>
+              <dt>Planned layers / shots / seed</dt>
+              <dd>{plan.config.p} / {plan.config.shots} / {plan.config.seed}</dd>
+            </div>
+            <div>
+              <dt>Problem ID</dt>
+              <dd>{plan.problem_id}</dd>
+            </div>
+          </dl>
         </div>
-        <details class="result-disclosure">
-          <summary>Preview Python</summary>
-          <div class="preview-body">
-            <label class="sr-only" for="generated-python">Generated Python source</label>
-            <textarea
-              id="generated-python"
-              readonly
-              value={artifact.source}
-              rows="18"
-              spellcheck="false"
-            ></textarea>
-          </div>
-        </details>
-      {:else if analysis?.status === 'rejected'}
-        <div class="output-body rejection" role="status">
-          <h3>This region is not supported yet</h3>
-          <p>
-            Keep the ordinary script around the marked function. The marked region currently needs
-            bounded binary arithmetic.
-          </p>
-          <ul class="diagnostics">
-            {#each analysis.diagnostics as diagnostic}
-              <li>
-                <p>{diagnostic.message}</p>
-                {#if diagnostic.line}<button
-                    class="button small"
-                    onclick={() => selectLine(diagnostic.line!)}
-                  >
-                    Line {diagnostic.line}<Icon name="arrow" size={13} /></button
-                  >{/if}
-              </li>
-            {/each}
-          </ul>
+      </Panel>
+      <section aria-labelledby="compilation-analytics-title">
+        <h3 id="compilation-analytics-title">Compilation analytics</h3>
+        <div class="analytics-grid">
+          <Metric
+            label="Binary inputs"
+            value={plan.qubo.num_variables}
+            note="Verified objective width"
+          />
+          <Metric
+            label="Circuit layers"
+            value={plan.circuit.p}
+            note="Generated plan · not executed"
+          />
+          <Metric
+            label="Logical depth"
+            value={plan.circuit.logical_depth}
+            note="Before transpilation · not measured"
+          />
         </div>
-      {:else}
-        <div class="output-placeholder">
-          <Icon name={loading === 'generate' ? 'clock' : 'code'} size={24} />
-          <div>
-            <h3>
-              {loading === 'generate' ? 'Converting your source…' : 'Ready when your script is'}
-            </h3>
-            <p>
-              Load or paste Python, mark your objective, then select <strong>Convert Python</strong
-              >. The converted .py file will be available to preview and download.
-            </p>
-          </div>
+      </section>
+      <section aria-labelledby="performance-title">
+        <h3 id="performance-title">Measured performance</h3>
+        <div class="analytics-grid performance-grid">
+          <Metric
+            label="Classical runtime"
+            value="Not run"
+            note="No classical measurement available"
+          />
+          <Metric label="QAOA runtime" value="Not run" note="No quantum measurement available" />
+          <Metric
+            label="Solution quality"
+            value="Not measured"
+            note="Requires an executed comparison"
+          />
         </div>
-      {/if}
-    </Panel>
-
-    {#if analysis?.status === 'supported'}
+      </section>
+      <section aria-labelledby="communication-title">
+        <h3 id="communication-title">Quantum communication timing</h3>
+        <p class="timing-note">
+          Provider connection pending. These placeholders are included in your downloaded test plan.
+          Actual timings need to be recorded when provider instrumentation is connected.
+        </p>
+        <div class="analytics-grid">
+          {#each communicationFields as field}
+            <Metric
+              label={field.label}
+              value={formatOptionalMs(plan.communication_timing?.[field.key])}
+              note={field.note}
+            />
+          {/each}
+        </div>
+        <p class="timing-note">
+          Round-trip time already includes sending, remote waits and processing, and receiving. Do
+          not add those components to it again. Unknown timing stays unmeasured, not zero.
+        </p>
+      </section>
       <details class="panel conversion-details">
-        <summary>Conversion details and future benchmarking</summary>
+        <summary>Objective & circuit details</summary>
         <div class="detail-section">
           {#each analysis.diagnostics as diagnostic}
             <p class="diagnostic-note"><strong>{diagnostic.code}</strong> {diagnostic.message}</p>
@@ -453,44 +665,129 @@
             </div>
           </details>
         {/if}
-        <div class="detail-section">
-          <h3>Future comparison</h3>
-          <p>
-            Both future solvers optimize the same verified objective. This does not run or time the
-            surrounding Python application.
-          </p>
-          <div class="comparison-actions">
-            <button class="button" disabled={busy} onclick={() => run('plan')}
-              >Prepare comparison<Icon name="arrow" size={15} /></button
-            >
-            <button class="button" disabled>Run comparison — execution disabled</button>
-          </div>
-          {#if plan}
-            <div class="comparison-plan">
-              <p role="status"><strong>Comparison prepared · not executed</strong></p>
-              <p>
-                Layers {plan.config.p} · Shots {plan.config.shots} · Seed {plan.config.seed}.
-                Classical and QAOA execution are disabled.
-              </p>
-              {#if planUrl}<a class="button" href={planUrl} download="q_atlas_benchmark_plan.json">
-                  Download comparison plan<Icon name="download" size={15} /></a
-                >{/if}
-              <ul class="blockers">
-                {#each plan.blockers as blocker}<li>{blocker}</li>{/each}
-              </ul>
-            </div>
-          {/if}
-        </div>
+
         <details class="result-disclosure">
           <summary>Raw analysis JSON</summary>
           <pre class="code-block">{JSON.stringify(analysis, null, 2)}</pre>
         </details>
       </details>
-    {/if}
-  </div>
-</div>
+      <details class="panel conversion-details">
+        <summary>Execution readiness</summary>
+        <div class="detail-section">
+          <ul class="blockers">
+            {#each plan.blockers as blocker}<li>{blocker}</li>{/each}
+          </ul>
+        </div>
+      </details>
+    </div>
+    <div class="step-actions">
+      <button class="button" disabled={busy} onclick={() => goToStep('test')}>Back to test</button>
+      <button class="button" disabled={busy} onclick={() => goToStep('input')}
+        >Edit Python<Icon name="code" size={15} /></button
+      >
+    </div>
+  {/if}
+</section>
 
 <style>
+  .workflow-nav ol {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    list-style: none;
+    padding: 0;
+    margin: 0 0 28px;
+  }
+  .workflow-nav button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 54px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 13px;
+    text-align: left;
+  }
+  .workflow-nav button.current {
+    border-color: var(--blue);
+    color: var(--blue);
+    background: #f4f7fc;
+  }
+  .workflow-nav button.complete {
+    color: var(--text);
+  }
+  .step-number {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    font: 12px var(--mono);
+  }
+  .stage-heading {
+    margin-bottom: 20px;
+  }
+  .stage-heading h2 {
+    margin: 6px 0 0;
+    font-size: 22px;
+    font-weight: 400;
+    scroll-margin-top: 20px;
+  }
+  .stage-heading h2:focus {
+    outline: none;
+  }
+  .step-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 20px;
+  }
+  .workflow-stage > .request-status.has-status {
+    margin-bottom: 20px;
+  }
+  .analytics-workspace {
+    display: grid;
+    gap: 20px;
+    min-width: 0;
+  }
+  .analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .timing-note {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.7;
+    margin: 10px 0 16px;
+  }
+  .test-summary {
+    margin: 16px 0 0;
+  }
+  .test-summary div {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 12px 0;
+    border-top: 1px solid var(--border);
+    font-size: 13px;
+  }
+  dt {
+    color: var(--muted);
+  }
+  dd {
+    margin: 0;
+    text-align: right;
+    overflow-wrap: anywhere;
+    min-width: 0;
+  }
   .availability {
     display: flex;
     align-items: flex-start;
@@ -724,10 +1021,6 @@
     max-width: 520px;
     margin: 0;
   }
-  .output-placeholder strong {
-    font-weight: 500;
-    color: var(--text);
-  }
   .result-disclosure {
     border-top: 1px solid var(--border);
   }
@@ -792,12 +1085,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-  }
-  .comparison-plan {
-    margin-top: 20px;
-    border-left: 3px solid var(--blue);
-    background: #f4f7fc;
-    padding: 16px;
+    margin-top: 16px;
   }
   .blockers,
   .diagnostics {
@@ -838,6 +1126,15 @@
     }
   }
   @media (max-width: 600px) {
+    .workflow-nav ol {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .analytics-grid {
+      grid-template-columns: 1fr;
+    }
+    .step-actions > .button {
+      width: 100%;
+    }
     .configuration {
       display: block;
     }

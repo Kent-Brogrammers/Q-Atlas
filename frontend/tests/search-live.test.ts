@@ -230,6 +230,11 @@ test('invalid backend probabilities or missing effective iterations are not plot
 test('typed search transport returns backend results without example fallback', async () => {
   const request = { ...buildRequest(defaultSettings()), iterations: 2 };
   const result = fixture(request);
+  result.metrics.shots = 1024;
+  result.metrics.successful_shots = 0;
+  result.metrics.classical_observed_queries = 2;
+  result.metrics.quantum_oracle_queries = 2;
+  result.metrics.quantum_total_oracle_queries = 2048;
   const fetcher: typeof fetch = async (url, init) => {
     assert.equal(url, 'http://localhost:8000/api/search/run');
     assert.equal(init?.method, 'POST');

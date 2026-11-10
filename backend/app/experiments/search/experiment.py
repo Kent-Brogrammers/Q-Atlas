@@ -57,7 +57,8 @@ def run_experiment(request: SearchRequest) -> SearchResult:
     counts = {bits[::-1]: count for bits, count in execution.get_counts().items()}
     if sum(counts.values()) != request.config.shots:
         raise RuntimeError("Aer returned an unexpected shot count")
-    success = sum(counts.get(state, 0) for state in request.marked_states) / request.config.shots
+    successful_shots = sum(counts.get(state, 0) for state in request.marked_states)
+    success = successful_shots / request.config.shots
     # Most frequent observed string, not a promise of success or a hidden postselection.
     most_frequent = min(counts, key=lambda state: (-counts[state], state))
     quantum_ms = (perf_counter() - started) * 1000
@@ -100,6 +101,9 @@ def run_experiment(request: SearchRequest) -> SearchResult:
             quantum_oracle_queries=iterations,
             classical_expected_queries=classical.expected_queries,
             classical_worst_case_queries=classical.worst_case_queries,
+            successful_shots=successful_shots,
+            classical_observed_queries=classical.oracle_queries,
+            quantum_total_oracle_queries=iterations * request.config.shots,
         ),
         metadata=SearchMetadata(
             seed=request.config.seed,

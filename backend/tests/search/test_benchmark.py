@@ -89,6 +89,13 @@ def test_measured_results_match_theory_and_contract(experiment, targets, iterati
         result.metrics.theoretical_success_probability, abs=0.04
     )
     assert result.metrics.quantum_oracle_queries == result.metadata.parameters.iterations
+    assert (
+        result.metrics.successful_shots / request.config.shots == result.metrics.success_probability
+    )
+    assert result.metrics.classical_observed_queries == int(min(targets), 2) + 1
+    assert result.metrics.quantum_total_oracle_queries == (
+        result.metrics.quantum_oracle_queries * request.config.shots
+    )
     assert result.metrics.classical_expected_queries == (2**request.num_qubits + 1) / (
         len(targets) + 1
     )
@@ -127,6 +134,7 @@ def test_unmarked_observation_is_not_relabelled_as_success(experiment):
             )
         )
         if result.metrics.success_probability == 0:
+            assert result.metrics.successful_shots == 0
             assert result.quantum.best_bitstring != "00"
             break
     else:

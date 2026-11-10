@@ -68,21 +68,3 @@ def test_runtime_budget_is_enforced_and_worker_is_reaped(client):
     assert response.status_code == 504
     assert response.json()["error"]["code"] == "TIMEOUT"
     assert {process.pid for process in mp.active_children()} <= before
-
-
-def test_optimization_endpoint_remains_a_stub(client):
-    for path, payload in [
-        (
-            "/api/optimization/run",
-            {
-                "problem": {
-                    "kind": "graph",
-                    "num_vertices": 2,
-                    "edges": [{"i": 0, "j": 1, "coefficient": 1}],
-                }
-            },
-        ),
-    ]:
-        response = client.post(path, json=payload)
-        assert response.status_code == 501
-        assert response.json()["error"]["code"] == "NOT_IMPLEMENTED"

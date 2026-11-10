@@ -132,7 +132,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Run */
+        /**
+         * Run
+         * @description Compare an exact classical solve and local Aer QAOA on a graph or QUBO.
+         */
         post: operations["run_api_optimization_run_post"];
         delete?: never;
         options?: never;
@@ -280,6 +283,7 @@ export interface components {
             qubo: components["schemas"]["QUBO"];
             config: components["schemas"]["QAOAConfig"];
             circuit: components["schemas"]["CircuitPreview"];
+            communication_timing?: components["schemas"]["CompilerCommunicationPlan"];
             /**
              * Classical Runner
              * @default app.experiments.optimization.solvers.run_classical
@@ -326,6 +330,26 @@ export interface components {
             quantum: components["schemas"]["QAOAResult"] | null;
             metrics: components["schemas"]["OptimizationMetrics"];
             metadata: components["schemas"]["OptimizationMetadata"];
+        };
+        /**
+         * CompilerCommunicationPlan
+         * @description Reserved provider timing fields in ms; preparation emits null, never measurements.
+         *
+         *     Submission is request-to-job-acknowledgement, retrieval is ready-result download
+         *     and decoding. Round trip includes remote wait/processing and client overhead;
+         *     it is not an extra duration to add to those overlapping components.
+         */
+        CompilerCommunicationPlan: {
+            /** Submission Ms */
+            submission_ms?: number | null;
+            /** Result Retrieval Ms */
+            result_retrieval_ms?: number | null;
+            /** Queue Ms */
+            queue_ms?: number | null;
+            /** Remote Processing Ms */
+            remote_processing_ms?: number | null;
+            /** Round Trip Ms */
+            round_trip_ms?: number | null;
         };
         /** CompilerGenerateRequest */
         CompilerGenerateRequest: {
@@ -1164,6 +1188,21 @@ export interface components {
             classical_expected_queries?: number | null;
             /** Classical Worst Case Queries */
             classical_worst_case_queries?: number | null;
+            /**
+             * Successful Shots
+             * @description Number of sampled outcomes in the marked set; not postselected shots.
+             */
+            successful_shots?: number | null;
+            /**
+             * Classical Observed Queries
+             * @description Actual predicate checks until the first classical match for this instance.
+             */
+            classical_observed_queries?: number | null;
+            /**
+             * Quantum Total Oracle Queries
+             * @description Combined-oracle applications across all shots: iterations times shots.
+             */
+            quantum_total_oracle_queries?: number | null;
         };
         /** SearchRequest */
         SearchRequest: {
@@ -1828,6 +1867,24 @@ export interface operations {
             };
             /** @description Feature not implemented */
             501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Quantum dependencies unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Solver runtime budget exceeded */
+            504: {
                 headers: {
                     [name: string]: unknown;
                 };

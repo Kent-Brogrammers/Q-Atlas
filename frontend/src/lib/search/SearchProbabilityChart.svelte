@@ -1,6 +1,10 @@
 <script lang="ts">
   import type { CurvePoint } from './live.ts';
-  let { points }: { points: CurvePoint[] } = $props();
+  let {
+    points,
+    measurementLabel = 'Measured Aer shots'
+  }: { points: CurvePoint[]; measurementLabel?: string } = $props();
+  let hasRanges = $derived(points.some((point) => point.observedRange !== undefined));
   let last = $derived(Math.max(1, ...points.map((point) => point.iteration)));
   const y = (probability: number) => 210 - probability * 180;
   let x = $derived((iteration: number) => 55 + (iteration / last) * 490);
@@ -45,6 +49,29 @@
       />
       <path d={path('measured')} fill="none" stroke="#0f62fe" stroke-width="2" />
       {#each points as point}
+        {#if point.observedRange}
+          <g stroke="#0f62fe" stroke-width="2">
+            <title
+              >Observed trial range: {(point.observedRange[0] * 100).toFixed(2)}% to {(
+                point.observedRange[1] * 100
+              ).toFixed(2)}%; not a confidence interval</title
+            >
+            <line
+              x1={x(point.iteration)}
+              x2={x(point.iteration)}
+              y1={y(point.observedRange[0])}
+              y2={y(point.observedRange[1])}
+            />
+            {#each point.observedRange as bound}
+              <line
+                x1={x(point.iteration) - 6}
+                x2={x(point.iteration) + 6}
+                y1={y(bound)}
+                y2={y(bound)}
+              />
+            {/each}
+          </g>
+        {/if}
         {#if point.theoretical !== null}<circle
             cx={x(point.iteration)}
             cy={y(point.theoretical)}
@@ -69,9 +96,13 @@
       <text x="300" y="258" text-anchor="middle">Grover iterations / oracle calls per shot</text>
     </svg>
     <figcaption>
-      <span class="measured">● Measured Aer shots</span><span class="theory">○ Ideal theory</span>
+      <span class="measured">● {measurementLabel}</span><span class="theory">○ Ideal theory</span>
     </figcaption>
-    <p class="hint">Lines join integer-iteration samples. The table below provides every value.</p>
+    <p class="hint">
+      {hasRanges
+        ? 'Whisker: observed min/max across trials, not a confidence interval.'
+        : 'Lines join integer-iteration samples.'} The table below provides every value.
+    </p>
   {:else}
     <div class="empty">
       <strong>No measurements yet</strong>

@@ -18,16 +18,22 @@ npm run dev
 Open Vite's local URL, normally `http://127.0.0.1:5173`. Fonts are bundled locally.
 The Svelte compiler at `/compiler/` now sends static generation/planning requests:
 load a normal Python file, mark one function with `@qatlas.objective`, click
-**Convert Python**, then download the result. Function/input names are arbitrary;
+**Convert Python**, then follow the four separate views: **Python input → Compiled
+code → Test → Results & analytics**. Conversion opens the compiled code automatically;
+**Continue to test** opens comparison preparation, and **Prepare test plan** opens
+analytics. Back buttons and the step navigation preserve the current source and
+downloads. Editing source or layers clears downstream data. Test preparation runs
+no solvers; performance metrics remain unmeasured. Function/input names are arbitrary;
 named scalar inputs and statically indexed vectors can infer width without `num_bits`.
 Quantum controls and mathematical details are optional advanced sections. No circuit
 code or second decorator is needed. File contents are never executed.
 
 FastAPI can be started independently using the root README or together with this
-frontend using `../dev.sh`. Its materials route runs the existing spin-system simulation
-only when requested; the Materials route displays live results. The Neutrino Lab and
-Grover Search also use their live backend APIs. Compiler conversion does not execute
-user code or run benchmarks, and optimization benchmarks remain unavailable.
+frontend using `../dev.sh`. Its materials route runs the existing spin-system
+simulation only when requested; the Materials route displays live results. The
+Neutrino Lab and Grover Search also use their live backend APIs. The compiler
+workflow calls only generation and planning; it does not execute user code or run
+benchmarks. Optimization benchmarks remain unavailable.
 
 ```sh
 npm run check
@@ -145,6 +151,26 @@ Windows commands and a demo rehearsal.
 `src/lib/search/live.ts` validates settings and orchestrates bounded sweeps;
 `SearchProbabilityChart.svelte` plots returned probabilities. Tests use synthetic
 fixtures only in `tests/search-live.test.ts`, never in the live application.
+
+**Run repeated trials** measures the same single-run configuration two to five times,
+using sequential seeds incremented modulo `2^32`. `src/lib/search/trials.ts` validates
+the completed records and summarizes mean probability, observed min/max, sample
+standard deviation, median solver times, seeds, and total shots. The chart shows a
+mean point and observed-range whisker; this is not a confidence interval. The trial
+table preserves individual results and seeds. JSON exports include the presentation
+summary separately from raw API responses; each raw run still reports one repetition.
+Failures/cancellation publish no partial summary. Tests for aggregation, metadata,
+seed wraparound and request control are in `tests/search-trials.test.ts`.
+
+For rehearsals, **Load recorded curve/trials** explicitly loads previously measured
+local API responses with a dated banner and source revision. Nothing loads on page
+startup or as an automatic error fallback. Recorded downloads retain a distinct
+source label and provenance; editing controls clears the recording. The matching
+configuration is restored when loading it. The backend script
+`scripts/prepare_search_demo.py` regenerates the recording only after real endpoint
+checks pass; `--verify` checks a saved bundle without simulation. See the search guide
+for the full rehearsal checklist. `tests/search-recorded.test.ts` covers provenance,
+evidence consistency, independent copies and reactive-state JSON export.
 
 ## API types and integration
 
