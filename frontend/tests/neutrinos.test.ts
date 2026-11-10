@@ -229,4 +229,5 @@ test('unavailable accuracy stays unavailable while a measured zero stays zero', 
   assert.equal(formatValue(NaN), '—');
   assert.equal(formatValue(0), '0');
   assert.equal(formatValue(0.0000001), '1.00e-7');
+  assert.equal(formatValue(0.123456), '0.123456');
 });

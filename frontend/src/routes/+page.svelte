@@ -50,18 +50,20 @@
     <dl>
       <div>
         <dt>Neutrino models and flavors</dt>
-        <dd>Awaiting backend definition</dd>
+        <dd>Effective two-flavor model · electron and other flavor</dd>
       </div>
       <div>
         <dt>Vacuum and constant-density matter</dt>
-        <dd>Planned · support unconfirmed</dd>
+        <dd>Available, including two-layer profiles</dd>
       </div>
       <div>
         <dt>Classical–Qiskit comparison</dt>
-        <dd>Not connected</dd>
+        <dd>SciPy reference, ideal Aer, and finite-shot measurements</dd>
       </div>
     </dl>
-    <p>No neutrino experiments can run yet. The Lab shows configuration and result requirements.</p>
+    <p>
+      Open the Neutrino Lab and select Run experiment to calculate a normalized propagation curve.
+    </p>
   </section>
 </div>
 

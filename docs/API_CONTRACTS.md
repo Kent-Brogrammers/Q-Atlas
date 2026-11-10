@@ -24,6 +24,53 @@ OpenAPI precisely records required keys, enums, defaults, and numeric bounds.
 | POST `/api/optimization/run` | `OptimizationRequest` | `OptimizationResult` | Developer 3 |
 | POST `/api/search/run` | `SearchRequest` | `SearchResult` | Developer 4 |
 | POST `/api/materials/run` | `MaterialsRequest` | `MaterialsResult` | Developer 1 |
+| POST `/api/neutrinos/run` | `NeutrinoRequest` | `NeutrinoResponse` | Neutrino experiment + Developer 5 integration |
+
+### Neutrino Lab integration
+
+Executable web models are in `backend/app/schemas/neutrinos.py`, reusing the
+experiment's validated inputs and shared validation/timing primitives. All neutrino
+inputs are **normalized**, except `theta` in radians; no GeV/km conversion is exposed.
+
+Request example (settings only, not experimental evidence):
+
+```json
+{
+  "experiment": {
+    "parameters": {"theta": 0.2, "delta_m2": 1, "energy": 1, "particle": "neutrino"},
+    "layers": [{"distance": 4, "potential": 0}],
+    "shots": 4096,
+    "seed": 42
+  },
+  "axis": "distance",
+  "samples": 21,
+  "max_potential": 2,
+  "timeout_seconds": 30
+}
+```
+
+`axis=distance` samples from zero to the total baseline, traversing each layer in
+listed order and truncating the last traversed layer at the requested distance.
+It does not rescale the entire profile. `axis=potential` requires one layer and
+sweeps potential from zero to `max_potential` at fixed distance. Zero extent returns
+one point. Samples default to 21 (range 2–41); potential is bounded to [0,10].
+Web runs permit at most 16 layers, total distance at most 100, and
+`samples * shots <= 500000`. Local CLI limits remain unchanged. The disposable
+worker enforces a wall-clock budget including startup (default 30s, range 0.01–60s).
+
+The response declares model `effective_two_flavor`, units `normalized`, the axis,
+aligned `coordinates`, and full measured `results` at each coordinate. Each record
+contains both flavors, analytical results where applicable, independent SciPy,
+ideal Aer, finite-shot measurements, counts, errors, numerical stability, depth,
+timing scopes, actual point seed, and versions. Seeds increment modulo `2**32`.
+No probability is encoded as an optimization objective. API startup imports no
+quantum packages. Missing simulation dependencies return 503; timeout returns 504;
+invalid inputs return 422 through the shared error envelope. Failed workers are
+reaped and unexpected failures use the sanitized shared 500 handler.
+
+The live Svelte page uses generated types and this endpoint; earlier
+`frontend/src/lib/neutrinos/proposal.ts` remains a historical discussion draft,
+not the live wire format. See `docs/NEUTRINOS.md` for physical conventions.
 
 Health returns `{"status":"ok","service":"q-atlas","backend":"aer_simulator","experiments_ready":false}`.
 This signals API readiness, not readiness of all experiments. Compiler analysis,
