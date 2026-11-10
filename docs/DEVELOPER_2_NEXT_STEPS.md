@@ -8,7 +8,9 @@ Developer 3/5 handoffs, provider decisions, day-of sequence and evidence templat
 
 The previous roadmap is retained in git history. Its broad test selections and
 statements that both shared solvers are stubs are obsolete after main PRs #6–#9.
-The classical baseline is implemented; the shared QAOA runner remains unfinished.
+The classical baseline and PR #11's seeded angle optimizer are implemented; the shared
+QAOA runner still needs final sampling and result assembly. An angle-search expectation
+does not replace a measured assignment and its objective.
 Use only the inspected compiler test selection during the current no-execution phase.
 
 1. Freeze one primary objective and one backup with independent expected values.
