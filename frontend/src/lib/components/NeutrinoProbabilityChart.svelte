@@ -1,50 +1,31 @@
 <script lang="ts">
-  import type { ProposedNeutrinoResult } from '../neutrinos/proposal.ts';
-  import { displaySeries, formatValue, probabilityPath } from '../neutrinos/presentation.ts';
+  import type { NeutrinoResponse } from '../../types/index.ts';
+  import { curveValues, flavorChannels } from '../neutrinos/live.ts';
+  import { formatValue, probabilityPath } from '../neutrinos/presentation.ts';
 
-  let {
-    result = null,
-    distanceKm = 0
-  }: { result?: ProposedNeutrinoResult | null; distanceKm?: number } = $props();
-  let source = $state<'both' | 'classical' | 'qiskit'>('both');
-  let series = $derived(displaySeries(result));
-  let extent = $derived(
-    result?.distances_km.at(-1) ?? (Number.isFinite(distanceKm) && distanceKm >= 0 ? distanceKm : 0)
+  let { result = null }: { result?: NeutrinoResponse | null } = $props();
+  let extent = $derived(result?.coordinates.at(-1) ?? 0);
+  let axis = $derived(
+    result?.axis === 'potential'
+      ? 'Matter potential (normalized)'
+      : 'Propagation distance (normalized)'
   );
-  const colors = ['#0f62fe', '#00869b', '#8061b5'];
 </script>
 
 <div class="probability-chart">
   <div class="chart-controls">
-    <div class="segmented" aria-label="Probability data source">
-      {#each [['both', 'Both methods'], ['classical', 'Classical'], ['qiskit', 'Qiskit']] as [value, label]}
-        <button
-          class:selected={source === value}
-          aria-pressed={source === value}
-          disabled={!series.length}
-          onclick={() => (source = value as typeof source)}>{label}</button
-        >
-      {/each}
-    </div>
-    <span class="chart-state">{series.length ? 'Simulator result' : 'No result data'}</span>
+    <span class="chart-state">{result ? 'Qiskit Aer · simulated' : 'No experiment run yet'}</span>
   </div>
   <figure>
     <div class="plot-region">
-      <!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard users must be able to scroll this overflow region.) -->
-      <div
-        class="plot-scroll"
-        tabindex="0"
-        role="region"
-        aria-label="Flavor probability plot; scroll horizontally on narrow screens"
-      >
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard users need to scroll the plot.) -->
+      <div class="plot-scroll" tabindex="0" role="region" aria-label="Flavor probability plot">
         <svg
           viewBox="0 0 860 330"
           role="img"
-          aria-label={series.length
-            ? 'Backend flavor probabilities by propagation distance.'
-            : 'Empty probability axes. No experiment results available; no flavor curves are plotted.'}
+          aria-label={`Flavor probabilities versus ${axis.toLowerCase()}`}
         >
-          <title>Flavor probability versus propagation distance</title>
+          <title>Flavor probabilities versus {axis.toLowerCase()}</title>
           {#each [0, 0.25, 0.5, 0.75, 1] as value}
             <line x1="64" x2="818" y1={272 - value * 230} y2={272 - value * 230} stroke="#e5ebf1" />
             <text x="49" y={276 - value * 230} text-anchor="end">{value}</text>
@@ -54,51 +35,61 @@
           <line x1="64" x2="818" y1="272" y2="272" stroke="#c3cedb" />
           {#each extent > 0 ? [0, 0.25, 0.5, 0.75, 1] : [0] as fraction}
             <text x={64 + fraction * 754} y="295" text-anchor="middle"
-              >{formatValue(fraction * extent, 1)}</text
+              >{formatValue(fraction * extent, 2)}</text
             >
           {/each}
-          <text x="818" y="320" text-anchor="end" class="axis-title">Propagation distance (km)</text
-          >
-          {#each series as item, i}
-            {#if source !== 'qiskit'}<path
-                d={probabilityPath(result!.distances_km, item.values.classical, extent)}
-                stroke={colors[i % colors.length]}
-                stroke-width="2"
-                fill="none"><title>{item.flavor.label} · classical reference</title></path
-              >{/if}
-            {#if source !== 'classical'}<path
-                d={probabilityPath(result!.distances_km, item.values.qiskit, extent)}
-                stroke={colors[i % colors.length]}
+          <text x="818" y="320" text-anchor="end" class="axis-title">{axis}</text>
+          {#if result}
+            {#each flavorChannels as flavor}
+              <path
+                d={probabilityPath(
+                  result.coordinates,
+                  curveValues(result, flavor.key, 'numerical'),
+                  extent
+                )}
+                stroke={flavor.color}
+                stroke-width="3"
+                fill="none"><title>{flavor.label} · SciPy reference</title></path
+              >
+              <path
+                d={probabilityPath(
+                  result.coordinates,
+                  curveValues(result, flavor.key, 'ideal'),
+                  extent
+                )}
+                stroke={flavor.color}
                 stroke-width="2"
                 stroke-dasharray="6 4"
-                fill="none"><title>{item.flavor.label} · Qiskit simulator</title></path
-              >{/if}
-          {/each}
+                fill="none"><title>{flavor.label} · ideal Qiskit</title></path
+              >
+              {#each curveValues(result, flavor.key, 'measured') as probability, i}
+                <circle
+                  cx={64 + (result.coordinates[i] / (extent || 1)) * 754}
+                  cy={272 - probability * 230}
+                  r="3"
+                  fill={flavor.color}
+                  ><title>{flavor.label} · shots {formatValue(probability)}</title></circle
+                >
+              {/each}
+            {/each}
+          {/if}
         </svg>
       </div>
-      {#if !series.length}<div class="plot-empty">
-          <h3>No experiment results available</h3>
+      {#if !result}<div class="plot-empty">
+          <h3>Run an experiment</h3>
           <p>
-            Flavor curves will appear after a supported model returns classical and Qiskit
-            probabilities.
+            Choose a configuration, then select Run experiment to calculate real simulation results.
           </p>
         </div>{/if}
     </div>
     <figcaption>
-      {#if series.length}<div class="flavor-legend">
-          {#each series as item, i}<span
-              ><i style:background={colors[i % colors.length]}></i>{item.flavor.symbol} · {item
-                .flavor.label}</span
-            >{/each}
-        </div>
-        <p>Solid: classical reference · Dashed: Qiskit simulator</p>
-      {:else}<p>
-          No flavor channels assumed. The propagation grid awaits backend configuration; axes are
-          not simulation data.
-        </p>{/if}
-      <p class="mobile-scroll-note">
-        Scroll the plot horizontally to inspect the full distance axis.
-      </p>
+      <div class="flavor-legend">
+        {#each flavorChannels as flavor}<span
+            ><i style:background={flavor.color}></i>{flavor.label}</span
+          >{/each}
+      </div>
+      <p>Solid: SciPy reference · Dashed: ideal Qiskit · Dots: finite-shot measurements</p>
+      <p class="mobile-scroll-note">Scroll horizontally to inspect the full plot.</p>
     </figcaption>
   </figure>
 </div>
