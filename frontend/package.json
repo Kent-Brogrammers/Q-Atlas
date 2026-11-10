@@ -10,7 +10,7 @@
     "#lib/*": "./src/lib/*"
   },
   "scripts": {
-    "dev": "vite dev --host 127.0.0.1",
+    "dev": "vite dev --host 127.0.0.1 --strictPort",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
     "prepare": "svelte-kit sync",
@@ -21,7 +21,8 @@
     "typecheck": "npm run check",
     "types:export": "../backend/.venv/bin/python ../backend/scripts/export_openapi.py > openapi.json",
     "types:generate": "npm run types:export && npm run generate --workspace @q-atlas/api-types",
-    "types:check": "npm run types:export && npm run generate --workspace @q-atlas/api-types -- --check"
+    "types:check": "npm run types:export && npm run generate --workspace @q-atlas/api-types -- --check",
+    "test:compiler": "node --experimental-strip-types tests/compiler-source.test.mjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.2.7",

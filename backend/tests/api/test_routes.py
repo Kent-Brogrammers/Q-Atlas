@@ -31,7 +31,7 @@ def test_health_is_api_readiness_only(client):
     assert health.experiments_ready is False
 
 
-@pytest.mark.parametrize(("path", "payload"), REQUESTS)
+@pytest.mark.parametrize(("path", "payload"), REQUESTS[2:])
 def test_validated_stubs_have_no_measurements(client, path, payload):
     response = client.post(path, json=payload)
     assert response.status_code == 501

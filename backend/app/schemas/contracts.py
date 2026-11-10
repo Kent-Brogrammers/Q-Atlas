@@ -81,6 +81,10 @@ class CompilerBenchmarkRequest(CompilerAnalyzeRequest):
     config: QAOAConfig = Field(default_factory=QAOAConfig)
 
 
+class CompilerGenerateRequest(CompilerAnalyzeRequest):
+    p: int = Field(default=1, ge=1, le=8)
+
+
 class GraphEdge(QuadraticTerm):
     """i/j are vertices; coefficient is the finite edge weight."""
 
@@ -324,11 +328,58 @@ class CircuitMetadata(Contract):
     backend: Backend = "aer_simulator"
 
 
+class CircuitAngle(Contract):
+    """Angle in radians: coefficient * the named variational parameter."""
+
+    parameter: str = Field(pattern=r"^(gamma|beta)_[0-7]$")
+    coefficient: float
+
+
+class CircuitGate(Contract):
+    name: Literal["h", "rz", "cp", "rx"]
+    qubits: list[Annotated[int, Field(ge=0, lt=MAX_VARIABLES)]] = Field(min_length=1, max_length=2)
+    angle: CircuitAngle | None = None
+
+    @model_validator(mode="after")
+    def validate_gate(self) -> Self:
+        arity = 2 if self.name == "cp" else 1
+        if len(self.qubits) != arity or len(set(self.qubits)) != arity:
+            raise ValueError("gate must have the correct number of distinct qubits")
+        if (self.name == "h") != (self.angle is None):
+            raise ValueError("only h has no angle; rotation gates require an angle")
+        return self
+
+
+class CircuitPreview(CircuitMetadata):
+    """Symbolic, untranspiled QAOA plan. No sampling or execution evidence."""
+
+    kind: Literal["qaoa_logical_preview"] = "qaoa_logical_preview"
+    executed: Literal[False] = False
+    depth: None = None  # Transpiled depth is unavailable for a symbolic preview.
+    p: int = Field(ge=1, le=8)
+    parameters: list[str] = Field(min_length=2, max_length=16)
+    gates: list[CircuitGate] = Field(min_length=1, max_length=2048)
+    global_phase: list[CircuitAngle] = Field(min_length=1, max_length=8)
+    logical_depth: int = Field(ge=1)
+
+    @model_validator(mode="after")
+    def validate_references(self) -> Self:
+        expected = [name for layer in range(self.p) for name in (f"gamma_{layer}", f"beta_{layer}")]
+        if self.parameters != expected:
+            raise ValueError("parameters must be ordered gamma_0, beta_0, ... for p layers")
+        angles = self.global_phase + [gate.angle for gate in self.gates if gate.angle is not None]
+        if any(angle.parameter not in expected for angle in angles):
+            raise ValueError("angle references an undeclared parameter")
+        if any(qubit >= self.num_qubits for gate in self.gates for qubit in gate.qubits):
+            raise ValueError("gate references a qubit outside the circuit width")
+        return self
+
+
 class CompilerAnalyzeResult(Contract):
     status: Literal["supported", "rejected"]
     diagnostics: list[Diagnostic]
     qubo: QUBO | None = None
-    circuit: CircuitMetadata | None = None
+    circuit: CircuitPreview | None = None
 
     @model_validator(mode="after")
     def validate_analysis(self) -> Self:
@@ -336,6 +387,51 @@ class CompilerAnalyzeResult(Contract):
             raise ValueError("supported analysis requires a normalized QUBO")
         if self.status == "rejected" and (self.qubo is not None or self.circuit is not None):
             raise ValueError("rejected analysis cannot include a QUBO or circuit")
+        return self
+
+
+class GeneratedPythonArtifact(Contract):
+    filename: Literal["q_atlas_generated.py"] = "q_atlas_generated.py"
+    source: str = Field(min_length=1, max_length=150_000)
+    entrypoint: str = Field(min_length=1)
+    replaced_function: str | None = None
+    executed: Literal[False] = False
+
+
+class CompilerGenerateResult(CompilerAnalyzeResult):
+    artifact: GeneratedPythonArtifact | None = None
+
+    @model_validator(mode="after")
+    def validate_artifact(self) -> Self:
+        if (self.status == "supported") != (self.artifact is not None):
+            raise ValueError("only supported generation requires an artifact")
+        return self
+
+
+class CompilerBenchmarkPlan(Contract):
+    """A reproducible future comparison, with no execution or measured results."""
+
+    status: Literal["planned"] = "planned"
+    comparison_scope: Literal["objective_optimization"] = "objective_optimization"
+    script_execution_enabled: Literal[False] = False
+    quantum_execution_enabled: Literal[False] = False
+    problem_id: str = Field(min_length=1, max_length=128)
+    source_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    generated_source_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    entrypoint: str = Field(min_length=1)
+    qubo: QUBO
+    config: QAOAConfig
+    circuit: CircuitPreview
+    classical_runner: Literal["app.experiments.optimization.solvers.run_classical"] = (
+        "app.experiments.optimization.solvers.run_classical"
+    )
+    quantum_runner: Literal["app.quantum.qaoa.run_qaoa"] = "app.quantum.qaoa.run_qaoa"
+    blockers: list[str] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def validate_plan(self) -> Self:
+        if self.circuit.p != self.config.p or self.circuit.num_qubits != self.qubo.num_variables:
+            raise ValueError("planned circuit must match the QUBO width and configuration")
         return self
 
 

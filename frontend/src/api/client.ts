@@ -1,4 +1,7 @@
 import type {
+  CompilerGenerateRequest,
+  CompilerGenerateResult,
+  CompilerBenchmarkPlan,
   CompilerAnalyzeRequest,
   CompilerAnalyzeResult,
   CompilerBenchmarkRequest,
@@ -100,6 +103,10 @@ export function createApiClient({
     health: (signal?: AbortSignal) => request<HealthResponse>('/health', undefined, signal),
     analyze: (body: CompilerAnalyzeRequest, signal?: AbortSignal) =>
       request<CompilerAnalyzeResult>('/compiler/analyze', body, signal),
+    generateScript: (body: CompilerGenerateRequest, signal?: AbortSignal) =>
+      request<CompilerGenerateResult>('/compiler/generate', body, signal),
+    prepareCompilerBenchmark: (body: CompilerBenchmarkRequest, signal?: AbortSignal) =>
+      request<CompilerBenchmarkPlan>('/compiler/benchmark/plan', body, signal),
     compilerBenchmark: (body: CompilerBenchmarkRequest, signal?: AbortSignal) =>
       postBenchmark('/api/compiler/benchmark', body, signal),
     optimization: (body: OptimizationRequest, signal?: AbortSignal) =>

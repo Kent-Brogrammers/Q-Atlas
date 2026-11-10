@@ -16,9 +16,17 @@ npm run dev
 ```
 
 Open Vite's local URL, normally `http://127.0.0.1:5173`. Fonts are bundled locally.
-The Materials route sends configured requests to the live `/api/materials/run`
-endpoint and displays only returned simulation data. Start FastAPI independently
-using the root README. Compiler, optimization, and search remain HTTP 501 stubs.
+The Svelte compiler at `/compiler/` now sends static generation/planning requests:
+load a normal Python file, mark one function with `@qatlas.objective`, click
+**Convert Python**, then download the result. Function/input names are arbitrary;
+named scalar inputs and statically indexed vectors can infer width without `num_bits`.
+Quantum controls and mathematical details are optional advanced sections. No circuit
+code or second decorator is needed. File contents are never executed.
+
+FastAPI can be started independently using the root README or together with this
+frontend using `../dev.sh`. Its materials route runs the existing spin-system simulation
+only when requested; the Materials route displays live results. Compiler execution,
+optimization, and search benchmarks remain unavailable.
 Neutrino API integration is proposed separately and is not registered in this frontend.
 
 ```sh
@@ -36,10 +44,10 @@ example-data consistency. `build` prerenders all seven routes into `build/`.
 
 ## Structure
 
-- `src/routes/`: primary Overview, Neutrino Lab, and Methodology views. Compiler,
+- `src/routes/`: primary Overview, Python Compiler, Neutrino Lab, and Methodology views.
   Materials, Optimization, and Search remain at their original URLs; Materials
   provides the live Ising-chain request and result view.
-- `src/lib/data/navigation.ts`: the three primary links, separate from the retained
+- `src/lib/data/navigation.ts`: the four primary links, separate from the retained
   experiment catalog in `experiments.ts`.
 - `src/lib/components/`: reusable panels, controls, SVG diagrams, and example displays.
 - `src/types/api.generated.ts`: the canonical types generated from FastAPI OpenAPI.
@@ -66,8 +74,9 @@ dividers. Cards use 4–6px corners and controls remain minimally rounded.
 
 ## Neutrino Oscillation Lab
 
-The main navigation is **Overview**, **Neutrino Lab**, and **Methodology**.
-Overview introduces the science and current availability without example statistics.
+The main navigation is **Overview**, **Python Compiler**, **Neutrino Lab**, and **Methodology**.
+Overview provides a prominent **Open Python Compiler** action, a compiler capability
+summary, and the existing Neutrino science/availability information without example statistics.
 Methodology records the model scope and classical validation requirements.
 
 `/neutrinos/` is the primary workspace. Model/flavor selection, energy/distance,
@@ -90,11 +99,10 @@ are preserved.
 
 ## Retained workspaces and data provenance
 
-The original routes `/compiler/`, `/optimization/`, `/search/`, and `/materials/`
-remain accessible by direct URL. They are hidden from primary navigation and Overview
-pending the team's decision about their long-term role. Materials sends live requests
-to its implemented backend endpoint; compiler, optimization, and search remain
-unimplemented backend operations. Their shared schemas and React reference are unchanged.
+The compiler at `/compiler/` is linked from the sidebar and Overview. The original
+`/optimization/`, `/search/`, and `/materials/` routes remain accessible by direct URL.
+Materials sends live requests to its implemented backend endpoint; optimization and
+search benchmarks remain unavailable. Their shared schemas and React reference are unchanged.
 
 ## Retained behavior
 
@@ -116,8 +124,11 @@ changing settings does not compute results. Only COBYLA is supported by the curr
 shared API; SPSA is visibly disabled. The graph counts a selected partition's edges,
 not an optimized solution. Reference cuts describe the mathematical presets.
 
-Compiler edits stay local, invalidate the bundled example QUBO, and are never
-executed or analyzed. Materials and Search controls update conceptual diagrams;
+Compiler edits invalidate the returned QUBO, generated script, and plan; requests
+use the shared typed API and ignore stale responses. The default example contains
+ordinary helpers, named binary choices, and a main caller with one bare decorator.
+Optional technical output shows source-to-bit mapping and honest unexecuted gates;
+comparison execution remains disabled. Materials and Search controls update conceptual diagrams;
 they do not compute observables or Grover probabilities.
 
 ## API types and integration
