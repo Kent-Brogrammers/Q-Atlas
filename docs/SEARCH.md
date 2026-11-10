@@ -3,7 +3,7 @@
 The benchmark compares a measured Grover circuit with classical search in the
 existing shared result format. `POST /api/search/run` now exposes the bounded runner.
 Shared model fields are unchanged; generated frontend types document the route's
-503/504 errors. The Search page is not connected yet.
+503/504 errors. The Search page now calls this API for live comparisons and curves.
 
 ## Windows setup
 
@@ -125,9 +125,64 @@ package versions, which are included in metadata; timings naturally fluctuate.
 Run the new benchmark with `python -m app.experiments.search` from `backend/`.
 The earlier `.demo` command remains a simple single-target circuit demonstration.
 
-## Remaining milestones
+## Live Search page and probability curves
 
-Add the iteration sweep and connect real results on the Search page with Developer 5.
+Start the backend as shown below, then in a second terminal at the repository root:
+
+```powershell
+cd frontend
+npm.cmd ci
+npm.cmd run dev
+```
+
+Open `http://127.0.0.1:5173/search/` or select **Grover Search** in navigation.
+The overview also links to the page. Nothing runs automatically on page load.
+
+- **Run comparison** sends one existing `SearchRequest`, with optional automatic
+  iteration selection. The backend reports the effective iteration count.
+- **Measure probability curve** sends iterations 0 through the chosen last value
+  (0–12 inclusive), sequentially, overriding the manual single-run iteration setting.
+  Points share the targets, shots, seed and per-point timeout. Every probability,
+  including theory, comes from an API response. No new sweep endpoint is needed.
+- Progress reports completed points. Configuration is disabled while running.
+  Editing inputs clears old results; failed/stopped sweeps publish no partial curve.
+  **Stop requests** aborts browser transport and prevents subsequent points; an
+  in-flight backend worker can continue until it finishes or reaches its timeout.
+- The plot and accessible table distinguish measured frequencies from ideal theory.
+  Lines join integer samples. Missing values stay unavailable; zero remains zero.
+  Select a table row to inspect an iteration's query and runtime comparison.
+- **Download measured JSON** exports every completed response with recorded settings,
+  versions, timings and oracle assumptions, marked with source `live_search_api`.
+  No measurement files or synthetic fixtures are bundled as application defaults.
+
+A sweep is one run per iteration, not repeated trials at one iteration. Its points
+share a seed; no independent-run distribution or confidence interval is claimed.
+The 13-request cap and per-request timeout bound work, but the sequence can take up
+to 13 per-point budgets plus transport overhead. Quantum time includes a shot batch;
+classical time measures one search. Their ratio is not a matched-success speedup.
+
+### Demo rehearsal
+
+1. Use three qubits, target `001`, 1024 shots and seed 42.
+2. Run a comparison: automatic selection uses two iterations. Compare the recorded
+   success rate with ideal theory (0.9453125); measured values can vary by version.
+3. Measure iterations 0 through 6. Point out the drop after the first amplification
+   peak and later oscillation; more iterations are not always better.
+4. Select iteration 4 to inspect low success. Compare per-shot oracle calls against
+   classical expected/worst-case checks separately from measured wall time.
+5. Download JSON and inspect seven result records. Change targets to `001, 110` and
+   run a single comparison to demonstrate multiple targets.
+6. Enter an invalid target to verify clear errors and removal of stale measurements.
+
+Manual browser verification covered a real seven-point curve, a two-target run,
+invalid-input handling and a seven-record JSON export. Frontend tests cover request
+validation, sequential limits, cancellation, failures, response metadata, zero/missing
+probabilities and typed transport. Svelte checks cover accessibility/compiler diagnostics.
+Configuration/results stack on narrow screens and sit side by side on desktop.
+
+Core search MVP is implemented. Follow-up polish can add repeated-run statistics or
+a typed observed classical-query field, coordinated with Developers 3/5 before changing
+shared schemas. Hardware and practical quantum advantage are not claimed.
 
 ## Search API
 
