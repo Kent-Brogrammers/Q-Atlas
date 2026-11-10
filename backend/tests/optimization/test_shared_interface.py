@@ -1,12 +1,6 @@
 import pytest
 
-from app.quantum.qaoa import run_qaoa
-from app.schemas.contracts import QUBO, GraphInput, QAOAConfig
-
-
-def test_qaoa_runner_remains_an_explicit_stub(qubo_payload):
-    with pytest.raises(NotImplementedError, match="Developer 3"):
-        run_qaoa(QUBO.model_validate(qubo_payload), QAOAConfig())
+from app.schemas.contracts import GraphInput
 
 
 @pytest.mark.parametrize(

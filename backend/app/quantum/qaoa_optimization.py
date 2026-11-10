@@ -1,13 +1,11 @@
 """Seeded COBYLA angle search with a process boundary for native-work deadlines."""
 
-import logging
-import multiprocessing as mp
 from dataclasses import dataclass, replace
 from math import isfinite
-from multiprocessing.connection import Connection
 from time import perf_counter_ns
 from typing import Literal
 
+from app.quantum._execution import run_with_deadline
 from app.schemas.contracts import QUBO, QAOAConfig
 
 
@@ -91,23 +89,6 @@ def _search_angles(qubo: QUBO, config: QAOAConfig) -> AngleOptimizationResult:
     )
 
 
-def _worker(connection: Connection, qubo_payload: dict, config_payload: dict) -> None:
-    try:
-        result = _search_angles(
-            QUBO.model_validate(qubo_payload), QAOAConfig.model_validate(config_payload)
-        )
-        connection.send(("ok", result))
-    except ImportError:
-        connection.send(("dependency_missing", None))
-    except ValueError as error:
-        connection.send(("invalid", str(error)))
-    except Exception:
-        logging.getLogger(__name__).exception("QAOA angle-search worker failed")
-        connection.send(("error", None))
-    finally:
-        connection.close()
-
-
 def optimize_qaoa_angles(qubo: QUBO, config: QAOAConfig) -> AngleOptimizationResult:
     """Find the best observed mean cost within a seeded, bounded local search.
 
@@ -116,49 +97,9 @@ def optimize_qaoa_angles(qubo: QUBO, config: QAOAConfig) -> AngleOptimizationRes
     Timeout cleanup terminates and reaps the worker, with OS cleanup latency.
     This module's import path uses only core dependencies until the worker runs.
     """
-    started_ns = perf_counter_ns()
-    deadline_ns = started_ns + int(config.timeout_seconds * 1_000_000_000)
-    context = mp.get_context("spawn")
-    reader, writer = context.Pipe(duplex=False)
-    process = context.Process(
-        target=_worker,
-        args=(writer, qubo.model_dump(mode="json"), config.model_dump(mode="json")),
-        daemon=True,
+    payload, elapsed_ms = run_with_deadline(
+        qubo, config, _search_angles, task_name="QAOA angle optimization"
     )
-    received = False
-    try:
-        process.start()
-        writer.close()
-        remaining_seconds = max(0, deadline_ns - perf_counter_ns()) / 1_000_000_000
-        if not reader.poll(remaining_seconds):
-            raise TimeoutError("QAOA angle optimization exceeded timeout_seconds")
-        try:
-            status, payload = reader.recv()
-        except EOFError as error:
-            raise RuntimeError("QAOA optimization worker exited without a result") from error
-        received = True
-        if perf_counter_ns() >= deadline_ns:
-            raise TimeoutError("QAOA angle optimization exceeded timeout_seconds")
-    finally:
-        if process.pid is not None:
-            if received:
-                process.join(timeout=0.05)
-            if process.is_alive():
-                process.terminate()
-                process.join(timeout=1)
-            if process.is_alive():
-                process.kill()
-                process.join(timeout=1)
-            process.close()
-        reader.close()
-        writer.close()
-    finished_ns = perf_counter_ns()
-    if finished_ns >= deadline_ns:
-        raise TimeoutError("QAOA angle optimization exceeded timeout_seconds")
-    if status == "dependency_missing":
-        raise ImportError("Install the backend quantum extra to optimize QAOA angles")
-    if status == "invalid":
-        raise ValueError(payload)
-    if status != "ok" or not isinstance(payload, AngleOptimizationResult):
+    if not isinstance(payload, AngleOptimizationResult):
         raise RuntimeError("QAOA angle optimization failed")
-    return replace(payload, elapsed_ms=(finished_ns - started_ns) / 1_000_000)
+    return replace(payload, elapsed_ms=elapsed_ms)
