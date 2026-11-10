@@ -18,6 +18,22 @@ checklist and proposed server execution gate/provider contract for D3/D5 review.
 The compiler now revalidates returned solver models, including mutable nested timing
 and metric fields, before accepting results. Its offline bundle exporter calls no runners.
 
+### Main PR #11 follow-up
+
+The compiler has incorporated main `9cd4b2a`, including the new
+`optimize_qaoa_angles(qubo, config) -> AngleOptimizationResult` helper. Seeded COBYLA
+and its angle-search worker deadline are implemented. `run_qaoa` still raises
+`NotImplementedError`, so final sampling and `QAOAResult` assembly remain your boundary.
+The compiler continues calling that entrypoint with the existing QUBO/config contract.
+
+Do not return `AngleOptimizationResult` directly or report its expectation as the
+best sampled objective. Bind angles, sample, normalize bit order, evaluate the chosen
+assignment, and fill measured metrics/timings. Keep one complete-run deadline, including
+the phases after angle search. The compiler rejects the wrong result type, evaluation
+counts above `max_iterations`, reported elapsed time beyond the deadline, and timing
+components longer than the reported total. Overlapping components are not summed.
+All compiler regressions remain mocked; PR #11's real Aer test is excluded.
+
 ## Shared helpers to consume
 
 The compiler now accepts arbitrary function/vector names and declared named scalar
