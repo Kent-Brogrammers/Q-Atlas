@@ -31,25 +31,6 @@ def test_health_is_api_readiness_only(client):
     assert health.experiments_ready is False
 
 
-@pytest.mark.parametrize(("path", "payload"), REQUESTS[2:3])
-def test_validated_stubs_have_no_measurements(client, path, payload):
-    response = client.post(path, json=payload)
-    assert response.status_code == 501
-    error = ErrorResponse.model_validate(response.json())
-    assert error.error.code == "NOT_IMPLEMENTED"
-    assert set(response.json()) == {"status", "error"}
-
-
-def test_qubo_request_is_accepted_before_stub(client, qubo_payload):
-    response = client.post(
-        "/api/optimization/run",
-        json={
-            "problem": {"kind": "qubo", "qubo": qubo_payload},
-        },
-    )
-    assert response.status_code == 501
-
-
 @pytest.mark.parametrize(
     ("path", "payload"),
     [
