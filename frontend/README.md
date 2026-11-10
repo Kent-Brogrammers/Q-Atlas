@@ -18,16 +18,19 @@ npm run dev
 Open Vite's local URL, normally `http://127.0.0.1:5173`. Fonts are bundled locally.
 The Svelte compiler at `/compiler/` now sends static generation/planning requests:
 load a normal Python file, mark one function with `@qatlas.objective`, click
-**Convert Python**, then download the result. Function/input names are arbitrary;
+**Convert Python**, then follow the four separate views: **Python input → Compiled
+code → Test → Results & analytics**. Conversion opens the compiled code automatically;
+**Continue to test** opens comparison preparation, and **Prepare test plan** opens
+analytics. Back buttons and the step navigation preserve the current source and
+downloads. Editing source or layers clears downstream data. Test preparation runs
+no solvers; performance metrics remain unmeasured. Function/input names are arbitrary;
 named scalar inputs and statically indexed vectors can infer width without `num_bits`.
 Quantum controls and mathematical details are optional advanced sections. No circuit
 code or second decorator is needed. File contents are never executed.
 
 FastAPI can be started independently using the root README or together with this
-frontend using `../dev.sh`. Its materials route runs the existing spin-system simulation
-only when requested; compiler execution and optimization remain unavailable. Search
-now runs live comparisons and measured iteration curves at `/search/`.
-Neutrino API integration is proposed separately and is not registered in this frontend.
+frontend using `../dev.sh`. The compiler workflow calls only generation and planning;
+other experiment pages retain their own simulation controls and API integrations.
 
 ```sh
 npm run check
