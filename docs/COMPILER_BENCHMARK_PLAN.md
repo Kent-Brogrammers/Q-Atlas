@@ -47,8 +47,10 @@ The full-file adapter is connected to the existing benchmark pipeline: it revali
 the complete file through static generation, passes only the verified QUBO/config
 to the shared runners, and validates their returned objectives/assignments. Integration
 tests patch both runner boundaries. No synthetic results are served by the real API.
-The underlying execution endpoint remains dependent on Developer 3's stubs; the new
-frontend uses only the planning endpoint, even after another owner replaces those stubs.
+The shared local Aer runner is implemented. The compiler HTTP benchmark defaults off;
+only `QATLAS_ENABLE_COMPILER_AER=1` on the backend enables local solver execution after
+separate authorization. The frontend uses only generation/planning endpoints. Plans
+remain nonexecuting regardless of that server setting. Hardware is not connected.
 
 ## API and reproducibility
 

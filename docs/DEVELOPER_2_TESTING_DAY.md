@@ -22,19 +22,19 @@ plans. It uses the shared panels and navigation. The older React tree is a refer
 | Offline bundle exporter | Implemented in this update | D2: run commands below |
 | Shared exact classical baseline | Implemented on main | D3: retain correctness/deadline checks |
 | Shared Qiskit circuit and Aer expectation scorer | Implemented on main; scorer performs simulation | D3: review and test only in an authorized execution phase |
-| Seeded COBYLA angle optimizer | Implemented by PR #11 with evaluation cap and disposable-worker deadline | D3: consume it from the shared runner |
-| `app.quantum.qaoa.run_qaoa` | Still raises `NotImplementedError` | D3: final sampling, complete-run deadline, result assembly |
+| Seeded COBYLA angle optimizer | Implemented and consumed by the shared runner | D3: maintain evaluation cap |
+| `app.quantum.qaoa.run_qaoa` | Implemented by PR #13: local Aer optimization, sampling, result assembly and whole-run deadline | D2: connected; execution remains opt-in |
 | Provider/QPU adapter | Not implemented or identified | D3 + allocation owner: identify service and limits |
 | Hardware result contract | Not agreed; current backend is Aer-only and metadata simulated | D2/D3/D5: approve extension before implementation |
 | Live compiler result UI | Execution disabled | D5/D2: wire only after agreed readiness and opt-in |
 | Whole-script classical vs quantum runtime | Not implemented | Separate trusted harness and scope decision |
 
 Do not describe the whole system as hardware-ready. Compiler preparation is ready;
-the shared execution and provider paths remain explicit release blockers.
+authorized local execution verification and the provider path remain explicit release blockers.
 
 ## 2. Main/PR audit for this update
 
-Fetched and integrated main through `9cd4b2a` without discarding teammate changes:
+Fetched and integrated main through `8451ce2` without discarding teammate changes:
 
 - PR #6, `d4ed923`: classical solver and QAOA circuit construction.
 - PR #7, `1719dc4`: live Neutrino backend and frontend.
@@ -43,11 +43,14 @@ Fetched and integrated main through `9cd4b2a` without discarding teammate change
 - PR #11, `9cd4b2a`: seeded COBYLA angle search, evaluation budgets, worker deadline
   and cleanup in `app.quantum.qaoa_optimization.optimize_qaoa_angles`.
 
-PR #11 returns an `AngleOptimizationResult`: angles, mean objective expectation,
+- PR #13, `8451ce2`: complete local Aer runner and shared worker deadline boundary.
+
+The PR #11 helper returns an `AngleOptimizationResult`: angles, mean objective expectation,
 evaluation count, convergence/stop reason and timing. This is not `QAOAResult`:
 it has no sampled best assignment, actual shot count or transpiled depth. The compiler
 continues to consume `run_qaoa`; it must not replace a sampled assignment's objective
-with the angle optimizer's mean expectation. The runner is still a stub on this main.
+with the angle optimizer's mean expectation. PR #13 now samples and returns the required
+`QAOAResult`; the compiler continues consuming that single shared entrypoint.
 
 An open-PR query against base `main` returned no open PRs at this audit. This is a
 point-in-time result, not an assurance about future pushes. The connector search
@@ -179,42 +182,44 @@ static assets). No `/run` or `/compiler/benchmark` call belongs in this rehearsa
 D2 continues to consume the shared runner; do not create a second QAOA engine.
 Send this document and `DEVELOPER_3_HANDOFF.md` yourself before the execution freeze.
 
-Required shared-runner completion after PR #11:
+### Completed local integration after PR #13
 
-- Implement `run_qaoa(qubo, config) -> QAOAResult` using the existing circuit and angle
-  optimizer. Do not duplicate the completed COBYLA search in the compiler.
-- Bind the returned angles, transpile and perform final sampling. Choose a measured
-  assignment and recompute its objective; mean expectation is a separate quantity.
-- Honor explicit gamma/beta parameter order, including zero-coefficient cases.
-- Convert measured bit ordering to canonical x[0]-first assignment order exactly once.
-- Recompute objective including constant; preserve canonical minimization for maximization.
-- Report actual shots, optimizer evaluations, transpiled depth and honest timing flags.
-- Enforce deadline/cancellation during execution; a check after blocking work is insufficient.
-- Apply one deadline to the complete run: angle optimization, final transpilation,
-  sampling and result assembly. The angle optimizer's worker timeout covers its own
-  phase only; do not grant the full configured timeout again to every later phase.
-- Keep input QUBO/config immutable. D2 passes independent copies and rejects mutation.
-- Return schema-valid finite results. D2 now revalidates mutable nested solver models
-  before accepting timings/metrics, then checks assignments, objectives and requested shots.
-- D2 rejects a bare angle-search record, optimizer evaluation counts above
-  `config.max_iterations`, and individual timing components above the solver's total.
-  A reported total above `timeout_seconds` maps to HTTP 504. These checks validate
-  evidence after return; the shared runner must still enforce an actual deadline.
-  Components may overlap, so the compiler does not require their sum to equal total time.
-- Test timeout, invalid response, mutation and stochastic/suboptimal outcomes with mocks.
+The shared runner now searches angles, binds the shared circuit, transpiles at level 1
+into `rz/sx/x/cx`, measures all qubits, and samples on CPU Aer statevector simulation.
+Reported depth includes final measurements. Count keys are reversed exactly once into
+x[0]-first API order, and the best observed assignment is evaluated with the shared QUBO
+evaluator, including its constant. Ties use lexicographic API order. One disposable
+worker bounds optimization, final sampling and normal cleanup.
 
-Current compiler benchmark metadata assumes Aer statevector execution. It cannot be
-reused unchanged for a physical QPU. This is a **proposal for D3/D5 review**, not a
-silently implemented shared API change: add a default-off server execution gate,
-explicit provider readiness, durable job identity/status, QPU provenance and budget
-accounting, plus cancellation and retry semantics. Extend schemas and regenerate
-frontend types only after the owners agree the fields.
+The compiler consumes this result directly. It checks result type/schema, assignment
+and objective, requested width/shots, evaluation budget, timing components and reported
+deadline. These checks do not replace worker enforcement. Components can overlap and
+are not summed. Missing optional dependencies produce sanitized HTTP 501 responses;
+timeouts map to 504. Rejected source is diagnosed before any runner can be called.
 
-The existing compiler benchmark endpoint is an execution-capable integration entrypoint;
-a disabled UI button is not a backend access-control mechanism. Do not expose it for
-live use merely because a future `run_qaoa` implementation lands. Finish the agreed
-server execution gate and deadline enforcement first. No enable flag is introduced
-by the offline exporter.
+### Compiler API execution switch
+
+`QATLAS_ENABLE_COMPILER_AER=1` is a backend environment opt-in for
+`POST /api/compiler/benchmark`. Unset or any other value returns HTTP 501 for supported
+source without calling either solver. Invalid source still returns 422. This uses the
+existing request/result/error schemas; it adds no browser execution flag or provider.
+The frontend continues conversion and nonexecuting planning only, even on an enabled server.
+
+Do not set this flag during the current no-execution preparation. After separate explicit
+local-simulation authorization, the operator may restart the backend with the flag set
+and submit a previously frozen tiny compiler benchmark request. This is local Aer only;
+it does not authorize or connect hardware, and direct trusted Python calls to
+`benchmark_source`, `benchmark_qubo`, or `run_qaoa` are outside this HTTP guard.
+The flag is an operational opt-in, not authentication or a network security boundary.
+It does not control other experiments' Run endpoints.
+
+### Remaining provider agreement
+
+D3/D5 still need to agree physical-device readiness, durable job identity/status,
+provenance, aggregate usage accounting, cancellation and retry semantics. Current
+compiler benchmark metadata is Aer-only and simulated. A QPU requires a reviewed
+schema extension and regenerated frontend types. Do not relabel a local Aer result
+or assume this local execution switch controls provider jobs.
 
 ## 6. Provider rehearsal gates
 
@@ -222,8 +227,10 @@ Complete these before the limited hardware appointment, under separate explicit
 authorization for any actual local simulation or hardware access:
 
 - [ ] Provider and allocation semantics recorded; account access checked by its owner.
-- [ ] Shared runner complete; mocked failure and cancellation paths pass.
-- [ ] Server execution gate and hardware-specific schema reviewed by D3/D5.
+- [x] Shared local Aer runner is implemented; compiler worker-mocked integration passes.
+- [ ] Separately authorized actual execution/cancellation verification is recorded.
+- [x] Compiler HTTP execution defaults off with an explicit local Aer opt-in.
+- [ ] Hardware-specific execution policy and schema reviewed by D3/D5.
 - [ ] Tiny circuit signs/global phase and measurement mapping checked on authorized local execution.
 - [ ] Freeze angles if using local training plus device sampling; label training costs separately.
 - [ ] Provider transpilation/ISA requirements, SDK version and device limits verified against current official docs.
@@ -302,7 +309,7 @@ configuration visible. Do not silently replace missing live data with fixtures.
 D2 is prepared when frozen cases and bundles exist, the compiler regression suite is
 green, the current UI workflow passes, and D3/D5 acknowledge the execution handoff.
 The team is hardware-ready only when all provider gates above are satisfied.
-An implemented source compiler does not remove the shared runner/provider dependency.
+The implemented local Aer runner does not remove the provider/hardware dependency.
 
 ## 10. Validation record for this update
 
@@ -325,3 +332,10 @@ deliberately excluded from compiler-only verification.
 
 These checks establish the offline preparation workflow. They do not establish actual
 circuit execution, hardware access, speedup, or completion of the shared runner.
+
+### PR #13 compiler follow-up validation
+
+374 compiler tests pass, including the actual shared `run_qaoa` entrypoint with its
+worker mocked, default-off API behavior, unsupported-source diagnostics while disabled,
+and sanitized missing-dependency errors. No simulator process or submitted Python ran.
+The local runner is implemented; physical-QPU integration remains separate.

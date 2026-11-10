@@ -9,8 +9,10 @@ in `frontend/react-scaffold/` for Developer 5 review; the shared specification i
 **Current state: compiler analysis and Python script generation.** Health, safe
 Python-to-QUBO analysis, symbolic QAOA circuit previews, and downloadable Qiskit
 builder code work. Compiler benchmarking consumes the shared runner entrypoints,
-which remain Developer 3 stubs; those benchmark requests and optimization
-routes return HTTP 501. Compiler execution tests stay mocked, and circuit previews
+which now implement classical enumeration and local Aer QAOA. Compiler benchmark
+requests default to HTTP 501 until the server explicitly enables local execution
+with `QATLAS_ENABLE_COMPILER_AER=1`; the compiler UI still only converts and plans.
+The optimization route remains HTTP 501. Compiler execution tests stay mocked, and circuit previews
 are constructed without execution. Other developers' materials and classical work
 is preserved alongside the compiler.
 

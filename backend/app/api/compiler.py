@@ -1,4 +1,6 @@
-"""Developer 2: parse/validate only; never execute submitted source."""
+"""Developer 2: safe conversion and opt-in solver comparison; never execute source."""
+
+import os
 
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
@@ -54,6 +56,18 @@ def benchmark_plan(request: CompilerBenchmarkRequest) -> CompilerBenchmarkPlan |
 )
 def benchmark(request: CompilerBenchmarkRequest) -> CompilerBenchmarkResult | JSONResponse:
     try:
+        # A new shared runner must not turn compilation-only deployments into executors.
+        # Validate first so unsupported source retains its ordinary diagnostic response.
+        if os.environ.get("QATLAS_ENABLE_COMPILER_AER") != "1":
+            prepare_benchmark(request.source, request.config)
+            return error_response(
+                501,
+                ErrorDetail(
+                    code="NOT_IMPLEMENTED",
+                    message="Compiler comparison execution is disabled on this server. "
+                    "Source conversion and comparison planning remain available.",
+                ),
+            )
         return benchmark_source(request.source, request.config)
     except CompilationError as exc:
         return error_response(
@@ -66,6 +80,14 @@ def benchmark(request: CompilerBenchmarkRequest) -> CompilerBenchmarkResult | JS
         )
     except NotImplementedError:
         return not_implemented("Shared compiler benchmark solvers", 3)
+    except ImportError:
+        return error_response(
+            501,
+            ErrorDetail(
+                code="NOT_IMPLEMENTED",
+                message="Compiler Aer comparison requires the backend quantum dependencies.",
+            ),
+        )
     except TimeoutError:
         return error_response(
             504,
