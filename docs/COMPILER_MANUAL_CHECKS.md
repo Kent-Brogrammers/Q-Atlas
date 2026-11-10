@@ -209,3 +209,23 @@ no browser errors. Only compiler generation/planning endpoints were requested.
 
 No submitted/generated Python, simulator, hardware, or supercomputer job was executed.
 The provider connection remains a documented future integration, not an enabled path.
+
+## Guided compiler workflow
+
+The active Svelte compiler now has four separate views, with Back/Next actions and
+guarded step navigation. Browser regression cases:
+
+1. Start at Python input; later steps are disabled and no generated-code panel is shown.
+2. Convert supported source; only Compiled code opens, with exact preview/download content.
+3. Go back and forward without editing; preserve source and artifacts without another request.
+4. Continue to Test; preparation is available and execution remains disabled.
+5. Fail a preparation request; stay on Test, retain the compiled artifact, and allow retry.
+6. Prepare successfully; open Results & analytics with the exact downloadable plan,
+   static compilation metrics, and explicit unmeasured runtime/quality fields.
+7. Navigate back, then edit source/layers; disable later steps and clear old artifacts/plans.
+8. Reject an unsupported objective; stay at input and retain diagnostic line selection.
+9. Delay conversion, edit source, then release the response; remain at input with no stale output.
+10. Exercise upload, keyboard focus, stage navigation, and every view at 375px width.
+
+Firefox verified the flow against a local API. Requests were confined to generation
+and nonexecuting plan endpoints. No simulator or hardware execution was performed.

@@ -5,8 +5,15 @@ Compiler** action. The home page identifies conversion/planning as available and
 quantum execution as disabled, alongside the preserved Neutrino Lab. Keeping a
 working route without a navigation entry previously made the compiler hard to find.
 
-The compiler now follows the Neutrino Lab's layout: a 290px configuration column,
-shared `Panel` headers, a blue availability notice, and a source/results column.
+The compiler now uses four exclusive views: **Python input → Compiled code → Test →
+Results & analytics**. Only the active stage is rendered. Successful conversion opens
+the generated Python directly; test preparation opens the analysis screen. Back/step
+navigation preserves source/artifact/plan state, while source or layer edits clear
+downstream state and return to input. Inaccessible steps are disabled. Stage changes
+focus the stage heading and reset scroll so navigation remains visible.
+
+The input stage follows the Neutrino Lab's layout: a 290px configuration column,
+shared `Panel` headers, a blue availability notice, and a source editor column.
 Controls, typography, tables, and collapsible details use the existing frontend
 styles. The columns stack on smaller screens. Upload, conversion, diagnostics,
 downloads, and nonexecuting comparison planning retain their existing behavior.
@@ -14,7 +21,8 @@ downloads, and nonexecuting comparison planning retain their existing behavior.
 The merge with main preserves its SvelteKit workspace and React reference. The active
 compiler is now `frontend/src/routes/compiler/+page.svelte`, with **load script →
 Convert Python → Download .py**. It defaults to one bare objective marker, named scalar
-inputs, and a normal Python caller. Advanced settings and output are collapsed; the
+inputs, and a normal Python caller. Advanced settings and analytical details are collapsed;
+compiled Python is visible in its own stage. The
 optional circuit marker is not part of the required flow. Shared source/file helpers
 remain under `frontend/src/compiler/`; React reference imports re-export those helpers.
 The shared main transport retains cancellation/error handling and adds typed generation
