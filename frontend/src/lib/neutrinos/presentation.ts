@@ -96,7 +96,7 @@ export function formatValue(value: number | null | undefined, digits = 6): strin
   if (value === 0) return '0';
   return Math.abs(value) < 0.0001
     ? value.toExponential(2)
-    : Number(value.toFixed(digits)).toLocaleString('en-US');
+    : Number(value.toFixed(digits)).toLocaleString('en-US', { maximumFractionDigits: digits });
 }
 
 /** SVG coordinate projection, not a neutrino calculation. Nulls break the path. */
