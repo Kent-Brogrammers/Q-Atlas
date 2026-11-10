@@ -50,3 +50,18 @@ def test_invalid_targets_are_rejected(marked):
 def test_invalid_iterations_are_rejected(iterations):
     with pytest.raises(ValueError):
         build_grover_circuit("001", iterations)
+
+
+@pytest.mark.parametrize("targets", [["001", "110"], ["00", "01", "10", "11"]])
+@pytest.mark.parametrize("iterations", [0, 1, 2, 3])
+def test_multiple_target_circuits_match_exact_amplification(targets, iterations):
+    state = Statevector.from_instruction(build_grover_circuit(targets, iterations, measure=False))
+    probability = sum(state.probabilities()[int(target[::-1], 2)] for target in targets)
+    theta = asin(sqrt(len(targets) / (2 ** len(targets[0]))))
+    assert probability == pytest.approx(sin((2 * iterations + 1) * theta) ** 2, abs=1e-12)
+
+
+@pytest.mark.parametrize("targets", [[], ["001", "001"], ["00", "001"], None])
+def test_invalid_target_collections_are_rejected(targets):
+    with pytest.raises(ValueError):
+        build_grover_circuit(targets, 1)

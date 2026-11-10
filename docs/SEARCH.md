@@ -1,8 +1,8 @@
-# Developer 4: first Grover milestone
+# Developer 4: Grover search benchmark
 
-This milestone is a local circuit demo, not the completed search benchmark. The
-search HTTP endpoint remains an explicit 501 stub. Shared contracts and frontend
-types are unchanged.
+The local benchmark compares a measured Grover circuit with classical search in
+the existing shared result format. The search HTTP endpoint remains an explicit
+501 stub pending the next milestone. Shared contracts and frontend types are unchanged.
 
 ## Windows setup
 
@@ -16,6 +16,7 @@ From a PowerShell terminal at the repository root:
 
 ```powershell
 cd backend
+.\.venv\Scripts\python.exe -m app.experiments.search
 .\.venv\Scripts\python.exe -m app.experiments.search.demo
 .\.venv\Scripts\python.exe -m pytest tests/search tests/quantum
 .\.venv\Scripts\ruff.exe check app/experiments/search tests/search
@@ -28,8 +29,9 @@ The local download of uv is a convenience, not a committed project dependency.
 
 ## Circuit and interpretation
 
-`build_grover_circuit(marked_state, iterations, measure=True)` supports one target,
-1–6 qubits, and 0–32 iterations. These are local circuit-helper limits; the existing
+`build_grover_circuit(marked_state, iterations, measure=True)` accepts one target
+string or a list of unique targets of the same width, 1–6 qubits, and 0–32 iterations.
+These are local circuit-helper limits; the existing
 API request schema is unchanged. The oracle uses X gates for target zero bits and
 a multi-controlled phase flip. Diffusion reflects about the uniform state, up to
 global phase. Each Grover step makes one oracle call per circuit execution.
@@ -54,9 +56,8 @@ The application already knows the target to construct the oracle. Query complexi
 assumes oracle access; constructing an explicitly marked circuit is not free, and
 this experiment cannot establish practical quantum speedup.
 
-## Next small milestones
+## Classical baseline
 
-### Classical baseline (implemented)
 
 `app.experiments.search.classical.run_classical_search` accepts the shared
 `SearchRequest`. It checks candidate strings in lexicographic order without
@@ -75,11 +76,58 @@ The baseline checks its deadline before queries and before returning results.
 Tests enumerate all target placements in a four-candidate space to verify the
 expected and worst-case formulas, in addition to fixed-instance and timeout tests.
 
-1. Integrate the classical no-replacement search baseline with the quantum runner.
-2. Add an iteration sweep comparing theoretical and sampled success probabilities.
-3. Integrate the existing search response contract and enforce runtime limits before
-   enabling the API; coordinate result/timing interpretations with Developers 3/5.
-4. Connect the search page with Developer 5 and rehearse a reproducible demo.
+## Benchmark runner
 
-Keep commits grouped by completed behavior: circuit foundation, classical baseline,
-probability sweep, then API integration. Review and approval precede each commit.
+`app.experiments.search.runner.run_search(request)` returns the shared `SearchResult`.
+It accepts 1–6 qubits, one or more unique marked states, 0–32 iterations, and at most
+10000 shots. Unsupported sizes produce a `ValueError` before creating a process;
+`request_diagnostics` supplies structured diagnostics for the later API layer.
+The broader shared schema remains unchanged; those fields are not a promise that
+every schema-valid resource size is supported by this implementation.
+
+With `iterations=None`, the runner selects the better nonnegative integer adjacent
+to the first ideal amplification peak, choosing fewer iterations on ties. For
+multiple targets, `theta = asin(sqrt(M / N))` in the probability formula above.
+The result's `metadata.parameters.iterations` records the effective choice. The
+caller request is not mutated, and target list order does not change the circuit
+or the stable problem ID.
+
+The runner performs both searches in a disposable spawned process. Its wall-clock
+budget includes process startup, imports, both solvers, and receiving/validating
+the result. On timeout it terminates and reaps the worker, including native Aer
+work. Missing quantum packages produce `SearchDependencyError`; other worker
+failures produce `RuntimeError`. No quantum packages are imported by the boundary
+module itself, preserving API-only startup for the next integration milestone.
+
+Per-solver `elapsed_ms` excludes worker startup, imports, result-envelope assembly,
+serialization, and HTTP. The classical timer includes target-set preparation,
+candidate enumeration and extraction. The quantum timer includes all circuit and
+oracle construction, backend creation, transpilation, sampling, and count extraction.
+Measured transpilation and sampling durations are subintervals of the quantum timer.
+Timings describe one cold solver invocation after imports, with no warm-up run.
+Record these scopes when comparing runtimes; the timeout budget and reported solver
+durations intentionally have different boundaries.
+
+`quantum_oracle_queries` is the iteration count **per shot**. Total calls across
+the batch equal `iterations * shots`, recorded in `oracle_assumptions`. The combined
+oracle applies a phase flip for every supplied target; a query is not a single gate.
+`classical_expected_queries` and `classical_worst_case_queries` retain the assumptions
+above. The observed classical check count is recorded in `oracle_assumptions` because
+the shared metrics currently have no dedicated field for it. Objectives remain null.
+
+Quantum `best_bitstring` is the most frequent observed bitstring, with lexicographic
+tie-breaking; it may be unmarked. Success probability counts **all** marked outcomes
+without postselection. Neither raw counts nor a probability sweep is currently part
+of the shared response. Seeded measurements reproduce within the same installed
+package versions, which are included in metadata; timings naturally fluctuate.
+
+Run the new benchmark with `python -m app.experiments.search` from `backend/`.
+The earlier `.demo` command remains a simple single-target circuit demonstration.
+
+## Remaining milestones
+
+1. Expose the bounded runner at the existing search endpoint with structured errors.
+2. Add the iteration sweep and connect real results on the Search page with Developer 5.
+
+The four follow-up commit groups are classical baseline, benchmark runner, API,
+then probability curves/frontend integration. Review and approval precede each commit.
