@@ -180,11 +180,17 @@
                 x2={100 + ((i + 1) * 400) / (spins - 1) - 33}
                 y1="100"
                 y2="100"
-                stroke="#cedceb"
-              />{/if}<circle cx={x} cy="100" r="31" fill="#f5f0fb" stroke="#c6b4df" /><path
+                stroke="var(--border)"
+              />{/if}<circle
+              cx={x}
+              cy="100"
+              r="31"
+              fill="var(--surface-raised)"
+              stroke="var(--border)"
+            /><path
               d={`M${x} ${i % 2 ? 115 : 85}v${i % 2 ? -30 : 30}m-7 ${i % 2 ? 23 : -23} 7 ${i % 2 ? 7 : -7} 7 ${i % 2 ? -7 : 7}`}
               fill="none"
-              stroke="#9d81c5"
+              stroke="var(--accent)"
               stroke-width="2"
             /><text {x} y="157" text-anchor="middle">spin {i}</text>{/each}</svg
         >
@@ -265,7 +271,7 @@
     grid-template-columns: 1.3fr 1fr;
   }
   .file-label {
-    color: #637387;
+    color: var(--muted);
     font: 12px var(--mono);
   }
   input[type='number'] {
@@ -273,7 +279,7 @@
   }
   .source-editor {
     display: flex;
-    background: #f8fafd;
+    background: var(--surface);
     border-top: 1px solid var(--border);
     min-height: 245px;
     padding: 23px 0;
@@ -284,7 +290,7 @@
     width: 43px;
     padding-right: 10px;
     text-align: right;
-    color: #9baabd;
+    color: var(--muted);
     font: 12px/2.1 var(--mono);
     user-select: none;
   }
@@ -294,7 +300,7 @@
     resize: vertical;
     min-height: 200px;
     background: transparent;
-    color: #496b9b;
+    color: var(--text);
     padding: 0 16px 0 5px;
     font: 12px/2.1 var(--mono);
     white-space: pre;
@@ -311,7 +317,7 @@
   }
   .editor-actions > span {
     font-size: 12px;
-    color: #667382;
+    color: var(--muted);
   }
   .editor-actions .button {
     font-size: 12px;
@@ -320,7 +326,7 @@
     margin: 0;
     padding: 0 20px 18px;
     font-size: 12px;
-    color: #708bac;
+    color: var(--muted);
     line-height: 1.7;
   }
   .output-label {
@@ -332,10 +338,10 @@
   .empty-state {
     padding: 32px 26px;
     min-height: 310px;
-    color: #83a9d8;
+    color: var(--blue);
   }
   .empty-state h3 {
-    color: #3e587b;
+    color: var(--text);
   }
   .empty-state p {
     font-size: 12px;
@@ -348,11 +354,11 @@
     justify-content: space-between;
     align-items: center;
     font-size: 12px;
-    color: #5d738f;
+    color: var(--muted);
     margin: 0 0 12px;
   }
   .foundation-controls input[type='range'] {
-    accent-color: #79acec;
+    accent-color: var(--accent);
     width: 100%;
     margin: 0 0 23px;
   }
@@ -360,16 +366,16 @@
   select {
     display: block;
     width: 100%;
-    background: #f6f9fd;
-    border: 1px solid #d9e4f2;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 10px;
-    color: #567397;
+    color: var(--text);
     font: 12px var(--mono);
     margin-bottom: 25px;
   }
   .foundation-controls p {
-    color: #667385;
+    color: var(--muted);
     font-size: 12px;
     line-height: 1.8;
   }
@@ -383,19 +389,19 @@
     display: block;
   }
   .spin-illustration svg text {
-    fill: #8494ac;
+    fill: var(--muted);
     font: 12px var(--mono);
   }
   .spin-illustration .mono {
-    color: #8f78b3;
+    color: var(--accent);
     font-size: 12px;
   }
   .spin-illustration .mono span {
-    color: #756e7f;
+    color: var(--muted);
     margin: 0 12px;
   }
   .spin-illustration > span {
-    color: #687382;
+    color: var(--muted);
     font-size: 12px;
   }
   .state-grid {
@@ -405,7 +411,7 @@
     gap: 10px;
   }
   .state-grid button {
-    border: 1px solid #dde6f1;
+    border: 1px solid var(--border);
     min-height: 68px;
     border-radius: 4px;
     display: flex;
@@ -413,16 +419,16 @@
     align-items: center;
     justify-content: center;
     gap: 9px;
-    background: #f7f9fd;
-    color: #6a83a2;
+    background: var(--surface-raised);
+    color: var(--text);
   }
   .state-grid button:hover {
-    border-color: #88b4e6;
+    border-color: var(--blue);
   }
   .state-grid button.marked {
-    border-color: #73b8e3;
-    background: #e9f6ff;
-    color: #2679a6;
+    border-color: var(--accent);
+    background: var(--surface-raised);
+    color: var(--accent);
   }
   .state-grid button > span {
     font: 12px var(--mono);
@@ -430,15 +436,15 @@
   .state-grid i {
     font: 12px var(--mono);
     letter-spacing: normal;
-    color: #97a9bf;
+    color: var(--muted);
   }
   .state-grid .marked i {
-    color: #428aba;
+    color: var(--accent);
   }
   .state-note {
     margin: 0;
     padding: 0 24px 22px;
-    color: #657385;
+    color: var(--muted);
     font-size: 12px;
     line-height: 1.7;
   }
@@ -467,30 +473,30 @@
     margin: 14px 0 22px;
   }
   .comparison-plan .mono {
-    color: #8ca8ca;
+    color: var(--blue);
     font-size: 12px;
     padding-top: 3px;
   }
   .comparison-plan p {
     margin: 0;
     font-size: 12px;
-    color: #647386;
+    color: var(--muted);
     line-height: 1.8;
   }
   .comparison-plan strong {
     display: block;
-    color: #384f71;
+    color: var(--text);
     font-size: 12px;
     font-weight: 400;
     margin-bottom: 5px;
   }
   .next-workspace {
-    border-top: 1px solid #dce8f7;
+    border-top: 1px solid var(--border);
     padding: 24px 8px;
   }
   .next-workspace > :global(svg) {
     display: block;
-    color: #5b9bd8;
+    color: var(--blue);
     margin: 25px 0 18px;
   }
   .next-workspace h2 {
@@ -500,7 +506,7 @@
     line-height: 1.3;
   }
   .next-workspace p {
-    color: #657385;
+    color: var(--muted);
     font-size: 12px;
     line-height: 1.8;
     max-width: 280px;

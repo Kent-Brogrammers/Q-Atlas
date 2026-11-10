@@ -14,21 +14,21 @@
   .feature-banner {
     padding: 24px;
     min-height: 176px;
-    color: #fff;
+    color: var(--bg);
     border-radius: 4px;
-    background: #0f62fe;
+    background: var(--blue);
   }
   h2 {
     margin: 0 0 12px;
     font:
       400 24px/1.25 'IBM Plex Sans',
       sans-serif;
-    color: #fff;
+    color: var(--bg);
   }
   p {
     max-width: 800px;
     margin: 0;
-    color: #fff;
+    color: var(--bg);
     font:
       400 14px/1.6 'IBM Plex Sans',
       sans-serif;
@@ -46,13 +46,13 @@
     gap: 12px;
     padding: 9px 12px;
     border-radius: 2px;
-    border: 1px solid #fff;
-    color: #124caa;
-    background: #fff;
+    border: 1px solid var(--bg);
+    color: var(--blue);
+    background: var(--bg);
     font-size: 14px;
   }
   .banner-footer :global(a:hover) {
-    background: #edf4ff;
+    background: var(--surface-raised);
   }
   @media (max-width: 480px) {
     .feature-banner {

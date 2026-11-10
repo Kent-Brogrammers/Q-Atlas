@@ -257,7 +257,7 @@
     padding: 14px 16px;
     margin: 0 0 24px;
     border-left: 3px solid var(--blue);
-    background: #f4f7fc;
+    background: var(--surface-raised);
     color: var(--muted);
     font-size: 13px;
     line-height: 1.6;
@@ -311,7 +311,7 @@
     gap: 8px;
     font-size: 12px;
     margin-bottom: 7px;
-    color: #46546a;
+    color: var(--muted);
   }
   label > span {
     font-family: var(--mono);
@@ -323,16 +323,16 @@
     min-height: 40px;
     padding: 9px 10px;
     margin-bottom: 14px;
-    background: #f3f5f8;
-    border: 1px solid #dbe1e9;
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
     border-radius: 2px;
-    color: #637286;
+    color: var(--muted);
     font-size: 12px;
     cursor: not-allowed;
     opacity: 1;
   }
   input::placeholder {
-    color: #637286;
+    color: var(--muted);
   }
   fieldset > :last-child {
     margin-bottom: 0;
@@ -427,7 +427,7 @@
     font-weight: 400;
   }
   thead {
-    background: #f8fafd;
+    background: var(--surface-raised);
     color: var(--muted);
   }
   td {

@@ -41,9 +41,9 @@
     const x = (time: number) => left + ((time - minTime) / (maxTime - minTime || 1)) * plotWidth;
     const y = (value: number) => top + ((maxValue - value) / (maxValue - minValue)) * plotHeight;
     const seriesDefinitions = [
-      { key: 'exact', label: 'Exact reference', color: '#2674c8' },
-      { key: 'ideal', label: 'Ideal Trotter circuit', color: '#8066b2' },
-      { key: 'measured', label: 'Shot-based circuit', color: '#16877f' }
+      { key: 'exact', label: 'Exact reference', color: 'var(--blue)' },
+      { key: 'ideal', label: 'Ideal Trotter circuit', color: 'var(--accent)' },
+      { key: 'measured', label: 'Shot-based circuit', color: 'var(--success)' }
     ] as const;
     const lines = seriesDefinitions.map((series) => {
       const coordinates = samples.map((point) => ({
@@ -87,7 +87,7 @@
       aria-label={`Exact, ideal circuit, and shot-based ${observable} over simulation time in ${unit}`}
     >
       {#each chart.ticks as tick}
-        <line x1={left} x2={chart.plotRight} y1={tick.y} y2={tick.y} stroke="#e6ebf1" />
+        <line x1={left} x2={chart.plotRight} y1={tick.y} y2={tick.y} stroke="var(--border)" />
         <text x={left - 8} y={tick.y + 4} text-anchor="end">{tick.value.toFixed(3)}</text>
       {/each}
       <line
@@ -95,7 +95,7 @@
         x2={chart.plotRight}
         y1={chart.plotBottom}
         y2={chart.plotBottom}
-        stroke="#aab7c6"
+        stroke="var(--border)"
       />
       {#each chart.lines as line}
         <path d={line.path} fill="none" stroke={line.color} stroke-width="2" />
@@ -128,7 +128,7 @@
   }
   h3 {
     margin: 0 0 8px;
-    color: #45566d;
+    color: var(--text);
     font-size: 12px;
     font-weight: 500;
   }
@@ -141,7 +141,7 @@
     overflow: visible;
   }
   text {
-    fill: #6f8198;
+    fill: var(--muted);
     font: 10px var(--mono);
   }
   figcaption {

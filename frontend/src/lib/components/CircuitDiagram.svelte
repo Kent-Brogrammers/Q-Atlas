@@ -16,31 +16,40 @@
         x2="493"
         y1={y}
         y2={y}
-        stroke="#d5e1ee"
+        stroke="var(--border)"
       />
-      <rect x="64" y={y - 12} width="25" height="24" fill="#edf4ff" stroke="#9fbee2" /><text
-        x="77"
-        y={y + 4}
-        text-anchor="middle">H</text
-      >
-      <rect x="333" y={y - 12} width="56" height="24" fill="#f3eefb" stroke="#b49bcf" /><text
-        x="361"
-        y={y + 4}
-        text-anchor="middle">RX(β)</text
-      >
-      <rect x="448" y={y - 12} width="26" height="24" fill="#f3f6fb" stroke="#bdcde0" /><path
-        d={`M453 ${y + 5}q8-15 16 0m-8 0 4-10`}
-        stroke="#728ba9"
-        fill="none"
-      />
+      <rect
+        x="64"
+        y={y - 12}
+        width="25"
+        height="24"
+        fill="var(--surface)"
+        stroke="var(--blue)"
+      /><text x="77" y={y + 4} text-anchor="middle">H</text>
+      <rect
+        x="333"
+        y={y - 12}
+        width="56"
+        height="24"
+        fill="var(--surface-raised)"
+        stroke="var(--accent)"
+      /><text x="361" y={y + 4} text-anchor="middle">RX(β)</text>
+      <rect
+        x="448"
+        y={y - 12}
+        width="26"
+        height="24"
+        fill="var(--surface)"
+        stroke="var(--border)"
+      /><path d={`M453 ${y + 5}q8-15 16 0m-8 0 4-10`} stroke="var(--text)" fill="none" />
     {/each}
     <rect
       x="154"
       y="14"
       width="112"
       height="120"
-      fill="#eff9fc"
-      stroke="#a4d4df"
+      fill="var(--surface-raised)"
+      stroke="var(--accent)"
       stroke-dasharray="3 3"
     /><text x="210" y="70" text-anchor="middle" class="cost">U(C, γ)</text><text
       x="210"
@@ -64,17 +73,17 @@
   }
   text {
     font: 12px var(--mono);
-    fill: #4c6485;
+    fill: var(--text);
   }
   .qubit {
-    fill: #8395ad;
+    fill: var(--muted);
   }
   .cost {
-    fill: #4d98a8;
+    fill: var(--accent);
     font-size: 13px;
   }
   .annotation {
-    fill: #8a9bb0;
+    fill: var(--muted);
     font-size: 12px;
   }
   figcaption {

@@ -59,8 +59,10 @@ example-data consistency. `build` prerenders all seven routes into `build/`.
 SvelteKit 3 configuration lives in `vite.config.ts`; `#lib/*` imports are declared
 in `package.json`. Tailwind CSS 4 is integrated through its Vite plugin. IBM Plex
 Sans handles UI text; Plex Mono handles code, numbers, and technical metadata.
-The light workspace, navy navigation, blue feature panels, 4–6px card corners,
-and minimally rounded controls preserve the current design.
+The warm-neutral editorial palette uses `#FAFAF8` for the canvas, `#F5F0EB` for
+cards and navigation, `#1C1917` / `#57534E` for text, `#0369A1` for interactive
+elements, `#C2410C` for accent states, `#166534` for success, and `#D6D3D1` for
+dividers. Cards use 4–6px corners and controls remain minimally rounded.
 
 ## Neutrino Oscillation Lab
 

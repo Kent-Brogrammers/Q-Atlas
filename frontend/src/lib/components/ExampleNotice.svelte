@@ -17,11 +17,11 @@
     flex-wrap: wrap;
     column-gap: 10px;
     row-gap: 4px;
-    border: 1px solid #e2ebf5;
-    background: #f7faff;
+    border: 1px solid var(--border);
+    background: var(--surface-raised);
     padding: 9px 13px;
     border-radius: 4px;
-    color: #69809b;
+    color: var(--muted);
     font-size: 12px;
     line-height: 1.5;
   }
@@ -30,9 +30,9 @@
       500 12px/1.5 'IBM Plex Sans',
       sans-serif;
     letter-spacing: normal;
-    color: #4975a1;
+    color: var(--blue);
   }
   span {
-    color: #637285;
+    color: var(--muted);
   }
 </style>

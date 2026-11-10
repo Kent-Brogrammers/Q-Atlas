@@ -38,7 +38,7 @@
   dd {
     margin: 0;
     font: 12px/1.5 var(--mono);
-    color: #34435a;
+    color: var(--text);
     text-align: right;
   }
   p {
