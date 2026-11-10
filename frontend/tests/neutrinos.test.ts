@@ -94,6 +94,7 @@ test('primary navigation exposes the compiler and neutrino lab while retaining t
       ['/', 'Overview'],
       ['/compiler/', 'Python Compiler'],
       ['/neutrinos/', 'Neutrino Lab'],
+      ['/search/', 'Grover Search'],
       ['/methodology/', 'Methodology']
     ]
   );

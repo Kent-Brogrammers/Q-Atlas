@@ -17,7 +17,8 @@ is preserved alongside the compiler.
 Search now runs a bounded local Grover/classical comparison at `POST /api/search/run`,
 with measured/theoretical success probabilities, query comparisons, and explicit
 timing metadata. See [the search guide](docs/SEARCH.md) for Windows commands, limits,
-and API examples. The Search frontend is pending live integration.
+and API examples. The live Search page at `/search/` provides controls, probability
+curves, query/runtime comparisons, errors, and measured JSON export.
 
 See [the compiler guide](docs/COMPILER.md) for supported syntax, diagnostics, limits,
 and the mocked QUBO-to-QAOA handoff. The
