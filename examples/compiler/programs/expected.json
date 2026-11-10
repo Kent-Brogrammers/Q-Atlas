@@ -1,4 +1,20 @@
 {
+  "named_decisions.py": {
+    "status": "supported",
+    "entrypoint": "build_qatlas_circuit",
+    "snapshot": "generated/named_decisions_qaoa.py",
+    "qubo": {
+      "num_variables": 3,
+      "constant": 6,
+      "linear": [-10, -8, -11],
+      "quadratic": [
+        {"i": 0, "j": 1, "coefficient": 12},
+        {"i": 0, "j": 2, "coefficient": 12},
+        {"i": 1, "j": 2, "coefficient": 12}
+      ]
+    },
+    "known_optimum": {"assignment": "001", "canonical_objective": -5, "original_objective": -5}
+  },
   "weighted_selection.py": {
     "status": "supported",
     "entrypoint": "build_circuit",

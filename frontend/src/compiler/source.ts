@@ -4,40 +4,32 @@ export const MAX_SOURCE_LENGTH = 20_000;
 // Read a bounded amount of UTF-8 text before enforcing the API's character limit.
 const MAX_SOURCE_FILE_BYTES = 80_000;
 
-export const DEFAULT_SOURCE = `@qatlas.objective(num_bits=3)
-def cost(x):
-    selected = 0
-    benefit = 0
-    for i in range(3):
-        selected += x[i]
-        benefit += (i + 1) * x[i]
-    penalty = 10 * (selected - 1)**2
-    return penalty - benefit
+export const DEFAULT_SOURCE = `@qatlas.objective
+def assess_selection(choose_red, choose_blue, choose_green):
+    selected = choose_red + choose_blue + choose_green
+    benefit = choose_red + 2 * choose_blue + 3 * choose_green
+    return 10 * (selected - 1)**2 - benefit
 `;
 
-export const DEFAULT_SCRIPT = `# A full script: only the marked circuit factory will be replaced.
-# This file is compiler input text; the markers are removed in the download.
+export const DEFAULT_SCRIPT = `# Mark one ordinary Python objective. No circuit code is needed.
+
+def describe_selection(value):
+    return f"Selection score: {value}"
 
 ${DEFAULT_SOURCE}
 
-@qatlas.circuit
-def build_circuit():
-    # Your old circuit construction goes here. This entire function is replaced.
-    from qiskit import QuantumCircuit
-    old_circuit = QuantumCircuit(3)
-    old_circuit.x(0)
-    return old_circuit
-
-
 if __name__ == "__main__":
-    circuit = build_circuit()
-    print(circuit)
+    score = assess_selection(0, 0, 1)
+    print(describe_selection(score))
 `;
 
 export function generatedFilename(inputName: string): string {
   const name = inputName.replaceAll('\\', '/').split('/').at(-1) ?? '';
   if (!/\.py$/i.test(name)) return 'q_atlas_generated.py';
-  const stem = name.slice(0, -3).replace(/[^\p{L}\p{N}._-]/gu, '_').slice(0, 100);
+  const stem = name
+    .slice(0, -3)
+    .replace(/[^\p{L}\p{N}._-]/gu, '_')
+    .slice(0, 100);
   return `${stem || 'q_atlas'}_qaoa.py`;
 }
 

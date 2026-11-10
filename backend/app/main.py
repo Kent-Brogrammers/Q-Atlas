@@ -12,7 +12,9 @@ from app.schemas.contracts import ErrorResponse, HealthResponse
 app = FastAPI(
     title="Q-Atlas API",
     version="0.1.0",
-    description="Development foundation. Experiment routes currently return HTTP 501.",
+    description=(
+        "Local experiments API. Materials TFIM is available; other experiments return HTTP 501."
+    ),
     responses={
         code: {"model": ErrorResponse, "description": description}
         for code, description in {

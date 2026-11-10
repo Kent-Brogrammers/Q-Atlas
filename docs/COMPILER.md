@@ -8,8 +8,48 @@ Python. The project specification is unchanged.
 
 ## Using the compiler page
 
-Start the API and frontend as described in [README.md](../README.md), then open
-`/compiler`. The page starts in **Generate script** with a complete three-bit example.
+The active Svelte compiler at `/compiler/` now uses **load Python → Convert Python →
+Download .py**. One `@qatlas.objective` marker is sufficient; no circuit function or
+quantum settings are required. Ordinary helpers, imports, and caller code stay in place.
+The example uses named scalar choices instead of a prescribed `cost(x)` signature.
+Technical output and comparison planning are under **Conversion details and future
+benchmarking**; layers are under **Advanced conversion options**. The original React
+integration remains available in `frontend/react-scaffold/` as a reference.
+
+### Source names and inferred inputs
+
+```python
+@qatlas.objective
+def assess_plan(include_red, include_blue, include_green):
+    selected = include_red + include_blue + include_green
+    benefit = 4 * include_red + 2 * include_blue + 5 * include_green
+    return 6 * (selected - 1)**2 - benefit
+```
+
+Function names, input names, locals, and optional circuit-factory names are arbitrary
+valid Python identifiers. With named scalar inputs, declaration order determines bit
+order: include_red is bit 0, include_blue bit 1, include_green bit 2. The function
+does not need to be called `cost`, and inputs do not need indexing syntax.
+Inputs cannot be reassigned or used as loop indices. Counts must match explicit
+`num_bits` when supplied. Signatures remain positional, unannotated, and without defaults.
+
+For vector input, `def assess_plan(choices)` may use `choices[0]`, bounded loop
+indices, and local aliases. A bare marker or `@qatlas.objective()` infers width from
+the highest statically used index plus one. Use optional `num_bits=N` to retain
+trailing unused vector positions. `sense="maximize"` remains optional. Inference never
+calls the function and still enforces the 1–6-bit and resource limits. A one-argument,
+one-bit function may use a scalar or indexed vector, but cannot mix both forms.
+The `INPUT_MAPPING` diagnostic records the source-to-canonical input order.
+
+The compiler still translates a bounded binary objective subset, not arbitrary
+Python algorithms. Keeping the surrounding script is distinct from executing it or
+replacing its behavior with a working quantum runtime. That execution integration
+is still pending; see [presentation compute hookup](QUANTUM_PRESENTATION.md).
+
+### React reference workflow
+
+Start the retained React app using [frontend setup](../frontend/README.md), then open
+its `/compiler` route on port 5174. That reference retains the **Generate script** mode.
 
 1. Edit the source, choose **Load a Python file**, or restore it with **Load example**.
 2. Keep one marked objective. Mark the zero-argument circuit factory you want to
@@ -32,7 +72,7 @@ Start the API and frontend as described in [README.md](../README.md), then open
    **Run comparison — execution disabled** stays disabled. See
    [benchmark planning](COMPILER_BENCHMARK_PLAN.md) for the scope and remaining work.
 
-The **Example program** chooser loads two supported complete scripts and three
+The **Example program** chooser loads three supported complete scripts and three
 deliberate rejection cases. It shares raw source files with the backend's
 [program fixtures](../examples/compiler/programs/README.md); the API still validates
 every example. Generated output snapshots are provided for the supported cases.
@@ -104,7 +144,8 @@ and a one-based line/column when available. No rejected response contains a QUBO
 
 The initial compiler accepts:
 
-- Exactly one synchronous marked function with one unannotated positional parameter,
+- Exactly one synchronous marked function with one unannotated vector parameter or
+  one positional scalar parameter per bit,
   no defaults, and one final return expression. The parameter name can differ from `x`.
 - An optional leading function docstring and up to 64 local assignments before the
   return. Each assignment has one plain name target, e.g. `penalty = 3*x[0]*x[2]`.

@@ -1,11 +1,12 @@
 # Full-program compiler examples
 
-Load these files as text in **Compiler → Generate script**, or choose them from
-**Example program** and click **Load example**. Do not run/import the input files:
+Load these files as text in **Compiler → Convert Python**, or choose them from
+**Example** and click **Load example**. Do not run/import the input files:
 the `qatlas` decorators are static source markers, removed in the output.
 
 | Input | Expected result | Reason/reference |
 | --- | --- | --- |
+| [named_decisions.py](named_decisions.py) | Supported | One bare decorator; arbitrary function name and three named scalar choices; ordinary helpers/main preserved |
 | [weighted_selection.py](weighted_selection.py) | Supported | Dataclass report/helper/main preserved; local tuple weights and a squared selection penalty compiled |
 | [weighted_maximize.py](weighted_maximize.py) | Supported | JSON report/helper/main preserved; local list weights and conflicts compiled with canonical minimization |
 | [rejected_helper_call.py](rejected_helper_call.py) | Rejected: `UNSUPPORTED_SYNTAX` | Calling a user helper inside the objective is outside the allowlist |
@@ -24,6 +25,7 @@ its original maximization value is 7. These are arithmetic references, not measu
 
 ## Generated output files
 
+- [named_decisions_qaoa.py](generated/named_decisions_qaoa.py)
 - [weighted_selection_qaoa.py](generated/weighted_selection_qaoa.py)
 - [weighted_maximize_qaoa.py](generated/weighted_maximize_qaoa.py)
 

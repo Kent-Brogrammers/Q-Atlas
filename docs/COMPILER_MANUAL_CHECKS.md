@@ -172,3 +172,40 @@ Two output `.py` snapshots were generated/formatted as text and compared by AST 
 No input/output script, solver, simulator, hardware, or supercomputer job was run.
 The temporary local servers were used only for these static operations. No live
 performance measurements or quantum-advantage claims follow from these checks.
+
+## Marker-only conversion, naming flexibility, and main integration
+
+The compiler accepts arbitrary objective/vector names and named scalar inputs.
+One bare `@qatlas.objective` marker infers scalar count or bounded static vector
+width. Tests verify every binary assignment for 1–6 named inputs in both senses,
+declaration order, local weights/loops, signature errors, input rebinding, and
+nonexecuting generation/planning. The new named-decision example and generated
+snapshot are checked as text/AST only.
+
+Main's SvelteKit workspace, Materials/Search/classical code, and Neutrino page were
+preserved. The active Svelte compiler now uses load Python → Convert Python →
+Download .py, with quantum options and benchmark details collapsed. The React
+reference was preserved under `frontend/react-scaffold/`, sharing types, transport,
+and compiler helpers. Both frontend builds/type checks passed; Svelte reported zero
+errors/warnings, frontend tests and generated-type/format checks passed, and Ruff passed.
+
+The inspected safe backend selection passed **422 tests**:
+
+```sh
+cd backend
+.venv/bin/pytest tests/compiler tests/api tests/schemas tests/optimization tests/materials/test_request_contract.py
+```
+
+The full default suite now contains other owners' simulator execution tests, so it
+was deliberately not run. This selection covers compiler/API/contracts, pure classical
+math, and mocked or unavailable shared runners without any quantum computation.
+
+Firefox checked the actual Svelte page against a local API: one-decorator default
+source with natural names and no circuit code; exact download contents and preserved
+caller; named-scalar upload; renamed-vector width inference; optional input-order and
+planning details; disabled execution; line-selected unsupported-call diagnostics;
+discarded late responses; 375px layout; and the retained Neutrino route. There were
+no browser errors. Only compiler generation/planning endpoints were requested.
+
+No submitted/generated Python, simulator, hardware, or supercomputer job was executed.
+The provider connection remains a documented future integration, not an enabled path.

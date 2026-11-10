@@ -14,6 +14,12 @@ authorizes execution. The helpers below are pure construction/evaluation functio
 
 ## Shared helpers to consume
 
+The compiler now accepts arbitrary function/vector names and declared named scalar
+inputs, with `@qatlas.objective` width inference. Scalars map to existing canonical
+indices in signature order. The new INPUT_MAPPING diagnostic exposes that association;
+the QUBO and runner inputs remain unchanged. See [QUANTUM_PRESENTATION.md](QUANTUM_PRESENTATION.md)
+for the still-disabled provider integration and the unresolved QPU/HPC allocation type.
+
 ```python
 from app.quantum.circuits import build_qaoa_preview
 from app.quantum.qubo import evaluate_qubo

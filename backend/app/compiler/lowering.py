@@ -62,9 +62,10 @@ class _SubstituteIndices(ast.NodeTransformer):
 
 
 def lower_body(
-    statements: list[ast.stmt], expression: ast.expr, parameter: str
+    statements: list[ast.stmt], expression: ast.expr, parameter: str | tuple[str, ...]
 ) -> tuple[list[ast.Assign], ast.expr]:
     """Flatten a bounded statement sequence, preserving source diagnostic locations."""
+    parameters = {parameter} if isinstance(parameter, str) else set(parameter)
     source_assignments = [
         node
         for statement in statements
@@ -89,7 +90,7 @@ def lower_body(
         for node in ast.walk(statement)
         if isinstance(node, ast.For) and isinstance(node.target, ast.Name)
     }
-    range_shadowed = "range" in assigned_names | loop_names | {parameter}
+    range_shadowed = "range" in assigned_names | loop_names | parameters
     values: dict[str, int] = {}
     result: list[ast.Assign] = []
     expanded_nodes = 0
@@ -114,7 +115,7 @@ def lower_body(
                     len(active) >= MAX_LOOP_DEPTH
                     or statement.orelse
                     or not isinstance(statement.target, ast.Name)
-                    or statement.target.id == parameter
+                    or statement.target.id in parameters
                     or statement.target.id in active
                     or statement.target.id in assigned_names
                     or range_shadowed
@@ -166,11 +167,11 @@ def lower_body(
             if (
                 len(targets) != 1
                 or not isinstance(targets[0], ast.Name)
-                or targets[0].id == parameter
+                or targets[0].id in parameters
             ):
                 raise LoweringError(
                     "INVALID_ASSIGNMENT",
-                    "Assign to one plain local name; do not rebind the binary-vector parameter.",
+                    "Assign to one plain local name; do not rebind a binary input parameter.",
                     statement,
                 )
             if isinstance(statement, ast.AugAssign):

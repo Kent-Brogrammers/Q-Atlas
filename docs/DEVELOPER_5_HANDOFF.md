@@ -1,5 +1,18 @@
 # Compiler page integration handoff
 
+The merge with main preserves its SvelteKit workspace and React reference. The active
+compiler is now `frontend/src/routes/compiler/+page.svelte`, with **load script →
+Convert Python → Download .py**. It defaults to one bare objective marker, named scalar
+inputs, and a normal Python caller. Advanced settings and output are collapsed; the
+optional circuit marker is not part of the required flow. Shared source/file helpers
+remain under `frontend/src/compiler/`; React reference imports re-export those helpers.
+The shared main transport retains cancellation/error handling and adds typed generation
+and planning methods. No other experiment page, navigation, or physics implementation
+was replaced. See [the presentation connection guide](QUANTUM_PRESENTATION.md).
+
+The React file table below describes preserved reference components; their paths now
+start with `frontend/react-scaffold/src/` rather than `frontend/src/`.
+
 The user authorized implementing the compiler-page integration after the Developer 2
 pipeline, including the November 9 file-to-generated-script workflow for Developer 5 review.
 Other experiment pages, shared fetch behavior, and the application shell are unchanged.

@@ -3,6 +3,7 @@
 import ast
 import itertools
 import math
+from dataclasses import dataclass
 from typing import NoReturn
 
 from app.compiler.lowering import LoweringError, lower_body
@@ -22,6 +23,16 @@ MAX_VECTOR_LENGTH = 64
 Polynomial = dict[tuple[int, ...], float]
 SymbolicBindings = dict[str, Polynomial | tuple[float, ...]]
 NumericBindings = dict[str, float | tuple[float, ...]]
+
+
+@dataclass(frozen=True)
+class BinaryInputs:
+    vector: str | None = None
+    scalars: tuple[str, ...] = ()
+
+    @property
+    def names(self) -> tuple[str, ...]:
+        return (self.vector,) if self.vector is not None else self.scalars
 
 
 class Rejected(Exception):
@@ -66,7 +77,32 @@ def parse_source(source: str) -> ast.Module:
     return tree
 
 
-def _objective(tree: ast.Module) -> tuple[list[ast.stmt], ast.expr, str, int, str]:
+def _infer_width(function: ast.FunctionDef, body: list[ast.stmt], names: tuple[str, ...]) -> int:
+    if len(names) != 1:
+        return len(names)
+    try:
+        assignments, expression = lower_body(body[:-1], body[-1].value, names)
+    except LoweringError as exc:
+        _reject(exc.message, exc.node, exc.code)
+    indices = [
+        node.slice
+        for statement in [*assignments, expression]
+        for node in ast.walk(statement)
+        if isinstance(node, ast.Subscript)
+        and isinstance(node.value, ast.Name)
+        and node.value.id == names[0]
+    ]
+    if any(
+        not isinstance(index, ast.Constant) or type(index.value) is not int or index.value < 0
+        for index in indices
+    ):
+        _reject(
+            "Cannot infer vector width from a dynamic or invalid index.", function, "INVALID_INDEX"
+        )
+    return max((index.value + 1 for index in indices), default=1)
+
+
+def _objective(tree: ast.Module) -> tuple[list[ast.stmt], ast.expr, BinaryInputs, int, str]:
     if len(tree.body) != 1 or not isinstance(tree.body[0], ast.FunctionDef):
         _reject(
             "Provide exactly one marked function; imports and top-level code are unsupported.",
@@ -75,53 +111,42 @@ def _objective(tree: ast.Module) -> tuple[list[ast.stmt], ast.expr, str, int, st
     function = tree.body[0]
     args = function.args
     if (
-        len(args.args) != 1
+        not args.args
         or args.posonlyargs
         or args.kwonlyargs
         or args.vararg
         or args.kwarg
         or args.defaults
         or args.kw_defaults
-        or args.args[0].annotation
+        or any(argument.annotation for argument in args.args)
         or function.returns
         or function.type_comment
         or getattr(function, "type_params", [])
     ):
-        _reject("Use one unannotated binary-vector parameter with no defaults.", function)
+        _reject(
+            "Use unannotated positional binary inputs with no defaults or variadic arguments.",
+            function,
+        )
     if len(function.decorator_list) != 1:
-        _reject("Mark the function with @qatlas.objective(num_bits=N).", function, "INVALID_MARKER")
+        _reject("Put one @qatlas.objective marker on the function.", function, "INVALID_MARKER")
     marker = function.decorator_list[0]
+    target = marker.func if isinstance(marker, ast.Call) else marker
     if not (
-        isinstance(marker, ast.Call)
-        and isinstance(marker.func, ast.Attribute)
-        and isinstance(marker.func.value, ast.Name)
-        and marker.func.value.id == "qatlas"
-        and marker.func.attr == "objective"
-        and not marker.args
+        isinstance(target, ast.Attribute)
+        and isinstance(target.value, ast.Name)
+        and target.value.id == "qatlas"
+        and target.attr == "objective"
+        and (not isinstance(marker, ast.Call) or not marker.args)
     ):
-        _reject("Expected @qatlas.objective(num_bits=N).", marker, "INVALID_MARKER")
-    keywords = {item.arg: item.value for item in marker.keywords}
-    if (
-        len(keywords) != len(marker.keywords)
-        or set(keywords) - {"num_bits", "sense"}
-        or "num_bits" not in keywords
-    ):
-        _reject("Marker accepts num_bits and optional sense only.", marker, "INVALID_MARKER")
-    bits = keywords["num_bits"]
-    if not (
-        isinstance(bits, ast.Constant)
-        and type(bits.value) is int
-        and 1 <= bits.value <= MAX_COMPILER_BITS
-    ):
-        _reject("num_bits must be an integer literal from 1 to 6.", bits, "INVALID_MARKER")
-    sense_node = keywords.get("sense")
-    sense = "minimize"
-    if sense_node is not None:
-        if not (
-            isinstance(sense_node, ast.Constant) and sense_node.value in ("minimize", "maximize")
-        ):
-            _reject("sense must be 'minimize' or 'maximize'.", sense_node, "INVALID_MARKER")
-        sense = sense_node.value
+        _reject(
+            "Expected @qatlas.objective, optionally with num_bits and sense.",
+            marker,
+            "INVALID_MARKER",
+        )
+    arguments = marker.keywords if isinstance(marker, ast.Call) else []
+    keywords = {item.arg: item.value for item in arguments}
+    if len(keywords) != len(arguments) or set(keywords) - {"num_bits", "sense"}:
+        _reject("Marker accepts optional num_bits and sense only.", marker, "INVALID_MARKER")
     body = function.body
     if (
         isinstance(body[0], ast.Expr)
@@ -131,7 +156,50 @@ def _objective(tree: ast.Module) -> tuple[list[ast.stmt], ast.expr, str, int, st
         body = body[1:]
     if not body or not isinstance(body[-1], ast.Return) or body[-1].value is None:
         _reject("End the function with one return expression.", body[-1] if body else function)
-    return body[:-1], body[-1].value, args.args[0].arg, bits.value, sense
+    bits = keywords.get("num_bits")
+    if bits is not None and not (
+        isinstance(bits, ast.Constant)
+        and type(bits.value) is int
+        and 1 <= bits.value <= MAX_COMPILER_BITS
+    ):
+        _reject("num_bits must be an integer literal from 1 to 6.", bits, "INVALID_MARKER")
+    names = tuple(argument.arg for argument in args.args)
+    # Inference is bounded AST lowering, not a call to the user's function.
+    if bits is None:
+        num_bits = _infer_width(function, body, names)
+    else:
+        num_bits = bits.value
+    if not 1 <= num_bits <= MAX_COMPILER_BITS:
+        _reject(
+            "The inferred objective width must be from 1 to 6 bits.", function, "INVALID_MARKER"
+        )
+    sense_node = keywords.get("sense")
+    sense = "minimize"
+    if sense_node is not None:
+        if not (
+            isinstance(sense_node, ast.Constant) and sense_node.value in ("minimize", "maximize")
+        ):
+            _reject("sense must be 'minimize' or 'maximize'.", sense_node, "INVALID_MARKER")
+        sense = sense_node.value
+    if len(set(names)) != len(names) or len(names) not in (1, num_bits):
+        _reject(
+            "Use one vector parameter or exactly num_bits distinct scalar parameters.",
+            function,
+            "INVALID_SIGNATURE",
+        )
+    indexed = len(names) == 1 and any(
+        isinstance(node, ast.Subscript)
+        and isinstance(node.value, ast.Name)
+        and node.value.id == names[0]
+        for statement in function.body
+        for node in ast.walk(statement)
+    )
+    inputs = (
+        BinaryInputs(vector=names[0])
+        if len(names) == 1 and (num_bits > 1 or indexed)
+        else BinaryInputs(scalars=names)
+    )
+    return body[:-1], body[-1].value, inputs, num_bits, sense
 
 
 def _finite(value: float, node: ast.AST) -> float:
@@ -178,7 +246,7 @@ def _vector_literal(node: ast.List | ast.Tuple) -> tuple[float, ...]:
 
 
 def _extract(
-    node: ast.expr, parameter: str, num_bits: int, bindings: SymbolicBindings
+    node: ast.expr, parameter: str | None, num_bits: int, bindings: SymbolicBindings
 ) -> Polynomial:
     if isinstance(node, ast.Name):
         if node.id == parameter:
@@ -322,19 +390,21 @@ def analyze_source(source: str) -> CompilerAnalyzeResult:
     """Exhaustively verify every accepted 1–6-bit objective against its QUBO."""
     try:
         tree = parse_source(source)
-        statements, expression, parameter, num_bits, sense = _objective(tree)
+        statements, expression, inputs, num_bits, sense = _objective(tree)
         try:
-            assignments, lowered_expression = lower_body(statements, expression, parameter)
+            assignments, lowered_expression = lower_body(statements, expression, inputs.names)
         except LoweringError as exc:
             _reject(exc.message, exc.node, exc.code)
-        symbolic_bindings: SymbolicBindings = {}
+        symbolic_bindings: SymbolicBindings = {
+            name: {(i,): 1.0} for i, name in enumerate(inputs.scalars)
+        }
         for statement in assignments:
             symbolic_bindings[statement.targets[0].id] = (
                 _vector_literal(statement.value)
                 if isinstance(statement.value, (ast.List, ast.Tuple))
-                else _extract(statement.value, parameter, num_bits, symbolic_bindings)
+                else _extract(statement.value, inputs.vector, num_bits, symbolic_bindings)
             )
-        polynomial = _extract(lowered_expression, parameter, num_bits, symbolic_bindings)
+        polynomial = _extract(lowered_expression, inputs.vector, num_bits, symbolic_bindings)
         sign = -1 if sense == "maximize" else 1
         # The IR stores only nonzero terms. Apply sense before filling absent terms
         # so their canonical JSON values remain +0.0, including under maximization.
@@ -351,7 +421,9 @@ def analyze_source(source: str) -> CompilerAnalyzeResult:
             original_sense=sense,
         )
         for assignment in itertools.product((0, 1), repeat=num_bits):
-            numeric_bindings: NumericBindings = {}
+            numeric_bindings: NumericBindings = {
+                name: float(assignment[i]) for i, name in enumerate(inputs.scalars)
+            }
             _interpret_statements(statements, assignment, numeric_bindings)
             expected = _finite(
                 sign * _interpret(expression, assignment, numeric_bindings), expression
@@ -380,7 +452,17 @@ def analyze_source(source: str) -> CompilerAnalyzeResult:
                     code="VERIFIED",
                     message=f"Verified the objective on all {2**num_bits} binary assignments.",
                     severity="info",
-                )
+                ),
+                Diagnostic(
+                    code="INPUT_MAPPING",
+                    message=(
+                        f"Vector {inputs.vector}[i] maps to canonical bit i."
+                        if inputs.vector is not None
+                        else "Declared input order: "
+                        + "; ".join(f"{name} -> bit {i}" for i, name in enumerate(inputs.scalars))
+                    ),
+                    severity="info",
+                ),
             ],
         )
     except Rejected as exc:

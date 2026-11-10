@@ -3,15 +3,16 @@
 Q-Atlas is a five-developer quantum computing hackathon project for reproducible,
 scientifically honest comparisons with classical methods. It combines a restricted
 Python optimization compiler, small spin-system experiments, QAOA optimization, and
-Grover search in one React application.
+Grover search in a SvelteKit application. The original React scaffold is preserved
+in `frontend/react-scaffold/` for Developer 5 review; the shared specification is unchanged.
 
 **Current state: compiler analysis and Python script generation.** Health, safe
 Python-to-QUBO analysis, symbolic QAOA circuit previews, and downloadable Qiskit
-builder code work. Compiler benchmarking
-uses the shared runner interfaces, which remain Developer 3 stubs; supported benchmark requests and the
-other experiment routes return HTTP 501. Execution is mocked in compiler tests only.
-There are no solver implementations or experimental measurements; circuit previews
-are constructed without execution.
+builder code work. Compiler benchmarking consumes the shared runner entrypoints,
+which remain Developer 3 stubs; those benchmark requests and optimization/search
+routes return HTTP 501. Compiler execution tests stay mocked, and circuit previews
+are constructed without execution. Other developers' materials and classical work
+is preserved alongside the compiler.
 
 See [the compiler guide](docs/COMPILER.md) for supported syntax, diagnostics, limits,
 and the mocked QUBO-to-QAOA handoff. The
@@ -25,21 +26,24 @@ The compiler accepts named local terms, numeric accumulation, bounded literal
 Start with the seven
 [pasteable Python examples](examples/compiler/README.md)
 and their expected QUBOs. Submitted source is parsed and verified, never executed.
-The compiler page now loads local `.py` text files and displays line-linked
-diagnostics, coefficient tables, and a gate preview labeled **Not executed**.
-In **Generate script**, it preserves surrounding Python and replaces an explicitly
-marked `@qatlas.circuit` factory with generated QAOA construction code. Select
-1–8 layers, inspect the Python, and click **Download .py**. Start with
-[script_replacement.py](examples/compiler/script_replacement.py) and the
-[script-generation guide](docs/COMPILER_SCRIPT_GENERATION.md). Existing unmarked
-circuits are preserved; mark the factory you intend to replace. Generation submits no jobs.
-The page also offers [five full-program examples](examples/compiler/programs/README.md),
-two [generated output scripts](examples/compiler/programs/README.md#generated-output-files),
-and **Prepare comparison** with a downloadable, nonexecuting classical/QAOA plan.
+The Svelte compiler page at `/compiler/` uses **load Python → Convert Python →
+Download .py**. Put `@qatlas.objective` above the objective; function and input names
+are arbitrary, named scalar inputs need no indexing, and width is inferred without
+`num_bits`. No circuit function or quantum settings are required. Start with
+[named_decisions.py](examples/compiler/programs/named_decisions.py) and the
+[script-generation guide](docs/COMPILER_SCRIPT_GENERATION.md). The optional second
+`@qatlas.circuit` marker is only for replacing an existing circuit factory.
+The page also offers [six full-program examples](examples/compiler/programs/README.md),
+three [generated output scripts](examples/compiler/programs/README.md#generated-output-files),
+and advanced conversion details plus nonexecuting comparison planning.
 Local numeric weight vectors are supported inside objectives. Quantum/script execution
 stays disabled in the compiler page; see [benchmark planning](docs/COMPILER_BENCHMARK_PLAN.md).
 See [the manual validation record](docs/COMPILER_MANUAL_CHECKS.md) and
 [Developer 5's integration handoff](docs/DEVELOPER_5_HANDOFF.md).
+
+Materials now provides a 2–4-spin TFIM simulation with exact, ideal-circuit, and
+finite-shot results; see [the materials guide](docs/MATERIALS.md). No materials
+simulations are run as part of compiler validation.
 
 Read [the original specification](docs/Project_Spec.md) completely before implementing
 features. The original file and its casing are preserved.
@@ -71,23 +75,23 @@ features. The original file and its casing are preserved.
 │   │   └── benchmarks/            # shared timing/result assembly
 │   └── tests/                     # api, schemas, compiler, materials, optimization, search
 └── frontend/
-    ├── package.json
-    ├── package-lock.json
-    ├── vite.config.ts
-    └── src/
-        ├── App.tsx                # overview + four feature routes
-        ├── pages/                 # Developer 5
-        ├── components/            # minimal request/response panels
-        ├── api/client.ts          # typed fetch client
-        └── types/                 # generated API types + named exports
+    ├── package.json               # primary SvelteKit application
+    ├── src/
+    │   ├── routes/                # overview + four experiment views
+    │   ├── lib/                   # reusable controls, graphs, example displays
+    │   ├── api/client.ts          # one shared typed transport
+    │   └── types/                 # canonical OpenAPI-generated types
+    ├── tools/api-types/           # isolated TypeScript 5 generator workspace
+    └── react-scaffold/            # preserved React application on port 5174
 ```
 
 ## Setup and run
 
-Prerequisites: Python 3.11+, [uv](https://docs.astral.sh/uv/getting-started/installation/),
-and Node.js 22.12+ (22 LTS or 24+). The lockfiles pin resolved compatible packages.
-The TypeScript 5.9 pin is intentional: the OpenAPI generator's peer range is TypeScript 5.
-The frontend uses [Vite](https://vite.dev/guide/) and the
+Prerequisites: Python 3.11+ (Developer 3 uses Python 3.12), [uv](https://docs.astral.sh/uv/getting-started/installation/),
+and Node.js 22.17+ (22 LTS or 24+). The lockfiles pin resolved compatible packages.
+SvelteKit uses TypeScript 6; the OpenAPI generator is isolated in a workspace
+using TypeScript 5.9 to satisfy its peer range. The frontends use
+[Vite](https://vite.dev/guide/) and the
 [Tailwind Vite plugin](https://tailwindcss.com/docs/installation/using-vite).
 
 From the repository root, in the backend terminal:
@@ -125,9 +129,12 @@ environment and frontend dependencies without installing packages or running exp
 Open <http://127.0.0.1:5173>. Backend docs are at <http://127.0.0.1:8000/docs>;
 health is <http://127.0.0.1:8000/api/health>. Start either server independently.
 The frontend serves `/`, `/compiler`, `/materials`, `/optimization`, and `/search`.
-Use **Check API health** on the overview to test the connection. Compiler analysis
-returns a real QUBO; benchmark/other experiment requests show real 501 responses.
-Sample inputs contain no measured results.
+The Svelte compiler sends only static generation/planning requests. The Neutrino
+workspace and other experiment pages remain preserved. The materials backend can
+run simulations when explicitly requested with its dependencies installed; the
+compiler launcher/conversion checks do not invoke it. React health/request panels
+remain runnable from `frontend/react-scaffold/` on port 5174. See
+[frontend setup](frontend/README.md) for both applications.
 
 No environment file or credentials are required. Optional overrides:
 
@@ -142,10 +149,10 @@ No environment file or credentials are required. Optional overrides:
 From `backend/`:
 
 ```sh
-uv run --locked python -c 'from app.main import app; print(app.title)'
-uv run --locked pytest
-uv run --locked ruff check .
-uv run --locked ruff format --check .
+uv run --locked --all-extras python -c 'from app.main import app; print(app.title)'
+uv run --locked --all-extras pytest
+uv run --locked --all-extras ruff check .
+uv run --locked --all-extras ruff format --check .
 ```
 
 From `frontend/`:
@@ -153,7 +160,9 @@ From `frontend/`:
 ```sh
 npm run test:compiler
 npm run types:check
-npm run typecheck
+npm run check
+npm test
+npm run format:check
 npm run build
 ```
 
@@ -177,11 +186,11 @@ and `--timeout` for the socket timeout. See [compiler checks](docs/COMPILER.md).
 
 | Owner | Begin here | First owned implementation/test |
 | --- | --- | --- |
-| Developer 1 | `backend/app/experiments/materials/`, `api/materials.py`, `tests/materials/` | Define Hamiltonian signs/units; known two-spin reference |
+| Developer 1 | `backend/app/experiments/materials/`, `api/materials.py`, `tests/materials/` | TFIM implemented; start with the physics and convergence tests |
 | Developer 2 | `backend/app/compiler/`, `api/compiler.py`, `tests/compiler/` | Allowlisted marked AST, diagnostics, normalized QUBO; consume shared runners |
 | Developer 3 | `backend/app/quantum/qaoa.py`, `experiments/optimization/solvers.py`, `api/optimization.py`, `tests/optimization/` | QUBO evaluation and classical reference, then shared QAOA and fair timings |
 | Developer 4 | `backend/app/experiments/search/`, `api/search.py`, `tests/search/` | Marked-state oracle with explicit wire ordering and query assumptions |
-| Developer 5 | `frontend/src/pages/`, `components/`, `api/`, `App.tsx` | Replace minimal request panels with controls; preserve live errors/loading |
+| Developer 5 | `frontend/src/routes/`, `src/lib/`, `src/api/`; preserved `frontend/react-scaffold/` | Review SvelteKit integration and connect typed requests while preserving live errors/loading |
 
 All backend paths in the table are relative to `backend/` where shortened. Shared
 contracts are in `backend/app/schemas/contracts.py`; timing guidance is in
@@ -200,12 +209,12 @@ helpers with all owners. No second QAOA engine belongs in the compiler.
 
 ## Integration decisions still owned by the team
 
-- Materials owner must select the exact Hamiltonian, estimation method, sign convention,
-  and physical or dimensionless units before producing results.
+- Materials now fixes an open TFIM chain, all-zero initial state, second-order Trotter
+  evolution, and dimensionless units with hbar=1; see [the implementation guide](docs/MATERIALS.md).
 - Optimization owner must define Max-Cut conversion, baseline selection, gap/ratio
   formulas, and optimizer stopping behavior. Requests accept graphs, but no conversion exists yet.
 - Search owner must specify oracle construction cost and classical query assumptions.
-- Each owner must enforce the declared runtime budget inside their eventual implementation;
-  `timeout_seconds` validation alone does not interrupt Python or native simulator work.
+- Materials enforces a wall-clock budget using a disposable simulation process. Other
+  owners must enforce their runners' budgets; field validation alone cannot stop native work.
 - The initial API is synchronous and simulator-only. Any async jobs or hardware contracts
   require coordinated changes, rather than silently extending current semantics.
