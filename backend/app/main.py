@@ -5,7 +5,7 @@ import os
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import compiler, materials, optimization, search
+from app.api import compiler, materials, neutrinos, optimization, search
 from app.api.errors import register_error_handlers
 from app.schemas.contracts import ErrorResponse, HealthResponse
 
@@ -13,7 +13,7 @@ app = FastAPI(
     title="Q-Atlas API",
     version="0.1.0",
     description=(
-        "Local experiments API. Materials TFIM is available; other experiments return HTTP 501."
+        "Local experiments API with materials TFIM and effective two-flavor neutrino simulation."
     ),
     responses={
         code: {"model": ErrorResponse, "description": description}
@@ -44,6 +44,12 @@ def health() -> HealthResponse:
     return HealthResponse()
 
 
-for router in (compiler.router, materials.router, optimization.router, search.router):
+for router in (
+    compiler.router,
+    materials.router,
+    neutrinos.router,
+    optimization.router,
+    search.router,
+):
     api.include_router(router)
 app.include_router(api)

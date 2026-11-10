@@ -1,278 +1,350 @@
 <script lang="ts">
-  import Icon from '#lib/components/Icon.svelte';
+  import { onDestroy } from 'svelte';
   import Panel from '#lib/components/Panel.svelte';
   import NeutrinoProbabilityChart from '#lib/components/NeutrinoProbabilityChart.svelte';
-  import { formatValue, displaySeries } from '#lib/neutrinos/presentation.ts';
-  import type { ProposedNeutrinoResult } from '#lib/neutrinos/proposal.ts';
+  import { api, ApiError } from '../../api/client.ts';
+  import type { NeutrinoResponse } from '../../types/index.ts';
+  import { buildRequest, defaultSettings, flavorChannels } from '#lib/neutrinos/live.ts';
+  import { formatValue } from '#lib/neutrinos/presentation.ts';
 
-  // Discussion types only. No agreed capabilities, API request, or fabricated result.
-  let result = $state<ProposedNeutrinoResult | null>(null);
-  let channels = $derived(displaySeries(result));
-  let terminalIndex = $derived((result?.distances_km.length ?? 0) - 1);
+  let settings = $state(defaultSettings());
+  let result = $state<NeutrinoResponse | null>(null);
+  let loading = $state(false);
+  let error = $state('');
+  let selectedIndex = $state(0);
+  let controller: AbortController | undefined;
+  let selected = $derived(result?.results[selectedIndex]);
+  onDestroy(() => controller?.abort());
+
+  function clearResult() {
+    result = null;
+    error = '';
+  }
+  function preset(kind: 'vacuum' | 'resonance' | 'layers') {
+    clearResult();
+    settings = defaultSettings();
+    if (kind === 'resonance') {
+      settings.environment = 'density';
+      // Published normalized example from docs/NEUTRINOS.md, not simulated results.
+      settings.distance = 4.0336988686318564;
+    } else if (kind === 'layers') {
+      settings.environment = 'layers';
+      settings.potential = 0.2;
+      settings.distance = 2;
+    }
+  }
+  async function runExperiment(event: SubmitEvent) {
+    event.preventDefault();
+    if (loading) return;
+    clearResult();
+    try {
+      const request = buildRequest(settings);
+      loading = true;
+      controller = new AbortController();
+      result = await api.neutrinos(request, controller.signal);
+      selectedIndex =
+        result.axis === 'potential'
+          ? Math.floor(result.results.length / 2)
+          : result.results.length - 1;
+    } catch (cause) {
+      error =
+        cause instanceof ApiError
+          ? [
+              cause.message,
+              ...(cause.body.error.diagnostics ?? []).map((item) => item.message)
+            ].join(' ')
+          : cause instanceof Error
+            ? cause.message
+            : 'The experiment failed. Please try again.';
+    } finally {
+      loading = false;
+    }
+  }
 </script>
 
-<svelte:head>
-  <title>Neutrino Lab · Q-Atlas</title>
-  <meta
+<svelte:head
+  ><title>Neutrino Lab · Q-Atlas</title><meta
     name="description"
-    content="Neutrino flavor probabilities, classical validation, and Qiskit simulation accuracy. Model support is awaiting backend agreement."
-  />
-</svelte:head>
-
+    content="Run two-flavor neutrino propagation and compare SciPy, Qiskit statevectors, and finite-shot measurements."
+  /></svelte:head
+>
 <header class="page-heading">
   <div>
     <h1>Neutrino Lab</h1>
-    <p>Configure propagation and compare classical and Qiskit flavor probabilities.</p>
+    <p>Explore how matter changes flavor oscillations with a one-qubit simulation.</p>
   </div>
 </header>
-
-<p class="availability">
-  <Icon name="info" size={17} /><span
-    ><strong>Neutrino backend unavailable.</strong> Controls will be enabled after model capabilities
-    and the API are agreed.</span
-  >
+<p class="notice">
+  Effective two-flavor model · initial electron flavor · Qiskit Aer simulator. Angle is in radians;
+  energy, mass splitting, distance, and potential use normalized units.
 </p>
-
+<div class="presets" aria-label="Example configurations">
+  <span>Load example:</span>
+  <button class="button" disabled={loading} onclick={() => preset('vacuum')}>Vacuum</button>
+  <button class="button" disabled={loading} onclick={() => preset('resonance')}
+    >MSW resonance</button
+  >
+  <button class="button" disabled={loading} onclick={() => preset('layers')}>Two layers</button>
+</div>
+{#if error}<div class="error" role="alert">
+    <strong>Experiment could not run.</strong>
+    {error}
+    <p>Check that the Q-Atlas backend is running at http://127.0.0.1:8000.</p>
+  </div>{/if}
 <div class="lab-layout">
   <aside aria-label="Experiment configuration">
-    <Panel title="Configuration" subtitle="Unavailable · awaiting backend support">
-      <div class="configuration">
-        <fieldset disabled aria-describedby="configuration-note">
-          <legend>Model</legend>
-          <label for="neutrino-model">Neutrino model</label>
-          <select id="neutrino-model"><option>Awaiting supported models</option></select>
-          <label for="initial-flavor">Initial flavor</label>
-          <select id="initial-flavor"><option>Awaiting model definition</option></select>
-        </fieldset>
-        <fieldset disabled>
+    <Panel title="Configuration" subtitle="Effective two-flavor propagation">
+      <form onsubmit={runExperiment} oninput={clearResult}>
+        <fieldset disabled={loading}>
           <legend>Propagation</legend>
-          <label for="neutrino-energy">Energy <span>GeV</span></label>
-          <input id="neutrino-energy" type="number" placeholder="Awaiting model limits" />
-          <label for="propagation-distance">Distance <span>km</span></label>
-          <input id="propagation-distance" type="number" placeholder="Awaiting model limits" />
-          <span class="field-label" id="environment-label">Environment</span>
-          <div class="environments" role="group" aria-labelledby="environment-label">
-            <label><input type="radio" name="environment" value="vacuum" />Vacuum</label>
-            <label
-              ><input type="radio" name="environment" value="constant_density" />Constant-density
-              matter</label
+          <label for="environment">Environment</label>
+          <select id="environment" bind:value={settings.environment}>
+            <option value="vacuum">Vacuum</option><option value="matter"
+              >Constant-density matter</option
+            ><option value="layers">Two equal-length layers</option><option value="density"
+              >Matter density sweep</option
             >
-          </div>
+          </select>
+          <label for="particle">Particle</label><select id="particle" bind:value={settings.particle}
+            ><option value="neutrino">Neutrino</option><option value="antineutrino"
+              >Antineutrino</option
+            ></select
+          >
+          <label for="theta">Mixing angle (radians)</label><input
+            id="theta"
+            type="number"
+            min="0"
+            max={Math.PI / 2}
+            step="any"
+            required
+            bind:value={settings.theta}
+          />
+          <label for="delta">Mass-squared splitting (normalized)</label><input
+            id="delta"
+            type="number"
+            min="-10"
+            max="10"
+            step="any"
+            required
+            bind:value={settings.delta_m2}
+          />
+          <label for="energy">Energy (normalized)</label><input
+            id="energy"
+            type="number"
+            min="0.01"
+            max="100"
+            step="any"
+            required
+            bind:value={settings.energy}
+          />
+          <label for="distance">Total distance (normalized)</label><input
+            id="distance"
+            type="number"
+            min="0"
+            max="100"
+            step="any"
+            required
+            bind:value={settings.distance}
+          />
+          {#if settings.environment === 'matter' || settings.environment === 'layers'}
+            <label for="potential"
+              >{settings.environment === 'layers' ? 'First layer potential' : 'Matter potential'} (normalized)</label
+            ><input
+              id="potential"
+              type="number"
+              min="0"
+              max="10"
+              step="any"
+              required
+              bind:value={settings.potential}
+            />
+          {/if}
+          {#if settings.environment === 'layers'}
+            <label for="second-potential">Second layer potential (normalized)</label><input
+              id="second-potential"
+              type="number"
+              min="0"
+              max="10"
+              step="any"
+              required
+              bind:value={settings.second_potential}
+            />
+          {/if}
+          {#if settings.environment === 'density'}
+            <label for="max-potential">Maximum potential (normalized)</label><input
+              id="max-potential"
+              type="number"
+              min="0"
+              max="10"
+              step="any"
+              required
+              bind:value={settings.max_potential}
+            />
+            <p class="hint">Sweep from zero to this potential at the fixed total distance.</p>
+          {/if}
+          <legend>Sampling</legend>
+          <label for="samples">Curve points</label><input
+            id="samples"
+            type="number"
+            min="2"
+            max="41"
+            step="1"
+            required
+            bind:value={settings.samples}
+          />
+          <label for="shots">Shots per point</label><input
+            id="shots"
+            type="number"
+            min="1"
+            max="100000"
+            step="1"
+            required
+            bind:value={settings.shots}
+          />
+          <label for="seed">Initial simulator seed</label><input
+            id="seed"
+            type="number"
+            min="0"
+            max="4294967295"
+            step="1"
+            required
+            bind:value={settings.seed}
+          />
+          <p class="hint">
+            Curve points × shots must be at most 500,000. Seeds increment at each point.
+          </p>
+          <button class="button primary" type="submit"
+            >{loading ? 'Running experiment…' : 'Run experiment'}</button
+          >
         </fieldset>
-        <details class="matter-settings">
-          <summary>Constant-density parameters</summary>
-          <fieldset disabled>
-            <legend class="sr-only">Matter parameters · support unconfirmed</legend>
-            <label for="matter-density">Mass density, ρ <span>g/cm³</span></label>
-            <input id="matter-density" type="number" placeholder="Convention pending agreement" />
-            <label for="electron-fraction">Electron fraction, Yₑ</label>
-            <input id="electron-fraction" type="number" placeholder="Support unconfirmed" />
-          </fieldset>
-        </details>
-        <fieldset disabled>
-          <legend>Execution</legend>
-          <label for="neutrino-shots">Requested shots <span>per point</span></label>
-          <input id="neutrino-shots" type="number" placeholder="Awaiting sampling method" />
-        </fieldset>
-        <button type="button" class="button primary" disabled aria-describedby="configuration-note"
-          >Run experiment<Icon name="arrow" size={15} /></button
-        >
-        <p class="field-note" id="configuration-note">
-          No model, flavor count, or environment support has been declared. No requests are sent.
-        </p>
-      </div>
+      </form>
     </Panel>
   </aside>
-
-  <div class="results">
-    <Panel title="Flavor probabilities" subtitle="Classical reference and Qiskit simulation">
-      <NeutrinoProbabilityChart {result} />
-    </Panel>
-
-    <Panel title="Comparison & run details">
-      <div class="result-details">
-        <details open={result !== null}>
-          <summary
-            >Classical vs Qiskit<span>{result ? 'Final distance' : 'Unavailable'}</span></summary
+  <div class="results" aria-busy={loading}>
+    <p role="status" class="status">
+      {loading
+        ? 'Calculating classical references and sampling Qiskit Aer…'
+        : result
+          ? `Completed ${result.results.length} points · all results are simulated.`
+          : 'Choose a configuration and run the experiment.'}
+    </p>
+    <Panel
+      title="Flavor probabilities"
+      subtitle="Independent reference, ideal circuit, and finite shots"
+      ><NeutrinoProbabilityChart {result} /></Panel
+    >
+    <Panel title="Comparison & run details" subtitle="Inspect a measured point">
+      <div class="details">
+        {#if result && selected}
+          <label for="point"
+            >{result.axis === 'potential' ? 'Matter potential' : 'Propagation distance'} (normalized)</label
           >
-          {#if result}
-            <div class="comparison-scroll">
-              <table>
-                <caption>Probabilities at {formatValue(result.distances_km.at(-1))} km</caption>
-                <thead
-                  ><tr><th>Flavor</th><th>Classical</th><th>Qiskit</th><th>Absolute error</th></tr
-                  ></thead
-                >
-                <tbody>
-                  {#each channels as channel}<tr
-                      ><th scope="row">{channel.flavor.label}</th><td
-                        >{formatValue(channel.values.classical[terminalIndex])}</td
-                      ><td>{formatValue(channel.values.qiskit[terminalIndex])}</td><td
-                        >{formatValue(channel.values.absolute_error[terminalIndex])}</td
-                      ></tr
-                    >
-                  {:else}<tr><td colspan="4">No supported flavor series available.</td></tr>{/each}
-                </tbody>
-              </table>
+          <select id="point" bind:value={selectedIndex}
+            >{#each result.coordinates as coordinate, index}<option value={index}
+                >{formatValue(coordinate)}</option
+              >{/each}</select
+          >
+          <div class="table-scroll">
+            <table>
+              <caption>Flavor probabilities at the selected point</caption>
+              <thead
+                ><tr
+                  ><th>Flavor</th><th>Analytical</th><th>SciPy</th><th>Ideal</th><th>Shots</th></tr
+                ></thead
+              >
+              <tbody
+                >{#each flavorChannels as flavor}<tr
+                    ><th>{flavor.label}</th><td>{formatValue(selected.analytical?.[flavor.key])}</td
+                    ><td>{formatValue(selected.numerical[flavor.key])}</td><td
+                      >{formatValue(selected.ideal[flavor.key])}</td
+                    ><td>{formatValue(selected.measured[flavor.key])}</td></tr
+                  >{/each}</tbody
+              >
+            </table>
+          </div>
+          <dl>
+            <div>
+              <dt>Mixing strength sin²(2θm)</dt>
+              <dd>{formatValue(selected.analytical?.mixing_strength)}</dd>
             </div>
-            <p>Classical method: {result.metadata.classical_method}. Qiskit Aer simulation.</p>
-          {:else}
-            <p>
-              No comparison available. Supported flavors and both methods’ probabilities must come
-              from the backend.
-            </p>
-          {/if}
-        </details>
-        <details open={result !== null}>
-          <summary
-            >Accuracy & error<span>{result ? 'Backend reported' : 'Not evaluated'}</span></summary
-          >
-          {#if result}
-            <dl class="measurements">
-              <div>
-                <dt>Maximum absolute error</dt>
-                <dd>{formatValue(result.metrics.max_absolute_error)}</dd>
-              </div>
-              <div>
-                <dt>Root mean square error</dt>
-                <dd>{formatValue(result.metrics.rms_error)}</dd>
-              </div>
-              <div>
-                <dt>Normalization deviation</dt>
-                <dd>{formatValue(result.metrics.normalization_deviation)}</dd>
-              </div>
-              <div>
-                <dt>Declared error tolerance</dt>
-                <dd>{formatValue(result.metrics.error_tolerance)}</dd>
-              </div>
-              <div>
-                <dt>Within tolerance</dt>
-                <dd>
-                  {result.metrics.within_tolerance == null
-                    ? 'Not evaluated'
-                    : result.metrics.within_tolerance
-                      ? 'Yes'
-                      : 'No'}
-                </dd>
-              </div>
-            </dl>
-          {:else}
-            <p>
-              Absolute and RMS probability errors, normalization deviation, and tolerance assessment
-              require a completed comparison. No accuracy values are available.
-            </p>
-          {/if}
-        </details>
-        <details open={result !== null}>
-          <summary>Circuit & execution<span>{result ? 'Simulated' : 'Not run'}</span></summary>
-          {#if result}
-            <dl class="measurements">
-              <div>
-                <dt>Qubits</dt>
-                <dd>{formatValue(result.metrics.num_qubits, 0)}</dd>
-              </div>
-              <div>
-                <dt>Circuit depth</dt>
-                <dd>{formatValue(result.metrics.circuit_depth, 0)}</dd>
-              </div>
-              <div>
-                <dt>Depth scope</dt>
-                <dd>{result.metadata.circuit_depth_scope}</dd>
-              </div>
-              <div>
-                <dt>Shots per point / total</dt>
-                <dd>
-                  {formatValue(result.metrics.shots_per_point, 0)} / {formatValue(
-                    result.metrics.total_shots,
-                    0
-                  )}
-                </dd>
-              </div>
-              <div>
-                <dt>Probability method</dt>
-                <dd>{result.metadata.probability_method}</dd>
-              </div>
-              <div>
-                <dt>Classical elapsed time</dt>
-                <dd>
-                  {result.classical
-                    ? `${formatValue(result.classical.elapsed_ms, 3)} ms`
-                    : 'Not measured'}
-                </dd>
-              </div>
-              <div>
-                <dt>Qiskit elapsed time</dt>
-                <dd>
-                  {result.quantum
-                    ? `${formatValue(result.quantum.elapsed_ms, 3)} ms`
-                    : 'Not measured'}
-                </dd>
-              </div>
-              <div>
-                <dt>Timing scope</dt>
-                <dd>{result.metadata.timing_scope}</dd>
-              </div>
-            </dl>
-          {:else}
-            <p>
-              No circuit or execution record available. Qubits, depth, actual shots, sampling
-              method, and elapsed times will be reported after execution.
-            </p>
-          {/if}
-        </details>
+            <div>
+              <dt>Effective mixing angle (radians)</dt>
+              <dd>{formatValue(selected.analytical?.theta_m)}</dd>
+            </div>
+            <div>
+              <dt>Ideal vs SciPy conversion error</dt>
+              <dd>{formatValue(selected.absolute_errors.ideal_vs_numerical.other)}</dd>
+            </div>
+            <div>
+              <dt>Shot sampling conversion error</dt>
+              <dd>{formatValue(selected.absolute_errors.sampling.other)}</dd>
+            </div>
+            <div>
+              <dt>Subdivision state change</dt>
+              <dd>{formatValue(selected.numerics.subdivision_check.state_change_l2)}</dd>
+            </div>
+            <div>
+              <dt>Qubits / depth (with measurement)</dt>
+              <dd>{selected.num_qubits} / {selected.circuit_depth}</dd>
+            </div>
+            <div>
+              <dt>Shots / seed</dt>
+              <dd>{selected.shots} / {selected.configuration.seed}</dd>
+            </div>
+            <div>
+              <dt>Classical reference (ms)</dt>
+              <dd>{formatValue(selected.timing_ms.classical, 3)}</dd>
+            </div>
+            <div>
+              <dt>Circuit end-to-end (ms)</dt>
+              <dd>{formatValue(selected.timing_ms.circuit_end_to_end, 3)}</dd>
+            </div>
+          </dl>
+          <p class="hint">
+            Maximum mixing and maximum conversion are distinct. Mixing is unavailable for multiple
+            layers or a degenerate generator. Timing scopes differ; these values do not establish
+            quantum speedup.
+          </p>
+          <details>
+            <summary>Full reproducibility record</summary>
+            <pre>{JSON.stringify(selected, null, 2)}</pre>
+          </details>
+        {:else}<p>No results yet. Run a simulation to compare both flavor probabilities.</p>{/if}
       </div>
     </Panel>
-
-    <details class="panel assumptions">
-      <summary>Scientific assumptions</summary>
-      <div>
-        <p>
-          Vacuum and constant-density matter are distinct propagation models. Their availability
-          must be declared by the backend; neither is enabled here yet.
-        </p>
-        <p>
-          Flavor channels, mixing parameters, mass differences, and state encoding await the
-          scientific model. No two- or three-flavor simulation is assumed.
-        </p>
-        <p>
-          The classical reference must use the same inputs independently of the Qiskit circuit. No
-          neutrino physics or error calculation runs in this frontend.
-        </p>
-        {#if result}<ul>
-            {#each result.metadata.assumptions as assumption}<li>{assumption}</li>{/each}
-          </ul>{/if}
-        <a class="text-link" href="/methodology/"
-          >Model scope and validation<Icon name="arrow" size={14} /></a
-        >
-      </div>
-    </details>
+    <p class="hint">
+      The other flavor is an effective active-flavor combination. Smooth profiles, three-flavor
+      interference, and neutrino interactions are outside this model. <a href="/methodology/"
+        >Read the methodology</a
+      >.
+    </p>
   </div>
 </div>
 
 <style>
-  .availability {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 14px 16px;
-    margin: 0 0 24px;
-    border-left: 3px solid var(--blue);
-    background: var(--surface-raised);
+  .notice,
+  .hint,
+  .status {
     color: var(--muted);
     font-size: 13px;
     line-height: 1.6;
   }
-  .availability :global(svg) {
-    margin-top: 2px;
-    color: var(--blue);
+  .notice {
+    border-left: 3px solid var(--blue);
+    padding: 12px 16px;
+    background: #f4f7fc;
   }
-  .availability strong {
-    color: var(--text);
-    font-weight: 500;
+  .presets {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 20px 0;
+    font-size: 13px;
   }
   .lab-layout {
     display: grid;
-    grid-template-columns: 290px minmax(0, 1fr);
+    grid-template-columns: 300px minmax(0, 1fr);
     gap: 24px;
     align-items: start;
   }
@@ -284,41 +356,36 @@
     display: grid;
     gap: 20px;
   }
-  .configuration {
-    padding: 0 24px 20px;
+  .status {
+    margin: 0;
+  }
+  form,
+  .details {
+    padding: 0 24px 24px;
   }
   fieldset {
-    padding: 0;
-    margin: 0 0 20px;
     border: 0;
+    padding: 0;
+    margin: 0;
     min-width: 0;
   }
   legend {
-    width: 100%;
-    border-top: 1px solid var(--border);
-    padding: 16px 0 12px;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
+    margin: 0 0 16px;
   }
-  fieldset:first-child legend {
-    border: 0;
-    padding-top: 0;
-  }
-  label,
-  .field-label {
-    display: flex;
-    justify-content: space-between;
-    gap: 8px;
-    font-size: 12px;
-    margin-bottom: 7px;
+  label {
+    display: block;
     color: var(--muted);
+    font-size: 12px;
+    margin: 0 0 7px;
   }
   label > span {
     font-family: var(--mono);
     color: var(--muted);
   }
   select,
-  input[type='number'] {
+  input {
     width: 100%;
     min-height: 40px;
     padding: 9px 10px;
@@ -326,101 +393,42 @@
     background: var(--surface-raised);
     border: 1px solid var(--border);
     border-radius: 2px;
-    color: var(--muted);
+    color: var(--text);
     font-size: 12px;
-    cursor: not-allowed;
-    opacity: 1;
   }
-  input::placeholder {
-    color: var(--muted);
+  form .button {
+    width: 100%;
   }
-  fieldset > :last-child {
+  .error {
+    padding: 16px;
+    border-left: 3px solid #b42318;
+    background: #fff0ed;
+    color: #8b251c;
+    margin: 16px 0;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .error p {
     margin-bottom: 0;
   }
-  .environments {
-    display: grid;
-    gap: 10px;
-    padding-top: 5px;
-  }
-  .environments label {
-    justify-content: start;
-    align-items: center;
-    margin: 0;
-  }
-  .environments input {
-    margin: 0;
-  }
-  .matter-settings {
-    margin: -2px 0 20px;
-  }
-  .matter-settings summary {
-    font-size: 12px;
-    color: var(--muted);
-    padding: 0 0 12px;
-  }
-  .matter-settings fieldset {
-    margin: 0;
-    padding-top: 6px;
-  }
-  .configuration .button {
-    width: 100%;
-    font-size: 13px;
-  }
-  .field-note {
-    color: var(--muted);
-    font-size: 12px;
-    line-height: 1.6;
-    margin: 12px 0 0;
-  }
-  .result-details {
-    border-top: 1px solid var(--border);
-  }
-  .result-details details + details {
-    border-top: 1px solid var(--border);
-  }
-  summary {
-    cursor: pointer;
-  }
-  .result-details summary {
-    padding: 17px 24px;
-    font-size: 13px;
-  }
-  .result-details summary span {
-    float: right;
-    color: var(--muted);
-    font-size: 12px;
-    margin-left: 12px;
-  }
-  .result-details p,
-  .assumptions p,
-  .assumptions li {
-    font-size: 13px;
-    line-height: 1.7;
-    color: var(--muted);
-  }
-  .result-details p {
-    padding: 0 24px 20px;
-    margin: 0;
-  }
-  .comparison-scroll {
+  .table-scroll {
     overflow-x: auto;
-    margin-bottom: 16px;
   }
   table {
-    border-collapse: collapse;
     width: 100%;
+    border-collapse: collapse;
     text-align: left;
     font-size: 12px;
   }
   caption {
     text-align: left;
-    padding: 0 24px 12px;
+    margin: 10px 0;
     color: var(--muted);
   }
   th,
   td {
-    padding: 12px 16px;
-    border-block: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 8px;
     white-space: nowrap;
   }
   th {
@@ -430,84 +438,43 @@
     background: var(--surface-raised);
     color: var(--muted);
   }
-  td {
+  td,
+  dd {
     font-family: var(--mono);
   }
-  .measurements {
-    margin: 0;
-    padding: 0 24px 20px;
+  dl {
+    margin: 16px 0;
   }
-  .measurements div {
+  dl div {
     display: flex;
+    gap: 16px;
     justify-content: space-between;
-    align-items: baseline;
-    gap: 20px;
     padding: 10px 0;
     border-bottom: 1px solid var(--border);
+    font-size: 12px;
   }
   dt {
-    font-size: 12px;
     color: var(--muted);
   }
   dd {
-    font: 12px/1.6 var(--mono);
     margin: 0;
     text-align: right;
-    overflow-wrap: anywhere;
   }
-  .assumptions summary {
-    padding: 20px 24px;
-    font-size: 14px;
-    font-weight: 500;
+  summary {
+    cursor: pointer;
+    padding: 12px 0;
+    font-size: 13px;
   }
-  .assumptions > div {
-    padding: 0 24px 24px;
+  pre {
+    max-height: 320px;
+    overflow: auto;
+    font-size: 11px;
+    background: #f4f7fc;
+    padding: 12px;
   }
-  .assumptions p {
-    margin: 0 0 12px;
-  }
-  .assumptions ul {
-    list-style: disc;
-    padding-left: 18px;
-  }
-  @media (max-width: 950px) {
+  @media (max-width: 900px) {
     .lab-layout {
       grid-template-columns: 1fr;
-    }
-    .configuration {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      column-gap: 24px;
-      align-items: start;
-    }
-    .configuration > :nth-last-child(-n + 2) {
-      grid-column: 1 / -1;
-    }
-    .matter-settings {
-      grid-column: 1;
-      grid-row: 2;
-    }
-  }
-  @media (max-width: 600px) {
-    .configuration {
-      display: block;
-      padding-inline: 18px;
-    }
-    .result-details summary {
-      padding-inline: 18px;
-    }
-    .result-details summary span {
-      float: none;
-      display: block;
-      margin: 6px 0 0 17px;
-    }
-    .result-details p,
-    .measurements {
-      padding-inline: 18px;
-    }
-    .assumptions summary,
-    .assumptions > div {
-      padding-inline: 18px;
     }
   }
 </style>

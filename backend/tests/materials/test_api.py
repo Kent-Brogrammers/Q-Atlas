@@ -70,11 +70,8 @@ def test_runtime_budget_is_enforced_and_worker_is_reaped(client):
     assert {process.pid for process in mp.active_children()} <= before
 
 
-def test_other_feature_endpoints_are_still_stubs(client):
+def test_optimization_endpoint_remains_a_stub(client):
     for path, payload in [
-        ("/api/compiler/analyze", {"source": "x"}),
-        ("/api/compiler/benchmark", {"source": "x"}),
-        ("/api/search/run", {"num_qubits": 2, "marked_states": ["00"]}),
         (
             "/api/optimization/run",
             {

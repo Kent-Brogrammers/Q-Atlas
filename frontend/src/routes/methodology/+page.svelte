@@ -15,14 +15,15 @@
   <section>
     <h2>Physical model</h2>
     <p>
-      The lab targets single-neutrino flavor propagation in vacuum and constant-density matter. The
-      scientific backend must declare which models, initial states, and output flavors it
-      implements. Two- or three-flavor support is not assumed.
+      The lab implements effective two-flavor propagation from an initial electron neutrino. One
+      simulated qubit encodes electron flavor and one effective other active flavor. Inputs use
+      normalized units, with the mixing angle in radians.
     </p>
     <p>
       Vacuum propagation excludes a matter potential. Constant-density matter adds a
-      forward-scattering potential with uniform density and composition. Variable-density,
-      interacting-neutrino, and supernova models are outside the current scope.
+      forward-scattering potential with uniform density and composition. Ordered piecewise-constant
+      layers are supported. Smooth profiles, interacting-neutrino, three-flavor, and realistic
+      supernova models are outside the current scope.
     </p>
     <a
       class="text-link"
@@ -60,9 +61,10 @@
   <section>
     <h2>Current availability</h2>
     <p>
-      The neutrino API and model capabilities are awaiting team agreement. Configuration and
-      execution are disabled. No neutrino results, example dataset, or frontend physics calculation
-      is included.
+      Vacuum, constant matter, two-layer profiles, and density sweeps run through the neutrino API.
+      The backend computes analytical predictions where applicable, an independent SciPy reference,
+      ideal Aer statevectors, and finite-shot measurements. The browser plots those returned
+      records.
     </p>
     <a class="text-link" href="/neutrinos/">Open Neutrino Lab<Icon name="arrow" size={14} /></a>
   </section>

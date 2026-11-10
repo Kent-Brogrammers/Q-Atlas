@@ -106,6 +106,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/neutrinos/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run */
+        post: operations["run_api_neutrinos_run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/optimization/run": {
         parameters: {
             query?: never;
@@ -132,7 +149,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Run */
+        /**
+         * Run
+         * @description Compare local Grover simulation with classical search on the same targets.
+         */
         post: operations["run_api_search_run_post"];
         delete?: never;
         options?: never;
@@ -368,6 +388,22 @@ export interface components {
             status?: "error";
             error: components["schemas"]["ErrorDetail"];
         };
+        /** Experiment */
+        Experiment: {
+            parameters?: components["schemas"]["Parameters"];
+            /** Layers */
+            layers: components["schemas"]["Layer"][];
+            /**
+             * Shots
+             * @default 4096
+             */
+            shots?: number;
+            /**
+             * Seed
+             * @default 42
+             */
+            seed?: number;
+        };
         /** GeneratedPythonArtifact */
         GeneratedPythonArtifact: {
             /**
@@ -439,6 +475,16 @@ export interface components {
              * @constant
              */
             experiments_ready?: false;
+        };
+        /** Layer */
+        Layer: {
+            /** Distance */
+            distance: number;
+            /**
+             * Potential
+             * @default 0
+             */
+            potential?: number;
         };
         /** MaterialsMetadata */
         MaterialsMetadata: {
@@ -671,6 +717,165 @@ export interface components {
             /** Shots Per Basis */
             shots_per_basis: number;
         };
+        /** NeutrinoAnalytical */
+        NeutrinoAnalytical: {
+            /** Electron */
+            electron: number;
+            /** Other */
+            other: number;
+            /** Mixing Strength */
+            mixing_strength: number | null;
+            /** Theta M */
+            theta_m: number | null;
+            /** Frequency */
+            frequency: number;
+        };
+        /** NeutrinoErrors */
+        NeutrinoErrors: {
+            ideal_vs_numerical: components["schemas"]["NeutrinoProbabilities"];
+            sampling: components["schemas"]["NeutrinoProbabilities"];
+            total: components["schemas"]["NeutrinoProbabilities"];
+            analytical_vs_numerical: components["schemas"]["NeutrinoProbabilities"] | null;
+        };
+        /** NeutrinoNumerics */
+        NeutrinoNumerics: {
+            /** Reference Norm */
+            reference_norm: number;
+            /** Ideal Norm */
+            ideal_norm: number;
+            /** State Error L2 */
+            state_error_l2: number;
+            subdivision_check: components["schemas"]["NeutrinoSubdivision"];
+            /** Approximation */
+            approximation: string;
+        };
+        /** NeutrinoProbabilities */
+        NeutrinoProbabilities: {
+            /** Electron */
+            electron: number;
+            /** Other */
+            other: number;
+        };
+        /** NeutrinoRecord */
+        NeutrinoRecord: {
+            /**
+             * Experiment
+             * @constant
+             */
+            experiment: "q_neutrino";
+            /**
+             * Status
+             * @constant
+             */
+            status: "completed";
+            /**
+             * Backend
+             * @constant
+             */
+            backend: "aer_simulator";
+            /**
+             * Simulated
+             * @constant
+             */
+            simulated: true;
+            configuration: components["schemas"]["Experiment"];
+            analytical: components["schemas"]["NeutrinoAnalytical"] | null;
+            numerical: components["schemas"]["NeutrinoProbabilities"];
+            ideal: components["schemas"]["NeutrinoProbabilities"];
+            measured: components["schemas"]["NeutrinoProbabilities"];
+            absolute_errors: components["schemas"]["NeutrinoErrors"];
+            numerics: components["schemas"]["NeutrinoNumerics"];
+            /**
+             * Num Qubits
+             * @constant
+             */
+            num_qubits: 1;
+            /** Circuit Depth */
+            circuit_depth: number;
+            /** Shots */
+            shots: number;
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /** Basis Gates */
+            basis_gates: string[];
+            timing_ms: components["schemas"]["NeutrinoTimings"];
+            quantum_timing: components["schemas"]["TimingBreakdown"];
+            /** Versions */
+            versions: {
+                [key: string]: string;
+            };
+        };
+        /** NeutrinoRequest */
+        NeutrinoRequest: {
+            experiment: components["schemas"]["Experiment"];
+            /**
+             * Axis
+             * @default distance
+             * @enum {string}
+             */
+            axis?: "distance" | "potential";
+            /**
+             * Samples
+             * @default 21
+             */
+            samples?: number;
+            /**
+             * Max Potential
+             * @default 2
+             */
+            max_potential?: number;
+            /**
+             * Timeout Seconds
+             * @default 30
+             */
+            timeout_seconds?: number;
+        };
+        /** NeutrinoResponse */
+        NeutrinoResponse: {
+            /**
+             * Model
+             * @default effective_two_flavor
+             * @constant
+             */
+            model?: "effective_two_flavor";
+            /**
+             * Units
+             * @default normalized
+             * @constant
+             */
+            units?: "normalized";
+            /**
+             * Axis
+             * @enum {string}
+             */
+            axis: "distance" | "potential";
+            /** Coordinates */
+            coordinates: number[];
+            /** Results */
+            results: components["schemas"]["NeutrinoRecord"][];
+        };
+        /** NeutrinoSubdivision */
+        NeutrinoSubdivision: {
+            /** Subdivisions Per Layer */
+            subdivisions_per_layer: number;
+            /** State Change L2 */
+            state_change_l2: number;
+            /** Scope */
+            scope: string;
+        };
+        /** NeutrinoTimings */
+        NeutrinoTimings: {
+            /** Classical */
+            classical: number;
+            /** Convergence Check */
+            convergence_check: number;
+            /** Circuit End To End */
+            circuit_end_to_end: number;
+            /** Ideal Execution */
+            ideal_execution: number;
+        };
         /** OptimizationMetadata */
         OptimizationMetadata: {
             /** Seed */
@@ -749,6 +954,30 @@ export interface components {
             quantum: components["schemas"]["QAOAResult"] | null;
             metrics: components["schemas"]["OptimizationMetrics"];
             metadata: components["schemas"]["OptimizationMetadata"];
+        };
+        /** Parameters */
+        Parameters: {
+            /**
+             * Theta
+             * @default 0.2
+             */
+            theta?: number;
+            /**
+             * Delta M2
+             * @default 1
+             */
+            delta_m2?: number;
+            /**
+             * Energy
+             * @default 1
+             */
+            energy?: number;
+            /**
+             * Particle
+             * @default neutrino
+             * @enum {string}
+             */
+            particle?: "neutrino" | "antineutrino";
         };
         /** QAOAConfig */
         QAOAConfig: {
@@ -1452,6 +1681,93 @@ export interface operations {
             };
         };
     };
+    run_api_neutrinos_run_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NeutrinoRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NeutrinoResponse"];
+                };
+            };
+            /** @description Route not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method not allowed */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Feature not implemented */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Quantum dependencies unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Neutrino runtime budget exceeded */
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     run_api_optimization_run_post: {
         parameters: {
             query?: never;
@@ -1581,6 +1897,24 @@ export interface operations {
             };
             /** @description Feature not implemented */
             501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Quantum dependencies unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Search runtime budget exceeded */
+            504: {
                 headers: {
                     [name: string]: unknown;
                 };
