@@ -3,6 +3,7 @@ import type { components } from './api.generated';
 // Generated from the backend OpenAPI document; never hand-edit api.generated.ts.
 type Schemas = components['schemas'];
 export type QUBO = Schemas['QUBO'];
+export type SolverResult = Schemas['SolverResult'];
 export type QAOAConfig = Schemas['QAOAConfig'];
 export type QAOAResult = Schemas['QAOAResult'];
 export type CircuitPreview = Schemas['CircuitPreview'];
@@ -24,4 +25,5 @@ export type MaterialsRequest = Schemas['MaterialsRequest'];
 export type MaterialsResult = Schemas['MaterialsResult'];
 export type HealthResponse = Schemas['HealthResponse'];
 export type ErrorResponse = Schemas['ErrorResponse'];
-export type BenchmarkResult = CompilerBenchmarkResult | OptimizationResult | SearchResult | MaterialsResult;
+export type BenchmarkResult =
+  CompilerBenchmarkResult | OptimizationResult | SearchResult | MaterialsResult;

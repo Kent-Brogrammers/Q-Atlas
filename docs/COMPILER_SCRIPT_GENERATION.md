@@ -10,32 +10,38 @@ imports Qiskit, or submits a quantum job.
 Start the API and frontend using [README.md](../README.md), then open
 <http://127.0.0.1:5173/compiler>.
 
-1. Keep **Generate script** selected.
-2. Choose **Load a Python file**, paste a script, or click **Load example**.
-3. Mark one supported objective with `@qatlas.objective(num_bits=N)`.
-4. Put old circuit construction in one zero-argument function and mark that function
-   with `@qatlas.circuit`. Its name is preserved when the implementation is replaced.
-5. Select 1–8 QAOA layers, then click **Generate Python script**.
-6. Review the generated Python, normalized QUBO, and symbolic gate plan.
-7. Click **Download .py**. A file named `model.py` downloads as `model_qaoa.py`.
-8. Optionally click **Prepare comparison** for a reproducibility manifest. It calls
+1. Choose **Load a .py file**, paste a script, or click **Load example**.
+2. Put `@qatlas.objective` above one supported binary objective. Function/input names
+   are arbitrary; scalar parameters do not need indexing. Width is inferred.
+3. Click **Convert Python**, then **Download .py**. A file named `model.py`
+   downloads as `model_qaoa.py`. The rest of the Python remains in place.
+4. Optional **Preview Python** shows the generated source. Circuit/layer settings
+   and mathematical details are in advanced sections, with safe defaults.
+5. Only if replacing existing circuit code, put it in a zero-argument factory and
+   mark that factory with `@qatlas.circuit`. Otherwise no second marker is needed.
+6. Optionally expand **Conversion details and future benchmarking** and click
+   **Prepare comparison** for a reproducibility manifest. It calls
    neither solver and leaves quantum/script execution disabled. See
    [benchmark planning](COMPILER_BENCHMARK_PLAN.md).
 
-The **Example program** chooser contains two supported weighted programs and three
+The **Example** chooser contains three supported programs and three
 deliberate rejection cases. See [program examples](../examples/compiler/programs/README.md)
-for independent expected values and two statically generated `.py` output snapshots.
+for independent expected values and three statically generated `.py` output snapshots.
 
 Try [script_replacement.py](../examples/compiler/script_replacement.py). The original
 source stays in the editor. Editing it, loading another file, or changing layers or
 workflow clears the prior download; late requests cannot restore old results.
 
-The separate **Analyze objective only** workflow retains single-function analysis and
-can also prepare a comparison. Whole files belong in Generate. The benchmark adapter
+The React reference retains its **Analyze objective only** workflow. The active
+Svelte page uses one conversion action for both functions and complete files. The benchmark adapter
 now accepts supported complete files through the same static generation path; it
 hands off only the verified QUBO/config and never executes the source file.
 
-## Input markers and replacement behavior
+## Advanced: replacing an existing circuit factory
+
+This second marker is optional. Normal scripts need only the objective marker;
+[named_decisions.py](../examples/compiler/programs/named_decisions.py) demonstrates
+inferred scalar inputs and a normal caller without any circuit code.
 
 ```python
 # Ordinary imports, helpers, and caller code may surround the marked functions.

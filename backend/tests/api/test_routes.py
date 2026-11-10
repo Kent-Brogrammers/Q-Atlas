@@ -19,7 +19,6 @@ REQUESTS = [
         },
     ),
     ("/api/search/run", {"num_qubits": 3, "marked_states": ["100"]}),
-    ("/api/materials/run", {}),
 ]
 
 

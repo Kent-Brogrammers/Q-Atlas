@@ -7,6 +7,12 @@ hardware, or the supercomputer. No credentials or external quota are used.
 
 ## Use the current frontend
 
+The active Svelte page now uses **Convert Python** rather than a workflow/mode
+selector. Upload or paste a normal file with `@qatlas.objective`, convert, and download.
+**Conversion details and future benchmarking** contains the optional plan action.
+Named inputs and static vector widths infer automatically; quantum options are not
+required. The steps below describe the preserved React reference workflow.
+
 1. Open `/compiler` with the local API and frontend running.
 2. In **Generate script**, choose an **Example program** and click **Load example**,
    or load your own `.py` file. The catalog includes two supported programs and three

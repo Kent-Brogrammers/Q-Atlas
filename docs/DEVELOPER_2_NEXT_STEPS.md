@@ -2,6 +2,26 @@
 
 Updated: 2026-11-09. Branch: `Connor`.
 
+The current compiler UI is integrated into main's Svelte frontend at `/compiler/`.
+It needs only `@qatlas.objective`: function/input names are arbitrary, scalar input
+counts or static vector widths are inferred, and no circuit code is required.
+Use **Convert Python**, then **Download .py**. Mathematical/circuit/benchmark details
+are optional. The React reference and other developers' changes are preserved.
+Read [QUANTUM_PRESENTATION.md](QUANTUM_PRESENTATION.md) for the future provider hookup;
+the actual provider/cluster has not been identified and no hardware was connected.
+
+After merging main, the full default pytest suite includes real simulator tests.
+Under the current mocks-only instruction use the inspected safe selection:
+
+```sh
+cd backend
+.venv/bin/pytest tests/compiler tests/api tests/schemas tests/optimization tests/materials/test_request_contract.py
+```
+
+This selection passed 422 cases. It includes pure classical math, mocked compiler
+handoffs, and Pydantic contracts; materials/search/environment simulation suites
+were deliberately not run. Historical full-suite counts below precede this merge.
+
 The **file-to-generated-script frontend flow is implemented**. Use **Generate script**
 to load a `.py` file, replace an explicitly marked `@qatlas.circuit` factory with
 generated Qiskit construction code, preserve the surrounding Python, and download

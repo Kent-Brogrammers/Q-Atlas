@@ -3,7 +3,7 @@
 import math
 from typing import Annotated, Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 MAX_VARIABLES = 16
 Backend = Literal["aer_simulator"]
@@ -59,6 +59,12 @@ class RunConfig(Contract):
     shots: int = Field(default=1024, ge=1, le=100_000)
     seed: Seed = 42
     timeout_seconds: float = Field(default=30, gt=0, le=60)
+
+
+class MaterialsRunConfig(RunConfig):
+    """Materials alone permits null for a nondeterministic simulator seed."""
+
+    seed: Seed | None = 42
 
 
 class QAOAConfig(RunConfig):
@@ -131,7 +137,16 @@ class MaterialsRequest(Contract):
     field: float = 0.5
     boundary: Literal["open", "periodic"] = "open"
     observable: Literal["energy", "magnetization"] = "energy"
-    config: RunConfig = Field(default_factory=RunConfig)
+    config: MaterialsRunConfig = Field(default_factory=MaterialsRunConfig)
+    evolution_time: float = Field(default=1.0, ge=0, le=10)
+    trotter_steps: int = Field(default=20, ge=1, le=256)
+    time_samples: int = Field(default=1, ge=1, le=21)
+
+    @field_validator("config", mode="before")
+    @classmethod
+    def accept_shared_config(cls, value: object) -> object:
+        # Preserve Python callers passing the original shared config, as well as JSON callers.
+        return value.model_dump() if isinstance(value, RunConfig) else value
 
 
 class TimingBreakdown(Contract):
@@ -175,10 +190,45 @@ class SearchMetrics(BenchmarkMetrics):
     classical_worst_case_queries: int | None = Field(default=None, ge=0)
 
 
+class MaterialsObservables(Contract):
+    """Dimensionless quantities; arrays are in increasing spin/bond order."""
+
+    per_spin_z: list[float] = Field(min_length=2, max_length=4)
+    per_spin_x: list[float] = Field(min_length=2, max_length=4)
+    magnetization_z: float
+    zz_correlations: list[float] = Field(min_length=1, max_length=3)
+    energy: float
+    state_norm: NonNegative | None = None
+
+
+class MaterialsObservableErrors(Contract):
+    magnetization_z: NonNegative
+    zz_correlations: list[NonNegative] = Field(min_length=1, max_length=3)
+    energy: NonNegative
+
+
+class MaterialsTimePoint(Contract):
+    time: NonNegative
+    exact: MaterialsObservables
+    ideal: MaterialsObservables
+    measured: MaterialsObservables
+    trotter_error: MaterialsObservableErrors
+    sampling_error: MaterialsObservableErrors
+    total_error: MaterialsObservableErrors
+    state_fidelity: Probability
+    circuit_depth: int = Field(ge=0)
+    shots_per_basis: int = Field(ge=1, le=100_000)
+
+
 class MaterialsMetrics(BenchmarkMetrics):
     classical_observable: float | None = None
     quantum_observable: float | None = None
     absolute_error: NonNegative | None = None
+    ideal_observable: float | None = None
+    trotter_absolute_error: NonNegative | None = None
+    sampling_absolute_error: NonNegative | None = None
+    total_shots: int | None = Field(default=None, ge=1)
+    time_series: list[MaterialsTimePoint] = Field(default_factory=list, max_length=21)
 
 
 class BenchmarkMetadata(Contract):
@@ -205,6 +255,16 @@ class MaterialsMetadata(BenchmarkMetadata):
     hamiltonian_convention: str = Field(min_length=1)
     energy_unit: str = Field(min_length=1)
     observable_unit: str = Field(min_length=1)
+    initial_state: Bitstring | None = None
+    trotter_order: Literal[2] = 2
+    execution_methods: list[Literal["scipy_expm", "aer_statevector", "aer_shots"]] = Field(
+        default_factory=list
+    )
+    measurement_bases: list[Literal["Z", "X"]] = Field(default_factory=list)
+    transpilation_basis: list[str] = Field(default_factory=list)
+    circuit_depth_scope: str | None = None
+    ideal_elapsed_ms: NonNegative | None = None
+    sampling_seed_policy: str | None = None
 
 
 class QAOAResult(SolverResult):
