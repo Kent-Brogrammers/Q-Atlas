@@ -8,9 +8,15 @@ unchanged. Developers 3 and 5 are the impacted owners.
 ## Execution remains mocked
 
 Do not use the supercomputer, hardware, external quotas, credentials, or run simulator
-jobs under the current instruction. `run_classical` and `run_qaoa` remain stubs;
-compiler integration tests replace them with synthetic results. Nothing here
-authorizes execution. The helpers below are pure construction/evaluation functions.
+jobs under the current instruction. As of main `a1f413b`, `run_classical` is implemented;
+`run_qaoa` remains a stub. Compiler integration tests replace both with synthetic
+results. The new QAOA expectation scorer runs Aer and must not be included in the
+current compiler-only test selection. Nothing here authorizes execution.
+
+See [the testing-day runbook](DEVELOPER_2_TESTING_DAY.md) for the current completion
+checklist and proposed server execution gate/provider contract for D3/D5 review.
+The compiler now revalidates returned solver models, including mutable nested timing
+and metric fields, before accepting results. Its offline bundle exporter calls no runners.
 
 ## Shared helpers to consume
 
