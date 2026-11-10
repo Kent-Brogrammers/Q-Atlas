@@ -128,9 +128,11 @@ environment and frontend dependencies without installing packages or running exp
 
 Open <http://127.0.0.1:5173>. Backend docs are at <http://127.0.0.1:8000/docs>;
 health is <http://127.0.0.1:8000/api/health>. Start either server independently.
-The frontend serves `/`, `/compiler`, `/materials`, `/optimization`, and `/search`.
+The frontend serves `/`, `/compiler`, `/neutrinos`, `/materials`, `/optimization`, and `/search`.
 The Svelte compiler sends only static generation/planning requests. The Neutrino
-workspace and other experiment pages remain preserved. The materials backend can
+Lab runs vacuum, matter, layered propagation, and density sweeps through its own
+API using normalized inputs; see [the experiment guide](docs/NEUTRINOS.md).
+The materials backend can
 run simulations when explicitly requested with its dependencies installed; the
 compiler launcher/conversion checks do not invoke it. React health/request panels
 remain runnable from `frontend/react-scaffold/` on port 5174. See
