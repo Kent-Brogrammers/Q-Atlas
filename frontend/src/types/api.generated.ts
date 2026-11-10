@@ -149,7 +149,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Run */
+        /**
+         * Run
+         * @description Compare local Grover simulation with classical search on the same targets.
+         */
         post: operations["run_api_search_run_post"];
         delete?: never;
         options?: never;
@@ -1894,6 +1897,24 @@ export interface operations {
             };
             /** @description Feature not implemented */
             501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Quantum dependencies unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Search runtime budget exceeded */
+            504: {
                 headers: {
                     [name: string]: unknown;
                 };

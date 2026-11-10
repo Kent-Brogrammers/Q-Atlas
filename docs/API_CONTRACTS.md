@@ -76,17 +76,17 @@ Health returns `{"status":"ok","service":"q-atlas","backend":"aer_simulator","ex
 This signals API readiness, not readiness of all experiments. Compiler analysis,
 generation, and nonexecuting comparison plans are available. Compiler benchmarking
 revalidates source and returns 422 for rejected source or 501 while shared runners
-are unavailable. Materials returns real simulation results with HTTP 200; optimization
-and search still validate first and return HTTP 501:
+are unavailable. Materials and search return real simulation results with HTTP 200;
+optimization still validates first and returns HTTP 501:
 
 ```json
-{"status":"error","error":{"code":"NOT_IMPLEMENTED","message":"Search benchmark is not implemented. Developer 4 owns this feature.","diagnostics":[]}}
+{"status":"error","error":{"code":"NOT_IMPLEMENTED","message":"Optimization benchmark is not implemented. Developer 3 owns this feature.","diagnostics":[]}}
 ```
 
 Invalid payloads return **422** with the same envelope and `VALIDATION_ERROR`.
 Routing/method errors return `NOT_FOUND`/`METHOD_NOT_ALLOWED` (404/405); unexpected
 exceptions return sanitized INTERNAL_ERROR (500). Compiler runner TimeoutError
-and materials worker timeouts map to TIMEOUT (504). Materials uses HTTP_ERROR (503)
+and materials/search worker timeouts map to TIMEOUT (504). Materials/search use HTTP_ERROR (503)
 when optional quantum dependencies are missing; HTTP_ERROR covers other HTTP failures.
 Errors expose no stack traces or submitted field values. Each diagnostic has required
 `code`, `message`, `severity` (`error|warning|info`), and optional nullable one-based
@@ -168,7 +168,11 @@ Never use an integer conversion that discards leading zeros or silently reverse 
   Developer 3 implements and documents the Max-Cut conversion.
 - `SearchRequest`: required `num_qubits` (1–16), required `marked_states` (1–256 unique
   binary strings, each exactly that width), optional nullable `iterations` (0–256;
-  default null delegates iteration selection to the future owner), and default run config.
+  default null selects the best integer beside Grover's first theoretical peak), and default run config.
+  The implemented search runner supports 1–6 qubits, 0–32 iterations, and at most
+  10000 shots; broader schema-valid sizes receive structured 422 diagnostics before
+  simulation. Single and multiple marked states are supported. See [search guide](SEARCH.md)
+  for query semantics, effective parameters, timing scopes, and reproducible examples.
 - `MaterialsRequest`: defaults `model=ising` (`ising|heisenberg`), `num_spins=2` (2–8),
   `coupling=1`, `field=0.5`, `boundary=open` (`open|periodic`), `observable=energy`
   (`energy|magnetization`), and materials run config. These original fields remain intact.
