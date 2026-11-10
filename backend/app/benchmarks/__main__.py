@@ -2,9 +2,9 @@
 
 import argparse
 import os
-import tempfile
 from pathlib import Path
 
+from app.benchmarks.artifacts import write_text_exclusive
 from app.benchmarks.neutrinos import (
     NeutrinoBenchmarkPlan,
     NeutrinoBenchmarkReport,
@@ -15,24 +15,7 @@ from app.schemas.neutrinos import NeutrinoRequest
 
 def write_report(report: NeutrinoBenchmarkReport, destination: Path) -> None:
     """Publish a fully serialized file atomically, preserving any existing path."""
-    temporary = None
-    try:
-        with tempfile.NamedTemporaryFile(
-            mode="w",
-            encoding="utf-8",
-            dir=destination.parent,
-            prefix=".neutrino-benchmark-",
-            delete=False,
-        ) as handle:
-            temporary = Path(handle.name)
-            handle.write(report.model_dump_json(indent=2))
-            handle.write("\n")
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.link(temporary, destination)
-    finally:
-        if temporary is not None:
-            temporary.unlink(missing_ok=True)
+    write_text_exclusive(report.model_dump_json(indent=2) + "\n", destination)
 
 
 def main(argv: list[str] | None = None) -> int:
