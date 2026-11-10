@@ -279,6 +279,22 @@
                 ></tr
               >
               <tr
+                ><th scope="row">Observed classical checks</th><td
+                  >{selected.metrics.classical_observed_queries ?? 'Not available'}</td
+                ><td>Not applicable</td></tr
+              >
+              <tr
+                ><th scope="row">Successful shots / total shots</th><td>Not applicable</td><td
+                  >{selected.metrics.successful_shots ?? 'Not available'} / {selected.metrics
+                    .shots ?? 'Not available'}</td
+                ></tr
+              >
+              <tr
+                ><th scope="row">Oracle calls across shot batch</th><td>Not applicable</td><td
+                  >{selected.metrics.quantum_total_oracle_queries ?? 'Not available'}</td
+                ></tr
+              >
+              <tr
                 ><th scope="row">Solver wall time</th><td
                   >{milliseconds(selected.classical?.elapsed_ms)}</td
                 ><td>{milliseconds(selected.quantum?.elapsed_ms)}</td></tr
@@ -299,7 +315,9 @@
         <p class="explanation">
           The classical run stops at its first match. Quantum wall time includes the whole shot
           batch; the query count is per circuit execution. The most frequent quantum output may be
-          unmarked. These timings are not matched-success speedup measurements.
+          unmarked. Total quantum oracle calls are iteration count times shots, not primitive gates
+          or measured simulator operations. These timings are not matched-success speedup
+          measurements.
         </p>
       </Panel>
       <Panel

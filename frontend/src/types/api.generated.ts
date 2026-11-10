@@ -1164,6 +1164,21 @@ export interface components {
             classical_expected_queries?: number | null;
             /** Classical Worst Case Queries */
             classical_worst_case_queries?: number | null;
+            /**
+             * Successful Shots
+             * @description Number of sampled outcomes in the marked set; not postselected shots.
+             */
+            successful_shots?: number | null;
+            /**
+             * Classical Observed Queries
+             * @description Actual predicate checks until the first classical match for this instance.
+             */
+            classical_observed_queries?: number | null;
+            /**
+             * Quantum Total Oracle Queries
+             * @description Combined-oracle applications across all shots: iterations times shots.
+             */
+            quantum_total_oracle_queries?: number | null;
         };
         /** SearchRequest */
         SearchRequest: {

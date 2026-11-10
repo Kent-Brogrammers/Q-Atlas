@@ -113,8 +113,8 @@ durations intentionally have different boundaries.
 the batch equal `iterations * shots`, recorded in `oracle_assumptions`. The combined
 oracle applies a phase flip for every supplied target; a query is not a single gate.
 `classical_expected_queries` and `classical_worst_case_queries` retain the assumptions
-above. The observed classical check count is recorded in `oracle_assumptions` because
-the shared metrics currently have no dedicated field for it. Objectives remain null.
+above. The observed classical check count is also exposed as `classical_observed_queries`.
+Objectives remain null.
 
 Quantum `best_bitstring` is the most frequent observed bitstring, with lexicographic
 tie-breaking; it may be unmarked. Success probability counts **all** marked outcomes
@@ -124,6 +124,33 @@ package versions, which are included in metadata; timings naturally fluctuate.
 
 Run the new benchmark with `python -m app.experiments.search` from `backend/`.
 The earlier `.demo` command remains a simple single-target circuit demonstration.
+
+## Structured evidence fields
+
+Three optional nullable fields in `SearchMetrics` expose the evidence directly:
+
+| Field | Meaning |
+| --- | --- |
+| `successful_shots` | Number of sampled outcomes in the marked set, counting all marked targets |
+| `classical_observed_queries` | Predicate checks actually made before the first match for this fixed instance |
+| `quantum_total_oracle_queries` | Algorithmic combined-oracle calls across the batch: iterations × shots |
+
+`successful_shots / shots` equals `success_probability`. The total quantum query
+count is derived from the executed circuit protocol, not measured CPU operations,
+primitive gates, or QPU work. The per-shot `quantum_oracle_queries` field retains
+its original meaning. No count is encoded as an optimization objective.
+
+The comparison table displays these fields separately from expected/worst-case
+classical query counts and measured wall time. They are included in JSON downloads
+without parsing the explanation text. Older responses remain valid without the new
+fields and display **Not available**, rather than fabricated or inferred evidence.
+Zero successful shots and zero quantum queries remain valid measured/protocol values.
+
+Validation rejects noninteger/negative counts, successful shots above the shot count,
+probabilities inconsistent with successful shots, total queries inconsistent with
+per-shot queries, and observed classical checks exceeding the stated space/worst case.
+Optional totals require their denominator or per-shot fields when provided. Shared
+model changes are additive; request limits, bit order, and timing scopes are unchanged.
 
 ## Live Search page and probability curves
 
@@ -180,9 +207,10 @@ validation, sequential limits, cancellation, failures, response metadata, zero/m
 probabilities and typed transport. Svelte checks cover accessibility/compiler diagnostics.
 Configuration/results stack on narrow screens and sit side by side on desktop.
 
-Core search MVP is implemented. Follow-up polish can add repeated-run statistics or
-a typed observed classical-query field, coordinated with Developers 3/5 before changing
-shared schemas. Hardware and practical quantum advantage are not claimed.
+Core search MVP and typed evidence fields are implemented. Next improvements are
+bounded repeated-run statistics and demo/regression hardening. Coordinate further
+shared-schema changes with Developers 3/5. Hardware and practical quantum advantage
+are not claimed.
 
 ## Search API
 

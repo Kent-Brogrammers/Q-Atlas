@@ -34,6 +34,13 @@ def test_real_search_response_matches_shared_contract(client, payload):
     )
     assert result.quantum.elapsed_ms > 0
     assert result.quantum.objective is None
+    assert (
+        result.metrics.successful_shots / result.metrics.shots == result.metrics.success_probability
+    )
+    assert result.metrics.classical_observed_queries == int(min(payload["marked_states"]), 2) + 1
+    assert result.metrics.quantum_total_oracle_queries == (
+        result.metrics.quantum_oracle_queries * result.metrics.shots
+    )
     assert result.metadata.parameters.iterations is not None
 
 
