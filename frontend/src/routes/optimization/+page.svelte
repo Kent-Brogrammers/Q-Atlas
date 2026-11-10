@@ -446,7 +446,7 @@
     margin: 0;
     font-size: 12px;
     line-height: 1.85;
-    color: #687381;
+    color: var(--muted);
     max-width: 710px;
   }
   .experiment-context {
@@ -472,11 +472,11 @@
     margin: 0;
   }
   .context-separator {
-    color: #c0ccdc;
+    color: var(--border);
     font-size: 12px;
   }
   .context-detail {
-    color: #677384;
+    color: var(--muted);
     font-size: 12px;
   }
   .metrics-grid {
@@ -501,17 +501,17 @@
     justify-content: space-between;
     align-items: center;
     gap: 10px;
-    color: #5d7390;
+    color: var(--muted);
     font-size: 12px;
     margin: 0 0 9px;
   }
   input[type='number'],
   select {
     width: 100%;
-    border: 1px solid #dce5f0;
+    border: 1px solid var(--border);
     border-radius: 4px;
-    color: #536f93;
-    background: #f8fafd;
+    color: var(--text);
+    background: var(--surface);
     min-height: 35px;
     font-size: 12px;
     padding: 8px 10px;
@@ -545,13 +545,13 @@
     height: 3px;
     display: block;
     margin: 12px 0 8px;
-    accent-color: #569aee;
+    accent-color: var(--accent);
     cursor: pointer;
   }
   .range-labels {
     display: flex;
     justify-content: space-between;
-    color: #667282;
+    color: var(--muted);
     font: 12px var(--mono);
     margin-bottom: 20px;
   }
@@ -575,16 +575,16 @@
     position: relative;
     flex: 1;
     font: 12px var(--mono);
-    color: #617388;
+    color: var(--muted);
     min-height: 31px;
-    border: 1px solid #e0e8f2;
-    background: #f7f9fd;
+    border: 1px solid var(--border);
+    background: var(--surface-raised);
     cursor: pointer;
   }
   .shot-options label.selected {
-    border-color: #91b7ea;
-    background: #e8f2ff;
-    color: #2d6fc9;
+    border-color: var(--accent);
+    background: var(--surface);
+    color: var(--accent);
   }
   .shot-options input {
     position: absolute;
@@ -603,26 +603,26 @@
     align-items: center;
     gap: 10px;
     padding: 11px 0 19px;
-    color: #6e93bf;
+    color: var(--blue);
   }
   .backend-preview strong {
     display: block;
     font-size: 12px;
     font-weight: 400;
-    color: #566e8f;
+    color: var(--text);
     margin-bottom: 4px;
   }
   .backend-preview span {
     display: block;
     font-size: 12px;
-    color: #8d9bb0;
+    color: var(--muted);
   }
   .load-button {
     width: 100%;
     font-size: 12px;
   }
   .control-note {
-    color: #677383;
+    color: var(--muted);
     font-size: 12px;
     line-height: 1.7;
     margin: 12px 0 0;
@@ -637,15 +637,15 @@
   .objective-strip p {
     font-size: 12px;
     margin: 8px 0;
-    color: #657385;
+    color: var(--muted);
   }
   .objective-strip .mono {
-    color: #4a6b95;
+    color: var(--blue);
     margin-left: 5px;
     font-size: 12px;
   }
   .objective-strip > span {
-    color: #657283;
+    color: var(--muted);
     font-size: 12px;
   }
   .solver-results {
@@ -686,7 +686,7 @@
   }
   .solver-method {
     margin: 6px 0 17px 12px;
-    color: #7f91a9;
+    color: var(--muted);
     font-size: 12px;
   }
   .solver-objective {
@@ -700,7 +700,7 @@
   .solver-objective > span {
     font: 12px var(--mono);
     letter-spacing: normal;
-    color: #617287;
+    color: var(--muted);
   }
   .solver-detail {
     display: flex;
@@ -708,23 +708,23 @@
     gap: 10px;
     margin: 0 0 0 12px;
     font-size: 12px;
-    color: #667382;
+    color: var(--muted);
   }
   .solver-detail strong {
     font: 12px var(--mono);
-    color: #587398;
+    color: var(--text);
   }
   .gap-note {
     padding: 15px 0;
     display: flex;
     align-items: flex-start;
     gap: 8px;
-    color: #667386;
+    color: var(--muted);
     border-top: 1px solid var(--border);
   }
   .gap-note p {
     margin: 0;
-    color: #667384;
+    color: var(--muted);
     font-size: 12px;
     line-height: 1.75;
   }
@@ -733,12 +733,12 @@
     display: flex;
     gap: 7px;
     align-items: flex-start;
-    color: #8495ac;
+    color: var(--muted);
     font-size: 12px;
     line-height: 1.5;
   }
   .run-status :global(svg) {
-    color: #7fae9c;
+    color: var(--success);
   }
   .charts-grid {
     display: grid;
@@ -774,14 +774,14 @@
     display: block;
     font: 20px var(--mono);
     margin-top: 12px;
-    color: #496e9a;
+    color: var(--text);
   }
   .record-grid .unavailable,
   .record-grid .source {
     font:
       12px 'IBM Plex Sans',
       sans-serif;
-    color: #657385;
+    color: var(--muted);
     margin-top: 18px;
   }
   .run-details {
@@ -793,7 +793,7 @@
     justify-content: space-between;
     padding: 16px 24px;
     cursor: pointer;
-    color: #597496;
+    color: var(--text);
     font-size: 12px;
     list-style: none;
   }
@@ -806,7 +806,7 @@
   .details-content p {
     font-size: 12px;
     line-height: 1.8;
-    color: #657385;
+    color: var(--muted);
     max-width: 850px;
   }
   .table-scroll {
@@ -822,15 +822,15 @@
     padding: 9px 10px;
     border-bottom: 1px solid var(--border);
     text-align: left;
-    color: #6c86a6;
+    color: var(--muted);
   }
   th {
-    color: #45658f;
+    color: var(--text);
     font-weight: 400;
   }
   caption {
     text-align: left;
-    color: #5c7491;
+    color: var(--muted);
     padding: 12px 10px;
     font-family: 'IBM Plex Sans', sans-serif;
   }
@@ -840,7 +840,7 @@
     gap: 10px;
     align-items: center;
     padding: 10px 18px;
-    background: #f7fafd;
+    background: var(--surface-raised);
     border-top: 1px solid var(--border);
   }
   .qubo-toolbar .eyebrow {
@@ -858,7 +858,7 @@
     margin: 0;
     font-size: 12px;
     line-height: 1.6;
-    color: #617388;
+    color: var(--muted);
     border-top: 1px solid var(--border);
   }
   @media (min-width: 1600px) {

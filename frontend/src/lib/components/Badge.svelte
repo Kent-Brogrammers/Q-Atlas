@@ -25,23 +25,23 @@
     background: var(--surface);
   }
   .blue {
-    color: var(--blue-light);
-    border-color: #d6e7fd;
-    background: #eff6ff;
+    color: var(--blue);
+    border-color: var(--border);
+    background: var(--surface);
   }
   .cyan {
-    color: var(--cyan);
-    border-color: #d5edf4;
-    background: #edf9fc;
+    color: var(--accent);
+    border-color: var(--border);
+    background: var(--surface);
   }
   .violet {
     color: var(--violet);
-    border-color: #e6ddf3;
-    background: #f6f1fc;
+    border-color: var(--border);
+    background: var(--surface);
   }
   .amber {
-    color: #a87930;
-    border-color: #f0e2c3;
-    background: #fffaf0;
+    color: var(--accent);
+    border-color: var(--border);
+    background: var(--surface);
   }
 </style>

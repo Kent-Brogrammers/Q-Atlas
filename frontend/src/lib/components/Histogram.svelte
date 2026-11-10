@@ -29,35 +29,35 @@
     font-size: 12px;
   }
   .mono {
-    color: #526b88;
+    color: var(--text);
     font-size: 12px;
   }
   .cut-label {
     font:
       12px 'IBM Plex Sans',
       sans-serif;
-    color: #677383;
+    color: var(--muted);
     margin-left: 5px;
   }
   .track {
     height: 10px;
     border-radius: 4px;
-    background: #f0f5fb;
+    background: var(--surface);
   }
   .bar {
     border-radius: 4px;
     height: 100%;
-    background: #b7cae4;
+    background: var(--blue);
     transition: width 0.2s;
     min-width: 2px;
   }
   .bar.best {
-    background: #75b6e6;
+    background: var(--accent);
   }
   .percentage {
     font: 12px var(--mono);
     text-align: right;
-    color: #60738b;
+    color: var(--text);
   }
   p {
     border-top: 1px solid var(--border);
@@ -66,7 +66,7 @@
     gap: 10px;
     margin: 22px 0 0;
     padding-top: 13px;
-    color: #677282;
+    color: var(--muted);
     font-size: 12px;
   }
 </style>

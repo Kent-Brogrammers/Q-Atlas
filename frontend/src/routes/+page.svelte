@@ -68,7 +68,7 @@
     margin: 0 0 24px;
     font-size: 19px;
     line-height: 1.55;
-    color: #45536a;
+    color: var(--muted);
   }
   .introduction .button {
     min-width: 230px;
@@ -104,7 +104,7 @@
     font-size: 14px;
   }
   dt {
-    color: #344158;
+    color: var(--text);
   }
   dd {
     margin: 0;

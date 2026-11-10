@@ -433,8 +433,8 @@
     gap: 8px;
     margin-bottom: 20px;
     padding: 10px 14px;
-    border: 1px solid #dfe9f4;
-    background: #f7faff;
+    border: 1px solid var(--border);
+    background: var(--surface-raised);
     color: var(--muted);
     font-size: 12px;
     line-height: 1.5;
@@ -443,7 +443,7 @@
     color: var(--blue);
   }
   .provenance-note strong {
-    color: #355d8c;
+    color: var(--blue);
     font-weight: 500;
   }
   .materials-grid {
@@ -468,7 +468,7 @@
     align-items: center;
   }
   .control-grid label {
-    color: #53647b;
+    color: var(--muted);
     font-size: 12px;
   }
   .control-grid input,
@@ -477,9 +477,9 @@
     min-width: 0;
     min-height: 36px;
     padding: 7px 9px;
-    border: 1px solid #d9e4f2;
+    border: 1px solid var(--border);
     border-radius: 3px;
-    background: #f8fafd;
+    background: var(--surface);
     color: var(--text);
     font: 12px var(--mono);
   }
@@ -491,7 +491,7 @@
     line-height: 1.65;
   }
   .request-issue {
-    color: #965329;
+    color: var(--accent);
   }
   .run-button {
     width: 100%;
@@ -515,9 +515,9 @@
   }
   .backend-badge {
     padding: 4px 7px;
-    border: 1px solid #d8e6f4;
-    background: #f3f8fe;
-    color: #315f92;
+    border: 1px solid var(--border);
+    background: var(--surface-raised);
+    color: var(--blue);
     font: 11px var(--mono);
   }
   .metrics-grid {
@@ -532,18 +532,18 @@
     margin: 0 24px 24px;
     padding: 22px;
     border: 1px solid var(--border);
-    background: #f9fbfd;
+    background: var(--surface);
   }
   .empty-state {
     text-align: center;
-    color: #86a7ca;
+    color: var(--blue);
   }
   .empty-state :global(svg) {
     margin: 2px auto 10px;
   }
   .empty-state h3 {
     margin: 4px 0 8px;
-    color: #384f71;
+    color: var(--text);
     font-size: 15px;
     font-weight: 500;
   }
@@ -557,9 +557,9 @@
     margin-top: 0;
   }
   .error-state {
-    border-color: #efc8c0;
-    background: #fff8f6;
-    color: #842e20;
+    border-color: var(--accent);
+    background: var(--surface-raised);
+    color: var(--text);
     font-size: 12px;
     line-height: 1.6;
   }
@@ -573,7 +573,7 @@
   }
   .run-details summary {
     padding: 14px 0;
-    color: #45566d;
+    color: var(--text);
     cursor: pointer;
     font-size: 12px;
   }
@@ -584,7 +584,7 @@
   }
   .details-grid h3 {
     margin: 0 0 6px;
-    color: #495c76;
+    color: var(--muted);
     font-size: 11px;
     font-weight: 500;
   }

@@ -11,7 +11,7 @@
   let extent = $derived(
     result?.distances_km.at(-1) ?? (Number.isFinite(distanceKm) && distanceKm >= 0 ? distanceKm : 0)
   );
-  const colors = ['#0f62fe', '#00869b', '#8061b5'];
+  const colors = ['var(--blue)', 'var(--accent)', 'var(--success)'];
 </script>
 
 <div class="probability-chart">
@@ -46,12 +46,18 @@
         >
           <title>Flavor probability versus propagation distance</title>
           {#each [0, 0.25, 0.5, 0.75, 1] as value}
-            <line x1="64" x2="818" y1={272 - value * 230} y2={272 - value * 230} stroke="#e5ebf1" />
+            <line
+              x1="64"
+              x2="818"
+              y1={272 - value * 230}
+              y2={272 - value * 230}
+              stroke="var(--border)"
+            />
             <text x="49" y={276 - value * 230} text-anchor="end">{value}</text>
           {/each}
           <text x="64" y="22" class="axis-title">Flavor probability</text>
-          <line x1="64" x2="64" y1="42" y2="272" stroke="#c3cedb" />
-          <line x1="64" x2="818" y1="272" y2="272" stroke="#c3cedb" />
+          <line x1="64" x2="64" y1="42" y2="272" stroke="var(--border)" />
+          <line x1="64" x2="818" y1="272" y2="272" stroke="var(--border)" />
           {#each extent > 0 ? [0, 0.25, 0.5, 0.75, 1] : [0] as fraction}
             <text x={64 + fraction * 754} y="295" text-anchor="middle"
               >{formatValue(fraction * extent, 1)}</text
@@ -122,7 +128,7 @@
   .plot-region {
     position: relative;
     border-top: 1px solid var(--border);
-    background: #fcfdff;
+    background: var(--surface-raised);
   }
   .plot-scroll {
     overflow-x: auto;
@@ -135,7 +141,7 @@
   }
   text {
     font: 12px var(--mono);
-    fill: #596b81;
+    fill: var(--muted);
   }
   .axis-title {
     font-family: var(--font-sans);
