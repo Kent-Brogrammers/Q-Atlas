@@ -19,6 +19,7 @@ from app.schemas.contracts import (
     Diagnostic,
     OptimizationMetadata,
     QAOAConfig,
+    QAOAResult,
     SolverResult,
 )
 
@@ -41,14 +42,18 @@ def _validate_solution(qubo: QUBO, result: SolverResult) -> None:
 
 
 def _call_shared_runner(
-    runner: Callable[[QUBO, QAOAConfig], Result], qubo: QUBO, config: QAOAConfig
+    runner: Callable[[QUBO, QAOAConfig], Result],
+    qubo: QUBO,
+    config: QAOAConfig,
+    result_type: type[Result],
 ) -> Result:
     # Protect the validated problem and provenance, including if a runner raises.
     runner_qubo, runner_config = qubo.model_copy(deep=True), config.model_copy(deep=True)
     result = runner(runner_qubo, runner_config)
     if runner_qubo != qubo or runner_config != config:
         raise ValueError("shared runner changed its input QUBO or configuration")
-    return result
+    # Shared models are mutable: validate nested fields again at the trust boundary.
+    return result_type.model_validate(result.model_dump(mode="python"))
 
 
 def _problem_id(qubo: QUBO) -> str:
@@ -73,7 +78,8 @@ def prepare_benchmark(source: str, config: QAOAConfig) -> CompilerBenchmarkPlan:
         circuit=generated.circuit,
         blockers=[
             "Execution is disabled; preparing this plan runs neither script nor solver.",
-            "Developer 3 must supply and validate the shared classical and QAOA runners.",
+            "The shared classical baseline is implemented; Developer 3 must finish and validate "
+            "the shared QAOA runner.",
             "Any execution needs a separately authorized mode and deadline enforcement.",
             "Whole-application timing needs a separate trusted execution boundary and contract.",
         ],
@@ -83,13 +89,13 @@ def prepare_benchmark(source: str, config: QAOAConfig) -> CompilerBenchmarkPlan:
 def benchmark_qubo(qubo: QUBO, config: QAOAConfig) -> CompilerBenchmarkResult:
     """Pass the same canonical instance/config to both shared runners.
 
-    The current shared implementations are explicit stubs. Tests inject synthetic
+    The shared QAOA entrypoint is still a stub. Tests inject synthetic
     results at these two boundaries; production never substitutes mock measurements.
     Source analysis is outside both solvers' reported end-to-end timers.
     """
-    classical = _call_shared_runner(solvers.run_classical, qubo, config)
+    classical = _call_shared_runner(solvers.run_classical, qubo, config, SolverResult)
     _validate_solution(qubo, classical)
-    quantum = _call_shared_runner(qaoa.run_qaoa, qubo, config)
+    quantum = _call_shared_runner(qaoa.run_qaoa, qubo, config, QAOAResult)
     _validate_solution(qubo, quantum)
     if quantum.metrics.num_qubits != qubo.num_variables or quantum.metrics.shots != config.shots:
         raise ValueError("shared QAOA metrics do not match the problem and requested shots")
