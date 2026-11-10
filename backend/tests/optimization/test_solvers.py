@@ -9,6 +9,7 @@ from app.experiments.optimization import solvers
 from app.quantum.qubo import evaluate_qubo
 from app.schemas.contracts import (
     QUBO,
+    CompilerBenchmarkResult,
     OptimizationMetrics,
     QAOAConfig,
     QAOAResult,
@@ -186,10 +187,23 @@ def test_compiler_consumes_the_real_classical_baseline(monkeypatch):
     quantum.assert_called_once()
 
 
-def test_compiler_reports_qaoa_unavailability_with_the_real_classical_runner(client):
+def test_compiler_returns_a_real_comparison_through_the_shared_runners(client):
+    pytest.importorskip("qiskit_aer", reason="Install the optional quantum extra")
+    pytest.importorskip("scipy", reason="Install the optional quantum extra")
     response = client.post(
         "/api/compiler/benchmark",
-        json={"source": "@qatlas.objective(num_bits=1)\ndef cost(x): return -x[0]"},
+        json={
+            "source": "@qatlas.objective(num_bits=1)\ndef cost(x): return -x[0]",
+            "config": {"shots": 32, "max_iterations": 16},
+        },
     )
-    assert response.status_code == 501
-    assert response.json()["error"]["code"] == "NOT_IMPLEMENTED"
+    assert response.status_code == 200
+    result = CompilerBenchmarkResult.model_validate(response.json())
+    assert result.classical.objective == -1
+    assert result.quantum.objective == evaluate_qubo(
+        result.metadata.qubo, result.quantum.best_bitstring
+    )
+    assert result.metrics.num_qubits == 1
+    assert result.metrics.shots == 32
+    assert result.metrics.optimality_gap >= 0
+    assert result.metadata.simulated is True
