@@ -320,8 +320,8 @@
             {:else}The generated builder was added automatically.{/if}
           </p>
           <p class="field-note">
-            Automatic quantum execution will be connected through the shared runtime; it is disabled
-            today.
+            Generated code has not been run. Comparison execution remains disabled in this
+            workspace.
           </p>
         </div>
         <details class="result-disclosure">

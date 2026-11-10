@@ -31,6 +31,8 @@ LOOP_SOURCE = (
 
 @pytest.fixture
 def mock_runners(monkeypatch):
+    # Opt in only while both execution boundaries are replaced by synthetic fixtures.
+    monkeypatch.setenv("QATLAS_ENABLE_COMPILER_AER", "1")
     # Deliberately synthetic timings; these values must never be served as live data.
     classical = Mock(
         return_value=SolverResult(
@@ -428,3 +430,77 @@ def test_shared_timing_components_cannot_exceed_total(mock_runners, runner_index
         pipeline.benchmark_source(SOURCE, QAOAConfig(shots=32))
     if runner_index == 0:
         mock_runners[1].assert_not_called()
+
+
+@pytest.mark.parametrize("setting", [None, "0", "true"])
+def test_compiler_api_defaults_to_no_execution(client, monkeypatch, setting):
+    if setting is None:
+        monkeypatch.delenv("QATLAS_ENABLE_COMPILER_AER", raising=False)
+    else:
+        monkeypatch.setenv("QATLAS_ENABLE_COMPILER_AER", setting)
+    classical = Mock(side_effect=AssertionError("must not run"))
+    quantum = Mock(side_effect=AssertionError("must not run"))
+    monkeypatch.setattr(pipeline.solvers, "run_classical", classical)
+    monkeypatch.setattr(pipeline.qaoa, "run_qaoa", quantum)
+    response = client.post("/api/compiler/benchmark", json={"source": SOURCE})
+    assert response.status_code == 501
+    assert "disabled" in response.json()["error"]["message"]
+    rejected = client.post("/api/compiler/benchmark", json={"source": "print('unsupported')"})
+    assert rejected.status_code == 422
+    classical.assert_not_called()
+    quantum.assert_not_called()
+
+
+def test_missing_optional_dependencies_are_sanitized(client, mock_runners):
+    mock_runners[1].side_effect = ImportError("private installation details")
+    response = client.post("/api/compiler/benchmark", json={"source": SOURCE})
+    assert response.status_code == 501
+    assert "quantum dependencies" in response.json()["error"]["message"]
+    assert "private" not in response.text
+
+
+def test_compiler_consumes_actual_shared_entrypoint_with_worker_mocked(client, monkeypatch):
+    from app.quantum import qaoa
+
+    monkeypatch.setenv("QATLAS_ENABLE_COMPILER_AER", "1")
+    classical = SolverResult(
+        algorithm="brute_force",
+        elapsed_ms=1,
+        objective=3,
+        best_bitstring="100",
+        timing=dict(
+            includes_queue=False,
+            includes_transpilation=False,
+            includes_optimizer=False,
+            includes_sampling=False,
+        ),
+    )
+    sampled = QAOAResult(
+        elapsed_ms=1,
+        objective=3,
+        best_bitstring="100",
+        metrics=dict(num_qubits=3, shots=32, circuit_depth=8, optimizer_evaluations=4),
+        timing=dict(
+            includes_queue=False,
+            includes_transpilation=True,
+            includes_optimizer=True,
+            includes_sampling=True,
+        ),
+    )
+    monkeypatch.setattr(pipeline.solvers, "run_classical", Mock(return_value=classical))
+    worker = Mock(return_value=(sampled, 2))
+    monkeypatch.setattr(qaoa, "run_with_deadline", worker)
+    clock = iter([0, 2_000_000])
+    monkeypatch.setattr(qaoa, "perf_counter_ns", lambda: next(clock))
+    response = client.post(
+        "/api/compiler/benchmark",
+        json={"source": SOURCE, "config": {"p": 2, "shots": 32, "seed": 7, "max_iterations": 4}},
+    )
+    assert response.status_code == 200
+    result = CompilerBenchmarkResult.model_validate(response.json())
+    assert result.quantum.elapsed_ms == 2 and result.quantum.best_bitstring == "100"
+    assert result.metrics.optimality_gap == 0 and result.metadata.simulated
+    worker.assert_called_once()
+    qubo, config, compute = worker.call_args.args
+    assert qubo == result.metadata.qubo and config == result.metadata.config
+    assert compute is qaoa._sampled_run  # Recorded only; the worker never executes.
