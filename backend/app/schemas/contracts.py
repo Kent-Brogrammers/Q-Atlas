@@ -408,6 +408,21 @@ class CompilerGenerateResult(CompilerAnalyzeResult):
         return self
 
 
+class CompilerCommunicationPlan(Contract):
+    """Reserved provider timing fields in ms; preparation emits null, never measurements.
+
+    Submission is request-to-job-acknowledgement, retrieval is ready-result download
+    and decoding. Round trip includes remote wait/processing and client overhead;
+    it is not an extra duration to add to those overlapping components.
+    """
+
+    submission_ms: NonNegative | None = None
+    result_retrieval_ms: NonNegative | None = None
+    queue_ms: NonNegative | None = None
+    remote_processing_ms: NonNegative | None = None
+    round_trip_ms: NonNegative | None = None
+
+
 class CompilerBenchmarkPlan(Contract):
     """A reproducible future comparison, with no execution or measured results."""
 
@@ -422,6 +437,9 @@ class CompilerBenchmarkPlan(Contract):
     qubo: QUBO
     config: QAOAConfig
     circuit: CircuitPreview
+    communication_timing: CompilerCommunicationPlan = Field(
+        default_factory=CompilerCommunicationPlan
+    )
     classical_runner: Literal["app.experiments.optimization.solvers.run_classical"] = (
         "app.experiments.optimization.solvers.run_classical"
     )

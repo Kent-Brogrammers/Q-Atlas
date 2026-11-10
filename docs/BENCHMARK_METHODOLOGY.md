@@ -40,6 +40,14 @@ may overlap and need not sum to the total. Report simulator execution separately
 the entire QAOA optimization loop. Future hardware work must separate queue time from
 execution and requires coordinated backend/schema changes.
 
+Compiler plans now reserve null provider communication fields, displayed as unmeasured
+placeholders. Submission, ready-result retrieval, provider queue/processing and full
+round trip have proposed measurement boundaries in
+[COMPILER_COMMUNICATION_TIMING.md](COMPILER_COMMUNICATION_TIMING.md). Actual remote
+wall time must be reported alongside solver/device time when that adapter is connected.
+Do not add communication/queue components to a round trip that already contains them.
+This preparation addition changes no existing solver timer or result convention.
+
 Apply `timeout_seconds` to each runner, report budget exhaustion as a structured timeout,
 and never compare an interrupted solve with a completed one without labeling it. Each
 owner must implement cancellation/deadline enforcement before enabling computation.

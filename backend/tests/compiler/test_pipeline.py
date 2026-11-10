@@ -345,6 +345,7 @@ def test_full_script_plan_is_nonexecuting_and_matches_mocked_benchmark(
     assert response.status_code == 200
     plan = CompilerBenchmarkPlan.model_validate(response.json())
     assert plan.status == "planned" and plan.comparison_scope == "objective_optimization"
+    assert all(value is None for value in plan.communication_timing.model_dump().values())
     assert plan.script_execution_enabled is plan.quantum_execution_enabled is False
     assert plan.source_sha256 == hashlib.sha256(source.encode()).hexdigest()
     from app.compiler.generation import generate_source

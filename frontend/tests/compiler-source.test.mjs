@@ -4,8 +4,17 @@ import {
   DEFAULT_SCRIPT,
   MAX_SOURCE_LENGTH,
   generatedFilename,
+  formatOptionalMs,
   readObjectiveFile
 } from '../src/compiler/source.ts';
+
+test('communication timings preserve unknown values and measured zero', () => {
+  for (const value of [undefined, null, NaN, Infinity, -1]) {
+    assert.equal(formatOptionalMs(value), 'Not measured');
+  }
+  assert.equal(formatOptionalMs(0), '0 ms');
+  assert.equal(formatOptionalMs(12.3456), '12.346 ms');
+});
 
 test('reads source as unchanged text, including unsupported input for server validation', async () => {
   const text = "import os\nprint('source text only')\n";
