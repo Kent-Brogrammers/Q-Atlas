@@ -10,22 +10,22 @@ from unittest.mock import Mock
 
 import pytest
 
-from app.quantum import qaoa_optimization
+from app.quantum import _execution, qaoa_optimization
 from app.schemas.contracts import QUBO, QAOAConfig
 
 
-def _blocked_worker(connection, qubo_payload, config_payload, *, marker):
+def _blocked_worker(connection, qubo_payload, config_payload, compute, *, marker):
     Path(marker).write_text("entered native call")
     ctypes.CDLL(None).sleep(30)
     connection.close()
 
 
-def _packet_worker(connection, qubo_payload, config_payload, *, status):
+def _packet_worker(connection, qubo_payload, config_payload, compute, *, status):
     connection.send((status, "invalid angles" if status == "invalid" else None))
     connection.close()
 
 
-def _empty_worker(connection, qubo_payload, config_payload):
+def _empty_worker(connection, qubo_payload, config_payload, compute):
     connection.close()
 
 
@@ -190,7 +190,7 @@ def test_real_aer_search_is_reproducible_and_improves_single_edge():
 
 def test_deadline_stops_native_work_and_reaps_worker(monkeypatch, tmp_path):
     marker = tmp_path / "native-call-started"
-    monkeypatch.setattr(qaoa_optimization, "_worker", partial(_blocked_worker, marker=str(marker)))
+    monkeypatch.setattr(_execution, "_worker", partial(_blocked_worker, marker=str(marker)))
     before = {process.pid for process in mp.active_children()}
     started = perf_counter()
     with pytest.raises(TimeoutError, match="timeout_seconds"):
@@ -220,7 +220,7 @@ def test_startup_is_inside_the_deadline():
     ],
 )
 def test_worker_failures_propagate_explicitly(monkeypatch, status, error, message):
-    monkeypatch.setattr(qaoa_optimization, "_worker", partial(_packet_worker, status=status))
+    monkeypatch.setattr(_execution, "_worker", partial(_packet_worker, status=status))
     with pytest.raises(error, match=message):
         qaoa_optimization.optimize_qaoa_angles(
             QUBO(num_variables=1, linear=[1]), QAOAConfig(timeout_seconds=10)
@@ -228,7 +228,7 @@ def test_worker_failures_propagate_explicitly(monkeypatch, status, error, messag
 
 
 def test_worker_exit_without_payload_is_an_explicit_failure(monkeypatch):
-    monkeypatch.setattr(qaoa_optimization, "_worker", _empty_worker)
+    monkeypatch.setattr(_execution, "_worker", _empty_worker)
     with pytest.raises(RuntimeError, match="exited without a result"):
         qaoa_optimization.optimize_qaoa_angles(
             QUBO(num_variables=1, linear=[1]), QAOAConfig(timeout_seconds=10)
