@@ -47,17 +47,28 @@ def build_diffusion(num_qubits: int) -> QuantumCircuit:
 
 
 def build_grover_circuit(
-    marked_state: str, iterations: int, *, measure: bool = True
+    marked_state: str | list[str], iterations: int, *, measure: bool = True
 ) -> QuantumCircuit:
     """Prepare a uniform state and apply the requested number of Grover steps.
 
     Measurement strings from Qiskit must be reversed before display to preserve
-    the shared x[0]x[1]... convention. This local milestone supports one target.
+    the shared x[0]x[1]... convention. A list defines one combined phase oracle;
+    its internal target-by-target construction cost is not one primitive gate.
     """
     if type(iterations) is not int or not 0 <= iterations <= 32:
         raise ValueError("iterations must be an integer from 0 to 32")
-    oracle = build_phase_oracle(marked_state)
-    circuit = QuantumCircuit(len(marked_state))
+    states = [marked_state] if isinstance(marked_state, str) else marked_state
+    if not isinstance(states, list) or not states:
+        raise ValueError("provide a target string or a nonempty list of target strings")
+    # Validate individual targets before inspecting widths or duplicate values.
+    oracles = [build_phase_oracle(state) for state in states]
+    width = oracles[0].num_qubits
+    if any(oracle.num_qubits != width for oracle in oracles) or len(set(states)) != len(states):
+        raise ValueError("marked states must be unique and have the same width")
+    oracle = QuantumCircuit(width, name="oracle")
+    for target_oracle in oracles:
+        oracle.compose(target_oracle, inplace=True)
+    circuit = QuantumCircuit(width)
     circuit.h(range(circuit.num_qubits))
     diffusion = build_diffusion(circuit.num_qubits)
     for _ in range(iterations):

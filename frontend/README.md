@@ -25,7 +25,8 @@ code or second decorator is needed. File contents are never executed.
 
 FastAPI can be started independently using the root README or together with this
 frontend using `../dev.sh`. Its materials route runs the existing spin-system simulation
-only when requested; compiler execution, optimization, and search remain unavailable.
+only when requested; compiler execution and optimization remain unavailable. Search
+now runs live comparisons and measured iteration curves at `/search/`.
 Neutrino API integration is proposed separately and is not registered in this frontend.
 
 ```sh
@@ -43,9 +44,9 @@ example-data consistency. `build` prerenders all seven routes into `build/`.
 
 ## Structure
 
-- `src/routes/`: primary Overview, Python Compiler, Neutrino Lab, and Methodology views.
-  Materials, Optimization, and Search remain at their original URLs.
-- `src/lib/data/navigation.ts`: the four primary links, separate from the retained
+- `src/routes/`: primary Overview, Python Compiler, Neutrino Lab, Grover Search, and Methodology views.
+  Materials and Optimization remain at their original URLs.
+- `src/lib/data/navigation.ts`: the five primary links, separate from the retained
   experiment catalog in `experiments.ts`.
 - `src/lib/components/`: reusable panels, controls, SVG diagrams, and example displays.
 - `src/types/api.generated.ts`: the canonical types generated from FastAPI OpenAPI.
@@ -70,7 +71,7 @@ and minimally rounded controls preserve the current design.
 
 ## Neutrino Oscillation Lab
 
-The main navigation is **Overview**, **Python Compiler**, **Neutrino Lab**, and **Methodology**.
+The main navigation is **Overview**, **Python Compiler**, **Neutrino Lab**, **Grover Search**, and **Methodology**.
 Overview provides a prominent **Open Python Compiler** action, a compiler capability
 summary, and the existing Neutrino science/availability information without example statistics.
 Methodology records the model scope and classical validation requirements.
@@ -96,8 +97,8 @@ are preserved.
 ## Retained workspaces and data provenance
 
 The compiler at `/compiler/` is linked from the sidebar and Overview. The original
-`/optimization/`, `/search/`, and `/materials/` routes remain accessible by direct URL,
-with their source and functionality preserved. Those three routes are hidden from
+`/optimization/` and `/materials/` routes remain accessible by direct URL,
+with their source and functionality preserved. Those two routes are hidden from
 primary navigation pending the team's decision about their long-term role. Their
 backend implementations, shared schemas, and React reference are unchanged.
 
@@ -125,8 +126,32 @@ Compiler edits invalidate the returned QUBO, generated script, and plan; request
 use the shared typed API and ignore stale responses. The default example contains
 ordinary helpers, named binary choices, and a main caller with one bare decorator.
 Optional technical output shows source-to-bit mapping and honest unexecuted gates;
-comparison execution remains disabled. Materials and Search controls update conceptual diagrams;
-they do not compute observables or Grover probabilities.
+comparison execution remains disabled. Materials controls retain their presentation
+scaffold. Search now runs the real search API.
+
+## Grover Search
+
+Open `/search/` or select **Grover Search** in navigation. Start FastAPI at
+`http://127.0.0.1:8000` with the backend quantum extra installed. Configure 1–6 qubits,
+unique marked bitstrings, shots and seed, then run a comparison or measure a curve.
+The page starts empty and never substitutes examples when an API request fails.
+
+Curves measure iterations 0 through a chosen last iteration (at most 12), with
+sequential calls to the existing typed `api.search` transport. Every point preserves
+the full backend response. The chart plots measured and backend-theoretical success
+probabilities, with a table for exact values and per-iteration comparisons. Progress,
+stopping, structured errors, missing values, reproducibility metadata and JSON download
+are included. Changing controls clears old results.
+
+Stopped/failed sweeps do not display incomplete results as completed curves. Stopping
+aborts browser requests; native backend work may finish or reach its per-request
+deadline. These are simulator measurements and oracle-model query counts, not practical
+speedup evidence. See [the search guide](../docs/SEARCH.md) for timing scopes, assumptions,
+Windows commands and a demo rehearsal.
+
+`src/lib/search/live.ts` validates settings and orchestrates bounded sweeps;
+`SearchProbabilityChart.svelte` plots returned probabilities. Tests use synthetic
+fixtures only in `tests/search-live.test.ts`, never in the live application.
 
 ## API types and integration
 

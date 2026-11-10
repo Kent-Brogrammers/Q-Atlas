@@ -16,6 +16,7 @@
         >Open Python Compiler<Icon name="arrow" size={18} /></a
       >
       <a class="button" href="/neutrinos/">Launch Neutrino Lab<Icon name="arrow" size={18} /></a>
+      <a class="button" href="/search/">Explore Grover Search<Icon name="arrow" size={18} /></a>
     </div>
   </header>
 
