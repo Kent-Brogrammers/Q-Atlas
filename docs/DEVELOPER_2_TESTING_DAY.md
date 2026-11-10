@@ -22,7 +22,8 @@ plans. It uses the shared panels and navigation. The older React tree is a refer
 | Offline bundle exporter | Implemented in this update | D2: run commands below |
 | Shared exact classical baseline | Implemented on main | D3: retain correctness/deadline checks |
 | Shared Qiskit circuit and Aer expectation scorer | Implemented on main; scorer performs simulation | D3: review and test only in an authorized execution phase |
-| `app.quantum.qaoa.run_qaoa` | Still raises `NotImplementedError` | D3: optimizer, sampling, deadline, result assembly |
+| Seeded COBYLA angle optimizer | Implemented by PR #11 with evaluation cap and disposable-worker deadline | D3: consume it from the shared runner |
+| `app.quantum.qaoa.run_qaoa` | Still raises `NotImplementedError` | D3: final sampling, complete-run deadline, result assembly |
 | Provider/QPU adapter | Not implemented or identified | D3 + allocation owner: identify service and limits |
 | Hardware result contract | Not agreed; current backend is Aer-only and metadata simulated | D2/D3/D5: approve extension before implementation |
 | Live compiler result UI | Execution disabled | D5/D2: wire only after agreed readiness and opt-in |
@@ -33,12 +34,20 @@ the shared execution and provider paths remain explicit release blockers.
 
 ## 2. Main/PR audit for this update
 
-Fetched and integrated main through `a1f413b` without discarding teammate changes:
+Fetched and integrated main through `9cd4b2a` without discarding teammate changes:
 
 - PR #6, `d4ed923`: classical solver and QAOA circuit construction.
 - PR #7, `1719dc4`: live Neutrino backend and frontend.
 - PR #8, `b94385e`: QAOA expectation scorer.
 - PR #9, `a1f413b`: live Grover search and dashboard/navigation integration.
+- PR #11, `9cd4b2a`: seeded COBYLA angle search, evaluation budgets, worker deadline
+  and cleanup in `app.quantum.qaoa_optimization.optimize_qaoa_angles`.
+
+PR #11 returns an `AngleOptimizationResult`: angles, mean objective expectation,
+evaluation count, convergence/stop reason and timing. This is not `QAOAResult`:
+it has no sampled best assignment, actual shot count or transpiled depth. The compiler
+continues to consume `run_qaoa`; it must not replace a sampled assignment's objective
+with the angle optimizer's mean expectation. The runner is still a stub on this main.
 
 An open-PR query against base `main` returned no open PRs at this audit. This is a
 point-in-time result, not an assurance about future pushes. The connector search
@@ -170,17 +179,28 @@ static assets). No `/run` or `/compiler/benchmark` call belongs in this rehearsa
 D2 continues to consume the shared runner; do not create a second QAOA engine.
 Send this document and `DEVELOPER_3_HANDOFF.md` yourself before the execution freeze.
 
-Required shared-runner completion:
+Required shared-runner completion after PR #11:
 
-- Implement `run_qaoa(qubo, config) -> QAOAResult` using the shared circuit/scorer.
+- Implement `run_qaoa(qubo, config) -> QAOAResult` using the existing circuit and angle
+  optimizer. Do not duplicate the completed COBYLA search in the compiler.
+- Bind the returned angles, transpile and perform final sampling. Choose a measured
+  assignment and recompute its objective; mean expectation is a separate quantity.
 - Honor explicit gamma/beta parameter order, including zero-coefficient cases.
 - Convert measured bit ordering to canonical x[0]-first assignment order exactly once.
 - Recompute objective including constant; preserve canonical minimization for maximization.
 - Report actual shots, optimizer evaluations, transpiled depth and honest timing flags.
 - Enforce deadline/cancellation during execution; a check after blocking work is insufficient.
+- Apply one deadline to the complete run: angle optimization, final transpilation,
+  sampling and result assembly. The angle optimizer's worker timeout covers its own
+  phase only; do not grant the full configured timeout again to every later phase.
 - Keep input QUBO/config immutable. D2 passes independent copies and rejects mutation.
 - Return schema-valid finite results. D2 now revalidates mutable nested solver models
   before accepting timings/metrics, then checks assignments, objectives and requested shots.
+- D2 rejects a bare angle-search record, optimizer evaluation counts above
+  `config.max_iterations`, and individual timing components above the solver's total.
+  A reported total above `timeout_seconds` maps to HTTP 504. These checks validate
+  evidence after return; the shared runner must still enforce an actual deadline.
+  Components may overlap, so the compiler does not require their sum to equal total time.
 - Test timeout, invalid response, mutation and stochastic/suboptimal outcomes with mocks.
 
 Current compiler benchmark metadata assumes Aer statevector execution. It cannot be
@@ -296,6 +316,12 @@ An implemented source compiler does not remove the shared runner/provider depend
 - The documented exporter successfully produced an exactly-one bundle locally.
 - The restricted-environment HTTP TestClient stalled; the same inspected compiler suite
   completed outside the sandbox in under a second. This was not a simulator test run.
+
+The follow-up for PR #11 adds mocked integration regressions for angle-record rejection,
+evaluation-cap violations, both solvers' reported deadline overruns, and invalid timing
+intervals: **369 compiler tests passed**, plus Ruff, frontend type drift/type checks,
+compiler helper tests and production build. The new optimization test module includes a real Aer search case and is
+deliberately excluded from compiler-only verification.
 
 These checks establish the offline preparation workflow. They do not establish actual
 circuit execution, hardware access, speedup, or completion of the shared runner.
