@@ -87,6 +87,39 @@ require an agreed matching workload and additional evidence.
 A higher shot count can yield a larger error in an individual stochastic run.
 Interpret the repeated-run distributions with their recorded sample counts.
 
+## Reviewing saved evidence
+
+Export a Markdown review from an existing completed report.
+
+```sh
+.venv/bin/python -m app.benchmarks.review \
+  /tmp/neutrino-evidence.json \
+  --output /tmp/neutrino-review.md
+```
+
+Review checks the saved plan, exact repetition coverage and order, effective
+requests, UTC creation time, recorded environment, package-version consistency,
+curve budgets, measurement bookkeeping, ordered profiles, and curve coordinates.
+Every summary is recomputed from the saved raw records, and the review uses those
+recomputed statistics. Sample counts, nullable
+availability, flavor channels, error families, and timing scopes must match.
+Statistics permit relative floating-point differences up to `1e-12` and absolute
+differences up to `1e-15`. Coordinate comparisons permit `1e-12` absolute difference.
+
+The Markdown includes a SHA-256 digest of the exact source bytes, recorded
+configuration and provenance, error summaries, and separate point and curve timing
+tables. Values are displayed with eight significant digits. Full precision remains
+in the original JSON. Unavailable analytical values and unmeasured timings retain
+their meaning in the review.
+
+Review consumes existing measurements through file I/O and arithmetic. The saved
+report is bounded to 25 MB. The destination uses the same atomic exclusive
+publication as the measurement CLI. Inconsistent evidence produces an error.
+
+These checks establish internal consistency. Scientific interpretation and review
+of the measurement provenance remain with the experiment owners. Nick and
+Developer 5 should review the exported presentation before website integration.
+
 ## Bounds and failures
 
 Plans support up to eight distinct shot counts, sixteen distinct base seeds,
