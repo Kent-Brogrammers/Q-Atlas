@@ -2,6 +2,9 @@ import type { components } from './api.generated';
 
 // Generated from the backend OpenAPI document; never hand-edit api.generated.ts.
 type Schemas = components['schemas'];
+export type NeutrinoRequest = Schemas['NeutrinoRequest'];
+export type NeutrinoResponse = Schemas['NeutrinoResponse'];
+export type NeutrinoRecord = Schemas['NeutrinoRecord'];
 export type QUBO = Schemas['QUBO'];
 export type SolverResult = Schemas['SolverResult'];
 export type QAOAConfig = Schemas['QAOAConfig'];

@@ -9,10 +9,18 @@ in `frontend/react-scaffold/` for Developer 5 review; the shared specification i
 **Current state: compiler analysis and Python script generation.** Health, safe
 Python-to-QUBO analysis, symbolic QAOA circuit previews, and downloadable Qiskit
 builder code work. Compiler benchmarking consumes the shared runner entrypoints,
-which remain Developer 3 stubs; those benchmark requests and optimization/search
-routes return HTTP 501. Compiler execution tests stay mocked, and circuit previews
+which now implement classical enumeration and local Aer QAOA. Compiler benchmark
+requests default to HTTP 501 until the server explicitly enables local execution
+with `QATLAS_ENABLE_COMPILER_AER=1`; the compiler UI still only converts and plans.
+The optimization route remains HTTP 501. Compiler execution tests stay mocked, and circuit previews
 are constructed without execution. Other developers' materials and classical work
 is preserved alongside the compiler.
+
+Search now runs a bounded local Grover/classical comparison at `POST /api/search/run`,
+with measured/theoretical success probabilities, query comparisons, and explicit
+timing metadata. See [the search guide](docs/SEARCH.md) for Windows commands, limits,
+and API examples. The live Search page at `/search/` provides controls, probability
+curves, query/runtime comparisons, errors, and measured JSON export.
 
 See [the compiler guide](docs/COMPILER.md) for supported syntax, diagnostics, limits,
 and the mocked QUBO-to-QAOA handoff. The
@@ -130,11 +138,11 @@ Open <http://127.0.0.1:5173>. Backend docs are at <http://127.0.0.1:8000/docs>;
 health is <http://127.0.0.1:8000/api/health>. Start either server independently.
 The frontend serves `/`, `/compiler`, `/neutrinos`, `/materials`, `/optimization`, and
 `/search`. The Svelte compiler sends static generation/planning requests; conversion
-does not execute user code or run a benchmark. The Neutrino Lab currently displays
-configuration and result requirements, but its controls are disabled and it sends no
-requests until model capabilities and the API are agreed. With the quantum extra
-installed, the Materials page submits configurable requests and displays returned
-simulation results, metrics, and time-series plots. Optimization and search benchmarks
+does not execute user code or run a benchmark. The Neutrino Lab runs vacuum, matter,
+layered propagation, and density sweeps through its own API using normalized inputs;
+see [the experiment guide](docs/NEUTRINOS.md). With the quantum extra installed, the
+Materials page submits configurable requests and displays returned simulation results,
+metrics, and time-series plots. Search runs live comparisons; optimization benchmarks
 remain unavailable. React health/request panels remain runnable from
 `frontend/react-scaffold/` on port 5174. See [frontend setup](frontend/README.md) for
 both applications.

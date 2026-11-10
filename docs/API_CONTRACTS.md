@@ -24,22 +24,69 @@ OpenAPI precisely records required keys, enums, defaults, and numeric bounds.
 | POST `/api/optimization/run` | `OptimizationRequest` | `OptimizationResult` | Developer 3 |
 | POST `/api/search/run` | `SearchRequest` | `SearchResult` | Developer 4 |
 | POST `/api/materials/run` | `MaterialsRequest` | `MaterialsResult` | Developer 1 |
+| POST `/api/neutrinos/run` | `NeutrinoRequest` | `NeutrinoResponse` | Neutrino experiment + Developer 5 integration |
+
+### Neutrino Lab integration
+
+Executable web models are in `backend/app/schemas/neutrinos.py`, reusing the
+experiment's validated inputs and shared validation/timing primitives. All neutrino
+inputs are **normalized**, except `theta` in radians; no GeV/km conversion is exposed.
+
+Request example (settings only, not experimental evidence):
+
+```json
+{
+  "experiment": {
+    "parameters": {"theta": 0.2, "delta_m2": 1, "energy": 1, "particle": "neutrino"},
+    "layers": [{"distance": 4, "potential": 0}],
+    "shots": 4096,
+    "seed": 42
+  },
+  "axis": "distance",
+  "samples": 21,
+  "max_potential": 2,
+  "timeout_seconds": 30
+}
+```
+
+`axis=distance` samples from zero to the total baseline, traversing each layer in
+listed order and truncating the last traversed layer at the requested distance.
+It does not rescale the entire profile. `axis=potential` requires one layer and
+sweeps potential from zero to `max_potential` at fixed distance. Zero extent returns
+one point. Samples default to 21 (range 2–41); potential is bounded to [0,10].
+Web runs permit at most 16 layers, total distance at most 100, and
+`samples * shots <= 500000`. Local CLI limits remain unchanged. The disposable
+worker enforces a wall-clock budget including startup (default 30s, range 0.01–60s).
+
+The response declares model `effective_two_flavor`, units `normalized`, the axis,
+aligned `coordinates`, and full measured `results` at each coordinate. Each record
+contains both flavors, analytical results where applicable, independent SciPy,
+ideal Aer, finite-shot measurements, counts, errors, numerical stability, depth,
+timing scopes, actual point seed, and versions. Seeds increment modulo `2**32`.
+No probability is encoded as an optimization objective. API startup imports no
+quantum packages. Missing simulation dependencies return 503; timeout returns 504;
+invalid inputs return 422 through the shared error envelope. Failed workers are
+reaped and unexpected failures use the sanitized shared 500 handler.
+
+The live Svelte page uses generated types and this endpoint; earlier
+`frontend/src/lib/neutrinos/proposal.ts` remains a historical discussion draft,
+not the live wire format. See `docs/NEUTRINOS.md` for physical conventions.
 
 Health returns `{"status":"ok","service":"q-atlas","backend":"aer_simulator","experiments_ready":false}`.
 This signals API readiness, not readiness of all experiments. Compiler analysis,
 generation, and nonexecuting comparison plans are available. Compiler benchmarking
 revalidates source and returns 422 for rejected source or 501 while shared runners
-are unavailable. Materials returns real simulation results with HTTP 200; optimization
-and search still validate first and return HTTP 501:
+are unavailable. Materials and search return real simulation results with HTTP 200;
+optimization still validates first and returns HTTP 501:
 
 ```json
-{"status":"error","error":{"code":"NOT_IMPLEMENTED","message":"Search benchmark is not implemented. Developer 4 owns this feature.","diagnostics":[]}}
+{"status":"error","error":{"code":"NOT_IMPLEMENTED","message":"Optimization benchmark is not implemented. Developer 3 owns this feature.","diagnostics":[]}}
 ```
 
 Invalid payloads return **422** with the same envelope and `VALIDATION_ERROR`.
 Routing/method errors return `NOT_FOUND`/`METHOD_NOT_ALLOWED` (404/405); unexpected
 exceptions return sanitized INTERNAL_ERROR (500). Compiler runner TimeoutError
-and materials worker timeouts map to TIMEOUT (504). Materials uses HTTP_ERROR (503)
+and materials/search worker timeouts map to TIMEOUT (504). Materials/search use HTTP_ERROR (503)
 when optional quantum dependencies are missing; HTTP_ERROR covers other HTTP failures.
 Errors expose no stack traces or submitted field values. Each diagnostic has required
 `code`, `message`, `severity` (`error|warning|info`), and optional nullable one-based
@@ -121,7 +168,11 @@ Never use an integer conversion that discards leading zeros or silently reverse 
   Developer 3 implements and documents the Max-Cut conversion.
 - `SearchRequest`: required `num_qubits` (1–16), required `marked_states` (1–256 unique
   binary strings, each exactly that width), optional nullable `iterations` (0–256;
-  default null delegates iteration selection to the future owner), and default run config.
+  default null selects the best integer beside Grover's first theoretical peak), and default run config.
+  The implemented search runner supports 1–6 qubits, 0–32 iterations, and at most
+  10000 shots; broader schema-valid sizes receive structured 422 diagnostics before
+  simulation. Single and multiple marked states are supported. See [search guide](SEARCH.md)
+  for query semantics, effective parameters, timing scopes, and reproducible examples.
 - `MaterialsRequest`: defaults `model=ising` (`ising|heisenberg`), `num_spins=2` (2–8),
   `coupling=1`, `field=0.5`, `boundary=open` (`open|periodic`), `observable=energy`
   (`energy|magnetization`), and materials run config. These original fields remain intact.
@@ -140,8 +191,11 @@ Never use an integer conversion that discards leading zeros or silently reverse 
 `QAOAConfig` adds `p=1` (1–8 layers), `optimizer=COBYLA` (only initial optimizer),
 `max_iterations=100` (1–1000). Counts and seeds are unitless; timeouts are **seconds**.
 
-These are validated interface limits. Shared compiler/optimization runner stubs do
-no expensive work. Materials uses a spawned worker terminated/reaped on timeout,
+These are validated interface limits. The shared QAOA runner performs local Aer work
+inside a spawned worker with a whole-run deadline. Compiler HTTP execution defaults
+off unless `QATLAS_ENABLE_COMPILER_AER=1` is set on the backend; disabled comparisons
+return the existing HTTP 501 error envelope. Analysis, generation and plans remain
+nonexecuting. Materials uses a spawned worker terminated/reaped on timeout,
 including native work; startup counts against its deadline, outside numerical timers.
 Future runners must enforce deadlines throughout native calls. The compiler enforces
 source/node/depth limits and verifies all assignments for 1–6 bits; see [the compiler guide](COMPILER.md).
@@ -279,7 +333,7 @@ serialization only and must never appear in the UI as experimental evidence.
 from app.quantum.qaoa import run_qaoa
 from app.experiments.optimization.solvers import run_classical
 
-# Both are intentional NotImplementedError stubs in this foundation.
+# Both shared local runners are implemented; calling QAOA performs Aer simulation.
 # run_qaoa(qubo: QUBO, config: QAOAConfig) -> QAOAResult
 # run_classical(qubo: QUBO, config: QAOAConfig) -> SolverResult
 ```

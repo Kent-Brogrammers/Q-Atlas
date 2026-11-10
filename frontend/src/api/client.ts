@@ -10,6 +10,8 @@ import type {
   HealthResponse,
   MaterialsRequest,
   MaterialsResult,
+  NeutrinoRequest,
+  NeutrinoResponse,
   OptimizationRequest,
   OptimizationResult,
   SearchRequest,
@@ -115,6 +117,8 @@ export function createApiClient({
       postBenchmark('/api/search/run', body, signal),
     materials: (body: MaterialsRequest, signal?: AbortSignal) =>
       postBenchmark('/api/materials/run', body, signal),
+    neutrinos: (body: NeutrinoRequest, signal?: AbortSignal) =>
+      request<NeutrinoResponse>('/neutrinos/run', body, signal),
     postBenchmark
   };
 }
