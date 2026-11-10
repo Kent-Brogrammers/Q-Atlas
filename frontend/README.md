@@ -163,6 +163,16 @@ summary separately from raw API responses; each raw run still reports one repeti
 Failures/cancellation publish no partial summary. Tests for aggregation, metadata,
 seed wraparound and request control are in `tests/search-trials.test.ts`.
 
+For rehearsals, **Load recorded curve/trials** explicitly loads previously measured
+local API responses with a dated banner and source revision. Nothing loads on page
+startup or as an automatic error fallback. Recorded downloads retain a distinct
+source label and provenance; editing controls clears the recording. The matching
+configuration is restored when loading it. The backend script
+`scripts/prepare_search_demo.py` regenerates the recording only after real endpoint
+checks pass; `--verify` checks a saved bundle without simulation. See the search guide
+for the full rehearsal checklist. `tests/search-recorded.test.ts` covers provenance,
+evidence consistency, independent copies and reactive-state JSON export.
+
 ## API types and integration
 
 After backend environment setup, run:

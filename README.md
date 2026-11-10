@@ -21,6 +21,8 @@ and API examples. The live Search page at `/search/` provides controls, probabil
 curves, query/runtime comparisons, errors, and measured JSON export.
 Repeated-trial mode adds two to five distinct seeded runs, probability variation,
 median runtimes, and raw-record export alongside the summary.
+An explicit, dated previously measured fallback and a repeatable API rehearsal command
+are documented in the search guide for demo preparation.
 
 See [the compiler guide](docs/COMPILER.md) for supported syntax, diagnostics, limits,
 and the mocked QUBO-to-QAOA handoff. The
