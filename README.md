@@ -6,6 +6,10 @@ Python optimization compiler, small spin-system experiments, QAOA optimization, 
 Grover search in a SvelteKit application. The original React scaffold is preserved
 in `frontend/react-scaffold/` for Developer 5 review; the shared specification is unchanged.
 
+Read the [whole-project scientific report](docs/PROJECT_SCIENTIFIC_REPORT.md) for the
+research question, Qiskit approaches, models, classical comparisons, evidence status,
+reproduction inputs, citations and limitations across all five experiences.
+
 **Current state: compiler analysis and Python script generation.** Health, safe
 Python-to-QUBO analysis, symbolic QAOA circuit previews, and downloadable Qiskit
 builder code work. Compiler benchmarking consumes the shared runner entrypoints,
@@ -21,6 +25,10 @@ with measured/theoretical success probabilities, query comparisons, and explicit
 timing metadata. See [the search guide](docs/SEARCH.md) for Windows commands, limits,
 and API examples. The live Search page at `/search/` provides controls, probability
 curves, query/runtime comparisons, errors, and measured JSON export.
+Repeated-trial mode adds two to five distinct seeded runs, probability variation,
+median runtimes, and raw-record export alongside the summary.
+An explicit, dated previously measured fallback and a repeatable API rehearsal command
+are documented in the search guide for demo preparation.
 
 See [the compiler guide](docs/COMPILER.md) for supported syntax, diagnostics, limits,
 and the mocked QUBO-to-QAOA handoff. The

@@ -41,6 +41,13 @@ def test_bundle_preserves_text_hashes_and_settings_without_execution(monkeypatch
         plan = json.loads(archive.read("plan.json"))
         assert plan["config"]["p"] == 2 and plan["config"]["shots"] == 64
         assert plan["quantum_execution_enabled"] is plan["script_execution_enabled"] is False
+        assert plan["communication_timing"] == {
+            "submission_ms": None,
+            "result_retrieval_ms": None,
+            "queue_ms": None,
+            "remote_processing_ms": None,
+            "round_trip_ms": None,
+        }
         assert plan["generated_source_sha256"] == manifest["files"]["generated.py"]["sha256"]
         assert plan["source_sha256"] == manifest["files"]["input.py"]["sha256"]
     assert not sentinel.exists()

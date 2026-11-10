@@ -294,6 +294,15 @@ after transpilation; record the gate basis/backend), `shots` (sample count). Exp
 - Search: `success_probability`, `theoretical_success_probability` (0–1),
   `quantum_oracle_queries` (count), `classical_expected_queries` (nonnegative expectation),
   `classical_worst_case_queries` (count). These are query counts, never milliseconds.
+  Optional nullable evidence fields: `successful_shots` (marked outcomes among all
+  shots), `classical_observed_queries` (actual fixed-instance predicate checks), and
+  `quantum_total_oracle_queries` (combined-oracle calls across the sampling batch,
+  equal to per-shot queries times shots). New evidence counts must be integers;
+  successful shots cannot exceed shots and must agree with the reported probability.
+  Observed classical queries cannot exceed a supplied space/worst-case bound. Totals
+  require the corresponding shot/per-shot fields. Missing fields preserve legacy
+  responses; null means unavailable. These algorithmic query totals are not hardware
+  gate counts or measured simulator operations. See [search evidence](SEARCH.md#structured-evidence-fields).
 - Materials: `classical_observable`, `quantum_observable`, `absolute_error`; units come
   from metadata. These summarize the terminal time's selected observable; quantum means
   shot-based. New optional metrics: `ideal_observable`, `trotter_absolute_error`,
@@ -328,6 +337,13 @@ Null fields are explicitly not applicable/unmeasured. Synthetic test fixtures ex
 serialization only and must never appear in the UI as experimental evidence.
 
 ## Shared execution handoff
+
+Compiler plans additionally include optional `communication_timing`, defaulting to
+an object with nullable `submission_ms`, `result_retrieval_ms`, `queue_ms`,
+`remote_processing_ms`, and `round_trip_ms`. Current preparation always emits null;
+these are provider timing placeholders, not experimental measurements. This leaves
+the shared solver `TimingBreakdown` unchanged. See
+[communication measurement boundaries](COMPILER_COMMUNICATION_TIMING.md).
 
 ```python
 from app.quantum.qaoa import run_qaoa

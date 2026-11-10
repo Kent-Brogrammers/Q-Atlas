@@ -187,9 +187,10 @@ def test_compiler_consumes_the_real_classical_baseline(monkeypatch):
     quantum.assert_called_once()
 
 
-def test_compiler_returns_a_real_comparison_through_the_shared_runners(client):
+def test_compiler_returns_a_real_comparison_through_the_shared_runners(client, monkeypatch):
     pytest.importorskip("qiskit_aer", reason="Install the optional quantum extra")
     pytest.importorskip("scipy", reason="Install the optional quantum extra")
+    monkeypatch.setenv("QATLAS_ENABLE_COMPILER_AER", "1")
     response = client.post(
         "/api/compiler/benchmark",
         json={
