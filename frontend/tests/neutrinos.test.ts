@@ -87,11 +87,12 @@ function displayFixture(): ProposedNeutrinoResult {
   };
 }
 
-test('primary navigation focuses on neutrinos while retaining the experiment catalog', () => {
+test('primary navigation exposes the compiler and neutrino lab while retaining the experiment catalog', () => {
   assert.deepEqual(
     primaryNavigation.map(({ href, title }) => [href, title]),
     [
       ['/', 'Overview'],
+      ['/compiler/', 'Python Compiler'],
       ['/neutrinos/', 'Neutrino Lab'],
       ['/methodology/', 'Methodology']
     ]

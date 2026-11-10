@@ -26,7 +26,7 @@
 <svelte:head>
   <meta
     name="description"
-    content="Q-Atlas: neutrino oscillation simulation and independent classical validation for the Quantum for Science challenge."
+    content="Q-Atlas: Python objective compilation, generated circuit code, and the Neutrino Oscillation Lab."
   />
 </svelte:head>
 

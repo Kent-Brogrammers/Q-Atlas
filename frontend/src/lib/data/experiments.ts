@@ -30,7 +30,8 @@ export const experiments: {
     number: '01',
     title: 'Python Compiler',
     short: 'Compiler',
-    description: 'Edit a binary Python objective and inspect an example QUBO.',
+    description:
+      'Convert a marked Python objective into verified circuit code and download the script.',
     method: 'AST → QUBO → circuit',
     icon: 'code',
     color: 'blue'
