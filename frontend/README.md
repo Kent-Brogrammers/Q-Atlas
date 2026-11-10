@@ -16,10 +16,10 @@ npm run dev
 ```
 
 Open Vite's local URL, normally `http://127.0.0.1:5173`. Fonts are bundled locally.
-The SvelteKit views do not send live experiment requests. FastAPI can be started
-independently using the root README; its materials route runs the existing spin-system simulation. Compiler,
-optimization, and search remain HTTP 501 stubs. Neutrino API integration is proposed
-separately and is not registered in this frontend.
+The Materials route sends configured requests to the live `/api/materials/run`
+endpoint and displays only returned simulation data. Start FastAPI independently
+using the root README. Compiler, optimization, and search remain HTTP 501 stubs.
+Neutrino API integration is proposed separately and is not registered in this frontend.
 
 ```sh
 npm run check
@@ -37,7 +37,8 @@ example-data consistency. `build` prerenders all seven routes into `build/`.
 ## Structure
 
 - `src/routes/`: primary Overview, Neutrino Lab, and Methodology views. Compiler,
-  Materials, Optimization, and Search remain at their original URLs.
+  Materials, Optimization, and Search remain at their original URLs; Materials
+  provides the live Ising-chain request and result view.
 - `src/lib/data/navigation.ts`: the three primary links, separate from the retained
   experiment catalog in `experiments.ts`.
 - `src/lib/components/`: reusable panels, controls, SVG diagrams, and example displays.
@@ -88,10 +89,10 @@ are preserved.
 ## Retained workspaces and data provenance
 
 The original routes `/compiler/`, `/optimization/`, `/search/`, and `/materials/`
-remain accessible by direct URL, with their source and functionality preserved.
-They are hidden from primary navigation and Overview pending the team's decision
-about their long-term role. Their backend implementations, shared schemas, and
-React reference are unchanged.
+remain accessible by direct URL. They are hidden from primary navigation and Overview
+pending the team's decision about their long-term role. Materials sends live requests
+to its implemented backend endpoint; compiler, optimization, and search remain
+unimplemented backend operations. Their shared schemas and React reference are unchanged.
 
 ## Retained behavior
 
