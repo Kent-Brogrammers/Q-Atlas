@@ -283,6 +283,7 @@ export interface components {
             qubo: components["schemas"]["QUBO"];
             config: components["schemas"]["QAOAConfig"];
             circuit: components["schemas"]["CircuitPreview"];
+            communication_timing?: components["schemas"]["CompilerCommunicationPlan"];
             /**
              * Classical Runner
              * @default app.experiments.optimization.solvers.run_classical
@@ -329,6 +330,26 @@ export interface components {
             quantum: components["schemas"]["QAOAResult"] | null;
             metrics: components["schemas"]["OptimizationMetrics"];
             metadata: components["schemas"]["OptimizationMetadata"];
+        };
+        /**
+         * CompilerCommunicationPlan
+         * @description Reserved provider timing fields in ms; preparation emits null, never measurements.
+         *
+         *     Submission is request-to-job-acknowledgement, retrieval is ready-result download
+         *     and decoding. Round trip includes remote wait/processing and client overhead;
+         *     it is not an extra duration to add to those overlapping components.
+         */
+        CompilerCommunicationPlan: {
+            /** Submission Ms */
+            submission_ms?: number | null;
+            /** Result Retrieval Ms */
+            result_retrieval_ms?: number | null;
+            /** Queue Ms */
+            queue_ms?: number | null;
+            /** Remote Processing Ms */
+            remote_processing_ms?: number | null;
+            /** Round Trip Ms */
+            round_trip_ms?: number | null;
         };
         /** CompilerGenerateRequest */
         CompilerGenerateRequest: {

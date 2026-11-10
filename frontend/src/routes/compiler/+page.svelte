@@ -14,6 +14,7 @@
     MAX_SOURCE_LENGTH,
     readObjectiveFile,
     generatedFilename,
+    formatOptionalMs,
     formatAngle
   } from '../../compiler/source.ts';
   import { PROGRAM_EXAMPLES } from '../../compiler/examples.ts';
@@ -25,6 +26,33 @@
     { id: 'results', label: 'Results & analytics', title: 'Review your results and analytics' }
   ] as const;
   type Step = (typeof steps)[number]['id'];
+  const communicationFields = [
+    {
+      key: 'submission_ms',
+      label: 'Send / submit',
+      note: 'Request preparation to provider job acknowledgement'
+    },
+    {
+      key: 'result_retrieval_ms',
+      label: 'Receive results',
+      note: 'Ready-result download and decoding'
+    },
+    {
+      key: 'queue_ms',
+      label: 'Provider queue',
+      note: 'Remote waiting time, reported by the provider'
+    },
+    {
+      key: 'remote_processing_ms',
+      label: 'Remote processing',
+      note: 'Provider-reported processing · not QPU quota usage'
+    },
+    {
+      key: 'round_trip_ms',
+      label: 'Provider round trip',
+      note: 'Submit through received results, including waits and overhead'
+    }
+  ] as const;
   let step = $state<Step>('input');
   let stageHeading = $state<HTMLHeadingElement>();
 
@@ -539,6 +567,26 @@
           />
         </div>
       </section>
+      <section aria-labelledby="communication-title">
+        <h3 id="communication-title">Quantum communication timing</h3>
+        <p class="timing-note">
+          Provider connection pending. These placeholders are included in your downloaded test plan.
+          Actual timings need to be recorded when provider instrumentation is connected.
+        </p>
+        <div class="analytics-grid">
+          {#each communicationFields as field}
+            <Metric
+              label={field.label}
+              value={formatOptionalMs(plan.communication_timing?.[field.key])}
+              note={field.note}
+            />
+          {/each}
+        </div>
+        <p class="timing-note">
+          Round-trip time already includes sending, remote waits and processing, and receiving. Do
+          not add those components to it again. Unknown timing stays unmeasured, not zero.
+        </p>
+      </section>
       <details class="panel conversion-details">
         <summary>Objective & circuit details</summary>
         <div class="detail-section">
@@ -713,6 +761,12 @@
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 12px;
+  }
+  .timing-note {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.7;
+    margin: 10px 0 16px;
   }
   .test-summary {
     margin: 16px 0 0;

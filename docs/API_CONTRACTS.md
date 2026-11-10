@@ -329,6 +329,13 @@ serialization only and must never appear in the UI as experimental evidence.
 
 ## Shared execution handoff
 
+Compiler plans additionally include optional `communication_timing`, defaulting to
+an object with nullable `submission_ms`, `result_retrieval_ms`, `queue_ms`,
+`remote_processing_ms`, and `round_trip_ms`. Current preparation always emits null;
+these are provider timing placeholders, not experimental measurements. This leaves
+the shared solver `TimingBreakdown` unchanged. See
+[communication measurement boundaries](COMPILER_COMMUNICATION_TIMING.md).
+
 ```python
 from app.quantum.qaoa import run_qaoa
 from app.experiments.optimization.solvers import run_classical
