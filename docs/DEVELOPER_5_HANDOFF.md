@@ -5,6 +5,12 @@ Compiler** action. The home page identifies conversion/planning as available and
 quantum execution as disabled, alongside the preserved Neutrino Lab. Keeping a
 working route without a navigation entry previously made the compiler hard to find.
 
+The compiler now follows the Neutrino Lab's layout: a 290px configuration column,
+shared `Panel` headers, a blue availability notice, and a source/results column.
+Controls, typography, tables, and collapsible details use the existing frontend
+styles. The columns stack on smaller screens. Upload, conversion, diagnostics,
+downloads, and nonexecuting comparison planning retain their existing behavior.
+
 The merge with main preserves its SvelteKit workspace and React reference. The active
 compiler is now `frontend/src/routes/compiler/+page.svelte`, with **load script →
 Convert Python → Download .py**. It defaults to one bare objective marker, named scalar
@@ -90,7 +96,7 @@ trusted execution boundary. No execution handler is attached to the disabled con
 
 ## Review and remaining frontend work
 
-- [ ] Review the compiler page in the team's intended layout/style.
+- [x] Align the compiler page with the shared Svelte layout and panel styles.
 - [ ] If needed, replace the gate table with an SVG circuit diagram using the same
   returned plan. Do not rebuild cost/mixer formulas in the frontend.
 - [ ] Agree an explicit execution opt-in and add actual result controls only after
