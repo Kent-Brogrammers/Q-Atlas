@@ -8,13 +8,28 @@
   <header class="introduction">
     <h1>Q-Atlas</h1>
     <p>
-      Neutrino oscillation simulation with Qiskit, compared against independent classical
-      calculations.
+      Convert marked Python objectives into circuit code, or explore the Neutrino Lab. Each
+      workspace shows its validation and execution status.
     </p>
-    <a class="button primary" href="/neutrinos/"
-      >Launch Neutrino Lab<Icon name="arrow" size={18} /></a
-    >
+    <div class="workspace-actions">
+      <a class="button primary" href="/compiler/"
+        >Open Python Compiler<Icon name="arrow" size={18} /></a
+      >
+      <a class="button" href="/neutrinos/">Launch Neutrino Lab<Icon name="arrow" size={18} /></a>
+    </div>
   </header>
+
+  <section class="compiler" aria-labelledby="compiler-title">
+    <h2 id="compiler-title">Python compiler</h2>
+    <p>
+      Load a .py file, mark one supported binary objective with <code>@qatlas.objective</code>, and
+      download the converted script. Your function names, input names, and surrounding Python stay
+      in place. No circuit code is required.
+    </p>
+    <p>
+      Source conversion and comparison planning are available. Quantum execution stays disabled.
+    </p>
+  </section>
 
   <section class="science" aria-labelledby="science-title">
     <h2 id="science-title">Why neutrino oscillations?</h2>
@@ -73,6 +88,11 @@
   .introduction .button {
     min-width: 230px;
   }
+  .workspace-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
   section {
     border-top: 1px solid var(--border);
     padding: 26px 0;
@@ -82,7 +102,8 @@
     font-size: 18px;
     font-weight: 500;
   }
-  .science p {
+  .science p,
+  .compiler p {
     max-width: 720px;
     margin: 0 0 12px;
     color: var(--muted);

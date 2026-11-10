@@ -43,9 +43,9 @@ example-data consistency. `build` prerenders all seven routes into `build/`.
 
 ## Structure
 
-- `src/routes/`: primary Overview, Neutrino Lab, and Methodology views. Compiler,
+- `src/routes/`: primary Overview, Python Compiler, Neutrino Lab, and Methodology views.
   Materials, Optimization, and Search remain at their original URLs.
-- `src/lib/data/navigation.ts`: the three primary links, separate from the retained
+- `src/lib/data/navigation.ts`: the four primary links, separate from the retained
   experiment catalog in `experiments.ts`.
 - `src/lib/components/`: reusable panels, controls, SVG diagrams, and example displays.
 - `src/types/api.generated.ts`: the canonical types generated from FastAPI OpenAPI.
@@ -70,8 +70,9 @@ and minimally rounded controls preserve the current design.
 
 ## Neutrino Oscillation Lab
 
-The main navigation is **Overview**, **Neutrino Lab**, and **Methodology**.
-Overview introduces the science and current availability without example statistics.
+The main navigation is **Overview**, **Python Compiler**, **Neutrino Lab**, and **Methodology**.
+Overview provides a prominent **Open Python Compiler** action, a compiler capability
+summary, and the existing Neutrino science/availability information without example statistics.
 Methodology records the model scope and classical validation requirements.
 
 `/neutrinos/` is the primary workspace. Model/flavor selection, energy/distance,
@@ -94,11 +95,11 @@ are preserved.
 
 ## Retained workspaces and data provenance
 
-The original routes `/compiler/`, `/optimization/`, `/search/`, and `/materials/`
-remain accessible by direct URL, with their source and functionality preserved.
-They are hidden from primary navigation and Overview pending the team's decision
-about their long-term role. Their backend implementations, shared schemas, and
-React reference are unchanged.
+The compiler at `/compiler/` is linked from the sidebar and Overview. The original
+`/optimization/`, `/search/`, and `/materials/` routes remain accessible by direct URL,
+with their source and functionality preserved. Those three routes are hidden from
+primary navigation pending the team's decision about their long-term role. Their
+backend implementations, shared schemas, and React reference are unchanged.
 
 ## Retained behavior
 

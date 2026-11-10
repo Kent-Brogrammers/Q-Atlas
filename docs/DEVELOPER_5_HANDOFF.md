@@ -1,5 +1,10 @@
 # Compiler page integration handoff
 
+The compiler is now visible in the primary sidebar and Overview's **Open Python
+Compiler** action. The home page identifies conversion/planning as available and
+quantum execution as disabled, alongside the preserved Neutrino Lab. Keeping a
+working route without a navigation entry previously made the compiler hard to find.
+
 The merge with main preserves its SvelteKit workspace and React reference. The active
 compiler is now `frontend/src/routes/compiler/+page.svelte`, with **load script →
 Convert Python → Download .py**. It defaults to one bare objective marker, named scalar
