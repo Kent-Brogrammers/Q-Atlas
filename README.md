@@ -6,6 +6,10 @@ Python optimization compiler, small spin-system experiments, QAOA optimization, 
 Grover search in a SvelteKit application. The original React scaffold is preserved
 in `frontend/react-scaffold/` for Developer 5 review; the shared specification is unchanged.
 
+Read the [whole-project scientific report](docs/PROJECT_SCIENTIFIC_REPORT.md) for the
+research question, Qiskit approaches, models, classical comparisons, evidence status,
+reproduction inputs, citations and limitations across all five experiences.
+
 **Current state: compiler analysis and Python script generation.** Health, safe
 Python-to-QUBO analysis, symbolic QAOA circuit previews, and downloadable Qiskit
 builder code work. Compiler benchmarking consumes the shared runner entrypoints,
