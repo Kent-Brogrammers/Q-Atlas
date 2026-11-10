@@ -113,8 +113,8 @@ durations intentionally have different boundaries.
 the batch equal `iterations * shots`, recorded in `oracle_assumptions`. The combined
 oracle applies a phase flip for every supplied target; a query is not a single gate.
 `classical_expected_queries` and `classical_worst_case_queries` retain the assumptions
-above. The observed classical check count is recorded in `oracle_assumptions` because
-the shared metrics currently have no dedicated field for it. Objectives remain null.
+above. The observed classical check count is also exposed as `classical_observed_queries`.
+Objectives remain null.
 
 Quantum `best_bitstring` is the most frequent observed bitstring, with lexicographic
 tie-breaking; it may be unmarked. Success probability counts **all** marked outcomes
@@ -124,6 +124,33 @@ package versions, which are included in metadata; timings naturally fluctuate.
 
 Run the new benchmark with `python -m app.experiments.search` from `backend/`.
 The earlier `.demo` command remains a simple single-target circuit demonstration.
+
+## Structured evidence fields
+
+Three optional nullable fields in `SearchMetrics` expose the evidence directly:
+
+| Field | Meaning |
+| --- | --- |
+| `successful_shots` | Number of sampled outcomes in the marked set, counting all marked targets |
+| `classical_observed_queries` | Predicate checks actually made before the first match for this fixed instance |
+| `quantum_total_oracle_queries` | Algorithmic combined-oracle calls across the batch: iterations × shots |
+
+`successful_shots / shots` equals `success_probability`. The total quantum query
+count is derived from the executed circuit protocol, not measured CPU operations,
+primitive gates, or QPU work. The per-shot `quantum_oracle_queries` field retains
+its original meaning. No count is encoded as an optimization objective.
+
+The comparison table displays these fields separately from expected/worst-case
+classical query counts and measured wall time. They are included in JSON downloads
+without parsing the explanation text. Older responses remain valid without the new
+fields and display **Not available**, rather than fabricated or inferred evidence.
+Zero successful shots and zero quantum queries remain valid measured/protocol values.
+
+Validation rejects noninteger/negative counts, successful shots above the shot count,
+probabilities inconsistent with successful shots, total queries inconsistent with
+per-shot queries, and observed classical checks exceeding the stated space/worst case.
+Optional totals require their denominator or per-shot fields when provided. Shared
+model changes are additive; request limits, bit order, and timing scopes are unchanged.
 
 ## Live Search page and probability curves
 
@@ -140,6 +167,8 @@ The overview also links to the page. Nothing runs automatically on page load.
 
 - **Run comparison** sends one existing `SearchRequest`, with optional automatic
   iteration selection. The backend reports the effective iteration count.
+- **Run repeated trials** measures the same single-run configuration two to five
+  times using distinct recorded seeds. See the statistics section below.
 - **Measure probability curve** sends iterations 0 through the chosen last value
   (0–12 inclusive), sequentially, overriding the manual single-run iteration setting.
   Points share the targets, shots, seed and per-point timeout. Every probability,
@@ -155,11 +184,61 @@ The overview also links to the page. Nothing runs automatically on page load.
   versions, timings and oracle assumptions, marked with source `live_search_api`.
   No measurement files or synthetic fixtures are bundled as application defaults.
 
-A sweep is one run per iteration, not repeated trials at one iteration. Its points
+A curve sweep is one run per iteration, not repeated trials at one iteration. Its points
 share a seed; no independent-run distribution or confidence interval is claimed.
 The 13-request cap and per-request timeout bound work, but the sequence can take up
 to 13 per-point budgets plus transport overhead. Quantum time includes a shot batch;
 classical time measures one search. Their ratio is not a matched-success speedup.
+
+## Repeated-run statistics
+
+Choose **Repeated trials** (2–5, default 3) and select **Run repeated trials**. This
+mode uses the single-run iteration setting, including backend automatic selection;
+it does not repeat the entire iteration curve. No new backend endpoint, dependency,
+or shared aggregate schema is introduced.
+
+The browser sends requests sequentially with seeds `(base_seed + trial_index) mod
+2^32`. Every request retains the same problem, shots, and manual/automatic iteration
+setting. The completed backend results must agree on effective iteration, instance,
+shot count, simulator method, timing scope, and package versions. Their seeds must
+match the requested seeds and be distinct. A mismatch or failure prevents publication
+of a partial batch. Cancellation stops subsequent requests; the current native worker
+can finish or reach its per-request deadline, as in curve mode.
+
+The summary reports:
+
+- Arithmetic mean of observed success probabilities across equal-shot trials.
+- Observed minimum and maximum success probabilities, also shown as a chart whisker.
+- Sample standard deviation: `sqrt(sum((p_i - mean)^2) / (r - 1))`, displayed in
+  percentage points (pp). This describes variability of the run probabilities, not
+  a standard error or confidence interval.
+- Median classical and quantum solver times, retaining all trials and excluding no
+  warm-up run. Even-sized medians average the two middle values. Solver timing scopes
+  remain as documented above; worker startup is outside reported solver durations.
+- Trial count, distinct seeds, shots per trial, and total shots across the batch.
+
+Missing timings make the corresponding median unavailable rather than averaging a
+subset. Missing probabilities or invalid/mismatched records prevent aggregation.
+If theoretical probabilities are unavailable, the summary does not fabricate them.
+The range and sample deviation are descriptive statistics over a small set of seeded
+simulator runs; neither bounds the true probability or establishes runtime advantage.
+
+The trial table lists every seed and measured probability and lets you inspect each
+raw response. Each raw record still has `metadata.repetitions=1`; the browser summary
+does not rewrite those records to imply backend aggregation. Editing controls clears
+the summary and all old results. The workload is capped at five requests and 50000
+shots, and can consume up to five per-request budgets plus transport overhead.
+
+JSON downloads now include `mode` (`single`, `curve`, or `trials`), `trial_summary`
+(null outside trials), and the unchanged `results` array. The source remains
+`live_search_api`. The summary is a presentation/export object, not a `SearchResult`.
+It records the actual seeds, probabilities, sample deviation, medians, and shot counts;
+all raw evidence is retained for independent review.
+
+Manual verification used the default three-qubit `001` configuration and seeds
+42, 43, 44, then verified the summary and three raw records in the downloaded JSON.
+Unit tests cover known statistics, odd/even medians, zeros, missing evidence,
+mismatched metadata, sequential limits, wraparound seeds, failures and cancellation.
 
 ### Demo rehearsal
 
@@ -180,11 +259,81 @@ validation, sequential limits, cancellation, failures, response metadata, zero/m
 probabilities and typed transport. Svelte checks cover accessibility/compiler diagnostics.
 Configuration/results stack on narrow screens and sit side by side on desktop.
 
-Core search MVP is implemented. Follow-up polish can add repeated-run statistics or
-a typed observed classical-query field, coordinated with Developers 3/5 before changing
-shared schemas. Hardware and practical quantum advantage are not claimed.
+Core search MVP, typed evidence fields, and bounded repeated-run statistics are implemented.
+Demo/regression hardening is also implemented as described below. Coordinate further
+shared-schema changes with Developers 3/5. Hardware and practical quantum advantage
+are not claimed.
 
-## Search API
+## Demo preparation and regression checks
+
+From `backend/`, with the quantum extra installed, run:
+
+```powershell
+.\.venv\Scripts\python.exe scripts/prepare_search_demo.py
+.\.venv\Scripts\python.exe scripts/prepare_search_demo.py --verify
+```
+
+The first command exercises the actual FastAPI endpoint in-process through TestClient;
+no HTTP server, external network, IBM credentials or hardware is required. It records
+seven curve points and three trials, probes one/multiple targets and boundary sizes
+(including 6 qubits / 32 iterations), and checks validation and timeout errors.
+Only after all checks pass does it write
+`frontend/src/lib/search/previously-measured.json`. `--output PATH` selects another
+destination. The second command validates the saved evidence without running simulation.
+If committing a regenerated recording, run
+`npx.cmd prettier --write src/lib/search/previously-measured.json` from `frontend/`
+after recording. Formatting changes no measurements or provenance values.
+
+The recording identifies its timestamp, source revision, dirty working-tree flag,
+SHA-256 hashes of the relevant source files, Python/OS, and per-result package versions.
+Hashes describe the source bytes on the recording machine; line endings can differ on
+other checkouts. A recording from a dirty tree is disclosed in the banner and export.
+These checks establish format/evidence consistency, not that old timings apply to
+the current machine. Regenerate intentionally before a rehearsal; recordings do not
+refresh during page load or silently replace a failed experiment.
+
+### Explicit offline fallback
+
+The page's **Load recorded curve** and **Load recorded trials** buttons require an
+explicit action and make no API requests. They load real previously measured records,
+restore the matching configuration, and show a prominent **Previously measured demo —
+not a live run** banner, timestamp and revision. Editing inputs clears the recording
+and its provenance. Live runs always clear recorded data first. No error handler loads
+a recording automatically.
+
+Recorded downloads use source `previously_measured_search_demo`, include the recording
+provenance and raw results, and use filename `q-atlas-search-recorded-demo.json`.
+Live downloads retain source `live_search_api` and filename `q-atlas-search-results.json`.
+The same export builder handles reactive page state through JSON serialization;
+regression tests cover proxies as well as plain records.
+
+### Browser rehearsal checklist
+
+| Check | Expected behavior |
+| --- | --- |
+| Initial page | Empty charts; no auto-loaded measurements |
+| Run comparison | Real probabilities, timings and evidence fields |
+| Measure curve 0–6 | Seven results with the expected amplification oscillation |
+| Run 3 trials | Seeds 42, 43, 44; summary plus each raw run |
+| Stop an active curve | No partial result is published; controls become usable |
+| Run again after stopping | A fresh comparison succeeds without stale responses |
+| Edit controls | Previous results, summaries and recorded provenance disappear |
+| Invalid target | Clear validation error; no fabricated result |
+| Backend unavailable | Connection error and empty results; no automatic fallback |
+| Explicit recorded load | Dated banner and matching configuration, even without API |
+| Download live/recorded | Correct source label, raw records and provenance where applicable |
+
+Manual browser checks confirmed cancellation/recovery, connection failure without
+fallback, explicit recorded loading while disconnected, clearing on edits, restoring
+the saved configuration, and downloading a seven-record file with recorded provenance.
+Unit/API tests cover both supported modes and malformed evidence. No additional
+browser automation package is required for the checklist.
+
+The repository also has two pre-existing Windows-incompatible QAOA timeout tests in
+Developer 3's module; their `ctypes.CDLL(None).sleep` helper fails on Windows. Report
+those separately from search checks and coordinate their repair with Developer 3.
+
+## Search API usage
 
 Start the backend from `backend/`:
 
