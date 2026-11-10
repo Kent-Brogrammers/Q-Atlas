@@ -56,7 +56,26 @@ this experiment cannot establish practical quantum speedup.
 
 ## Next small milestones
 
-1. Add a classical no-replacement search baseline and query assumptions/tests.
+### Classical baseline (implemented)
+
+`app.experiments.search.classical.run_classical_search` accepts the shared
+`SearchRequest`. It checks candidate strings in lexicographic order without
+replacement and stops at the first marked state. Input order does not influence
+checking order. Leading zeros and the shared qubit-0-first display are preserved.
+One set-membership predicate counts as one query; marked-set construction is
+included in wall time, rather than counted as an oracle query.
+
+The returned observed query count belongs to that fixed instance. Separately,
+`(N + 1) / (M + 1)` is the expected number of checks under uniformly distributed
+marked positions, and `N - M + 1` is the worst case, for N candidates and M targets.
+These quantities assume stopping at the first success, without replacement. They
+must not be labeled as measured runtimes or equated to quantum gate costs.
+
+The baseline checks its deadline before queries and before returning results.
+Tests enumerate all target placements in a four-candidate space to verify the
+expected and worst-case formulas, in addition to fixed-instance and timeout tests.
+
+1. Integrate the classical no-replacement search baseline with the quantum runner.
 2. Add an iteration sweep comparing theoretical and sampled success probabilities.
 3. Integrate the existing search response contract and enforce runtime limits before
    enabling the API; coordinate result/timing interpretations with Developers 3/5.
