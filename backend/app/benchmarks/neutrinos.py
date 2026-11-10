@@ -138,6 +138,18 @@ def _validate_response(request: NeutrinoRequest, response: NeutrinoResponse) -> 
             distance = sum(layer.distance for layer in configuration.layers)
             if not isclose(distance, response.coordinates[index], rel_tol=0, abs_tol=1e-12):
                 raise ValueError("neutrino point configuration does not match its distance")
+            layers = configuration.layers
+            original_layers = request.experiment.layers
+            if len(layers) > len(original_layers):
+                raise ValueError("neutrino point contains layers outside the input profile")
+            for layer_index, layer in enumerate(layers):
+                original = original_layers[layer_index]
+                if (
+                    layer.potential != original.potential
+                    or layer.distance > original.distance
+                    or (layer_index < len(layers) - 1 and layer.distance != original.distance)
+                ):
+                    raise ValueError("neutrino point does not follow the ordered input profile")
         else:
             layer = request.experiment.layers[0].model_copy(
                 update={"potential": response.coordinates[index]}
