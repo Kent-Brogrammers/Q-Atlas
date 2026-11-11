@@ -2,9 +2,9 @@
 
 The compiler now consumes shared surface, border, text and muted tokens throughout
 its forms, code previews, tables and notices. Active steps use `--accent`, falling
-back to `--blue` on main's current theme. This prepares all four views for Shagai's
-warm palette in open `dev5` PR #14, without importing that PR's unrelated features
-or fixing the compiler to an experimental color selection.
+back to `--blue` on older themes. Shagai's warm palette from `dev5` PR #14 is now
+merged into main; all four compiler views inherit it without fixing their controls
+to individual color values. The compiler's conversion/planning behavior is preserved.
 
 The compiler is now visible in the primary sidebar and Overview's **Open Python
 Compiler** action. The home page identifies conversion/planning as available and
