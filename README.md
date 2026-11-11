@@ -144,15 +144,16 @@ environment and frontend dependencies without installing packages or running exp
 
 Open <http://127.0.0.1:5173>. Backend docs are at <http://127.0.0.1:8000/docs>;
 health is <http://127.0.0.1:8000/api/health>. Start either server independently.
-The frontend serves `/`, `/compiler`, `/neutrinos`, `/materials`, `/optimization`, and `/search`.
-The Svelte compiler sends only static generation/planning requests. The Neutrino
-Lab runs vacuum, matter, layered propagation, and density sweeps through its own
-API using normalized inputs; see [the experiment guide](docs/NEUTRINOS.md).
-The materials backend can
-run simulations when explicitly requested with its dependencies installed; the
-compiler launcher/conversion checks do not invoke it. React health/request panels
-remain runnable from `frontend/react-scaffold/` on port 5174. See
-[frontend setup](frontend/README.md) for both applications.
+The frontend serves `/`, `/compiler`, `/neutrinos`, `/materials`, `/optimization`, and
+`/search`. The Svelte compiler sends static generation/planning requests; conversion
+does not execute user code or run a benchmark. The Neutrino Lab runs vacuum, matter,
+layered propagation, and density sweeps through its own API using normalized inputs;
+see [the experiment guide](docs/NEUTRINOS.md). With the quantum extra installed, the
+Materials page submits configurable requests and displays returned simulation results,
+metrics, and time-series plots. Search runs live comparisons; optimization benchmarks
+remain unavailable. React health/request panels remain runnable from
+`frontend/react-scaffold/` on port 5174. See [frontend setup](frontend/README.md) for
+both applications.
 
 No environment file or credentials are required. Optional overrides:
 

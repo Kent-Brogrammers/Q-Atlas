@@ -49,7 +49,7 @@
     <title>{graph.name} — graph preset</title>
     <defs
       ><pattern id={gridId} width="24" height="24" patternUnits="userSpaceOnUse"
-        ><circle cx="1" cy="1" r=".7" fill="#c7d8e9" /></pattern
+        ><circle cx="1" cy="1" r=".7" fill="var(--border)" /></pattern
       ></defs
     >
     <rect width="600" height="450" fill={`url(#${gridId})`} opacity=".65" />
@@ -121,7 +121,7 @@
 <style>
   .graph-view {
     position: relative;
-    background: #f7faff;
+    background: var(--surface-raised);
     overflow: hidden;
   }
   .network {
@@ -143,50 +143,50 @@
   .graph-caption {
     font: 12px var(--mono);
     letter-spacing: normal;
-    color: #647385;
+    color: var(--muted);
   }
   .graph-overlay .mono {
     font-size: 12px;
-    color: #9cacc0;
+    color: var(--muted);
   }
   .edge {
-    stroke: #d0dce9;
+    stroke: var(--border);
     stroke-width: 1.5;
     stroke-dasharray: 5 5;
     transition: stroke 0.2s;
   }
   .edge.cut {
-    stroke: #6ba8df;
+    stroke: var(--blue);
     stroke-dasharray: none;
   }
   .node-hit {
     fill: transparent;
   }
   .node-ring {
-    fill: #f1f9ff;
-    stroke: #a9cfe9;
+    fill: var(--surface);
+    stroke: var(--blue);
     stroke-width: 1;
   }
   .node-core {
-    fill: #e5f3ff;
-    stroke: #49a0d1;
+    fill: var(--bg);
+    stroke: var(--blue);
     stroke-width: 1.2;
   }
   .node text {
-    fill: #2a729c;
+    fill: var(--blue);
     font: 13px var(--mono);
     pointer-events: none;
   }
   .partition-b .node-ring {
-    fill: #faf7ff;
-    stroke: #d9c9ea;
+    fill: var(--surface-raised);
+    stroke: var(--accent);
   }
   .partition-b .node-core {
-    fill: #f0eaf8;
-    stroke: #a58ac7;
+    fill: var(--bg);
+    stroke: var(--accent);
   }
   .partition-b text {
-    fill: #795a9e;
+    fill: var(--accent);
   }
   .interactive {
     cursor: pointer;
@@ -194,7 +194,7 @@
   }
   .interactive:hover .node-ring,
   .interactive:focus-visible .node-ring {
-    stroke: #0f62fe;
+    stroke: var(--blue);
     stroke-width: 2;
   }
   .graph-tools {
@@ -207,7 +207,7 @@
   .graph-tools button {
     width: 27px;
     height: 27px;
-    background: #ffffff;
+    background: var(--surface);
   }
   .graph-bottom {
     display: flex;
@@ -218,7 +218,7 @@
   }
   .graph-bottom p {
     margin: 0;
-    color: #667385;
+    color: var(--muted);
     font: 12px var(--mono);
   }
   .graph-bottom strong {
@@ -230,7 +230,7 @@
     display: flex;
     gap: 14px;
     font-size: 12px;
-    color: #677382;
+    color: var(--muted);
   }
   .graph-legend span {
     display: flex;
@@ -250,19 +250,19 @@
     background: var(--violet);
   }
   .graph-instructions {
-    border-top: 1px solid #e4edf6;
+    border-top: 1px solid var(--border);
     padding: 12px 21px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    color: #8a9bb0;
+    color: var(--muted);
     font-size: 12px;
   }
   .graph-instructions button {
     display: flex;
     align-items: center;
     gap: 6px;
-    color: #5583b5;
+    color: var(--blue);
     background: none;
     border: none;
     padding: 0;
@@ -278,7 +278,7 @@
     max-height: none;
   }
   .compact .edge.cut {
-    stroke: #a4c7e7;
+    stroke: var(--blue);
   }
   @media (prefers-reduced-motion: reduce) {
     .edge {

@@ -376,21 +376,25 @@
   }
   label {
     display: block;
-    color: #46546a;
+    color: var(--muted);
     font-size: 12px;
     margin: 0 0 7px;
+  }
+  label > span {
+    font-family: var(--mono);
+    color: var(--muted);
   }
   select,
   input {
     width: 100%;
-    padding: 10px;
-    margin-bottom: 16px;
-    background: white;
-    border: 1px solid #c3cedb;
+    min-height: 40px;
+    padding: 9px 10px;
+    margin-bottom: 14px;
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
     border-radius: 2px;
     color: var(--text);
-    font-size: 13px;
-    min-height: 40px;
+    font-size: 12px;
   }
   form .button {
     width: 100%;
@@ -426,6 +430,13 @@
     border-bottom: 1px solid var(--border);
     padding: 12px 8px;
     white-space: nowrap;
+  }
+  th {
+    font-weight: 400;
+  }
+  thead {
+    background: var(--surface-raised);
+    color: var(--muted);
   }
   td,
   dd {
