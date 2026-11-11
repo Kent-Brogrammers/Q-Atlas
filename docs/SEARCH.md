@@ -393,3 +393,45 @@ the documented operation changes. No new dependency or transport client is requi
 
 The four follow-up commit groups are classical baseline, benchmark runner, API,
 then probability curves/frontend integration. Review and approval precede each commit.
+
+## Configurable repeated benchmarks
+
+The fixed demo recorder remains unchanged. For a custom local batch, run the
+search sweep from `backend/` in PowerShell:
+
+```powershell
+.\.venv\Scripts\python.exe -m app.experiments.search.sweep `
+  --num-qubits 3 --marked-states 001 110 `
+  --iterations 0 1 2 3 4 --shots 256 1024 --seeds 42 43 44 `
+  --timeout 30 --total-timeout 300 --output "$env:TEMP\search-sweep.json"
+```
+
+Use a new output filename each time. The parent directory must already exist;
+an existing file or symlink is never replaced. This example executes 30 runs:
+five iteration counts × two shot counts × three seeds. Targets are supplied
+together as one marked set, rather than as separate search instances. To compare
+different marked sets, run separate commands with different output filenames.
+
+The JSON contains the complete plan, raw shared `SearchResult` records, UTC
+recording time, source revision/dirty status, source-file hashes, Python/OS and
+per-run package versions. Summaries group runs by iteration and shots and report
+mean/minimum/maximum success probability, sample standard deviation (null for a
+single seed), theoretical probability, and median classical/quantum solver time.
+Ranges and standard deviations describe these seeded observations; they are not
+confidence intervals. Seeds are reused between groups, so groups are not
+independent replicate samples. Seeded probabilities should reproduce in the same
+environment; measured runtimes need not.
+
+Limits: 1–6 qubits, 0–32 iterations, 1–10000 shots, up to 16 distinct seeds,
+eight shot counts, and 256 total runs. Every grid axis must contain unique values.
+The default grid is iterations 0–6, shots 256/1024, seeds 42/43/44 (42 runs).
+The total budget defaults to 300 seconds and is capped at 3600; each run defaults
+to 30 seconds (maximum 60), reduced to the remaining suite budget when necessary.
+Worker startup is included in those deadlines. Suite elapsed time includes runner
+overhead and summary computation, excludes initial provenance collection and file
+serialization; solver timing definitions remain in each raw result.
+
+On validation, dependency, timeout or execution failure the command exits with
+status 1 and publishes no report. It does not replace the frontend's recorded
+demo, change API contracts, contact IBM, or submit hardware jobs. These are local
+Aer measurements; query counts and simulator runtime remain separate comparisons.
