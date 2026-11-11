@@ -24,6 +24,7 @@
   --cyan: var(--accent);
   --violet: var(--accent);
   --accent: #c2410c;
+  --lab-marker: #626324;
   --success: #166534;
   color: var(--text);
   background: var(--bg);
@@ -31,6 +32,20 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   color-scheme: light;
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #1a1715;
+  --surface: #25211e;
+  --surface-raised: #302b27;
+  --border: #58504a;
+  --text: #f6f0ea;
+  --muted: #c4b9b0;
+  --subtle: var(--muted);
+  --blue: #88cfff;
+  --accent: #ffa578;
+  --success: #88d5a0;
+  --lab-marker: #d6d98a;
 }
 * {
   box-sizing: border-box;

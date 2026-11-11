@@ -9,8 +9,8 @@
   let width = $state(660),
     hover = $state<number | null>(null);
   const channels = [
-    { key: 'electron', name: 'Electron flavor', color: '#78abff' },
-    { key: 'other', name: 'Other flavor', color: '#4ce0c2' }
+    { key: 'electron', name: 'Electron flavor', color: 'var(--blue)' },
+    { key: 'other', name: 'Other flavor', color: 'var(--accent)' }
   ] as const;
   const methods = ['ideal', 'numerical', 'analytical', 'measured'] as const;
   type Method = (typeof methods)[number];
@@ -100,7 +100,7 @@
         y="34"
         width={end - x(boundary)}
         height="190"
-        fill="#eab96b"
+        fill="var(--lab-marker)"
         opacity=".065"
       /><text x={x(boundary) - 6} y="22" text-anchor="end">Layer 1</text><text
         x={x(boundary) + 6}
@@ -111,7 +111,7 @@
         x2={end}
         y1={y(p)}
         y2={y(p)}
-        stroke="#314259"
+        stroke="var(--border)"
       /><text x="34" y={y(p) + 4} text-anchor="end">{p * 100}%</text>{/each}
     {#each extent ? [0, 0.25, 0.5, 0.75, 1] : [0] as p}<text
         x={x(extent * p)}
@@ -129,7 +129,7 @@
           x2={x(v)}
           y1="31"
           y2="224"
-          stroke="#efbd73"
+          stroke="var(--lab-marker)"
           stroke-dasharray="3 4"
         />{/if}{/each}
     {#each channels as c}
@@ -165,7 +165,7 @@
       x2={x(result.coordinates[index])}
       y1="34"
       y2="224"
-      stroke="#9daec0"
+      stroke="var(--muted)"
       stroke-dasharray="2 5"
     />
     {#each channels as c}{#if !advanced || visible.ideal}<circle
@@ -173,7 +173,7 @@
           cy={y(result.results[index].ideal[c.key])}
           r="4"
           stroke={c.color}
-          fill="#0f1c2d"
+          fill="var(--surface)"
           stroke-width="2"
         />{/if}{/each}
   </svg>
@@ -232,24 +232,24 @@
   }
   .plot text {
     font: 11px var(--mono);
-    fill: #bdcada;
+    fill: var(--muted);
   }
   .plot .amber {
-    fill: #efbd73;
+    fill: var(--lab-marker);
   }
   .axis {
     text-align: center;
     font-size: 0.78rem;
-    color: #d3dceb;
+    color: var(--text);
     margin-top: -0.7rem;
   }
   .tip {
     position: absolute;
     top: 30%;
     pointer-events: none;
-    border: 1px solid #64819a;
-    background: #132336;
-    color: white;
+    border: 1px solid var(--muted);
+    background: var(--surface-raised);
+    color: var(--text);
     padding: 0.55rem;
     border-radius: 6px;
     font-size: 0.75rem;
@@ -257,11 +257,11 @@
   .overlays,
   p {
     margin: 0.9rem 0 0;
-    color: var(--lab-muted);
+    color: var(--muted);
     font-size: 0.77rem;
   }
   .overlays input {
     margin-right: 0.35rem;
-    accent-color: var(--lab-teal);
+    accent-color: var(--accent);
   }
 </style>

@@ -4,6 +4,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#f5f0eb" />
+    <script>
+      // Set the saved appearance before the first paint, including on prerendered pages.
+      try {
+        if (localStorage.getItem('q-atlas-theme') === 'dark') {
+          document.documentElement.dataset.theme = 'dark';
+          document.querySelector('meta[name="theme-color"]').content = '#1a1715';
+        }
+      } catch {
+        // Light mode also works when browser storage is unavailable.
+      }
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     %sveltekit.head%
   </head>

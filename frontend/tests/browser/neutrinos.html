@@ -55,6 +55,20 @@
           'Graph and inspector are out of sync'
         );
         const readout = doc().querySelector('.metrics').textContent;
+        const themeSwitch = () => doc().querySelector('button[role="switch"]');
+        const initialTheme = frame.contentWindow.getComputedStyle(
+          doc().documentElement
+        ).colorScheme;
+        const nextTheme = initialTheme === 'light' ? 'dark' : 'light';
+        themeSwitch().click();
+        await until(
+          () =>
+            frame.contentWindow.getComputedStyle(doc().documentElement).colorScheme === nextTheme,
+          'Theme did not change'
+        );
+        if (doc().querySelector('.metrics').textContent !== readout || +exact().value !== 2)
+          throw new Error('Changing theme reset the simulation');
+        themeSwitch().click();
         button('Advanced').click();
         await until(() => button('Validation'), 'Advanced inspection did not appear');
         if (
@@ -73,8 +87,20 @@
         );
         button('Reset').click();
         await until(() => +exact().value === 4 && point(), 'Reset did not restore the vacuum run');
+        themeSwitch().click();
+        frame.src = '/';
+        await until(
+          () =>
+            doc()?.querySelector('.overview') &&
+            themeSwitch()?.getAttribute('aria-checked') === String(nextTheme === 'dark') &&
+            frame.contentWindow.getComputedStyle(doc().documentElement).colorScheme === nextTheme,
+          'Theme preference did not survive loading another page'
+        );
+        themeSwitch().click();
+        frame.src = '/neutrinos/';
+        await until(() => point(), 'Lab did not reopen');
         report.textContent =
-          'PASS — slider and numeric synchronization, normalized validation, loading invalidation, live run, graph selection, mode preservation and reset.';
+          'PASS — synchronized controls, validation, live run, graph selection, mode preservation, reset, and persistent app-wide theme.';
       } catch (error) {
         report.textContent = 'FAIL — ' + error.message;
       } finally {

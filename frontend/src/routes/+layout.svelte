@@ -7,13 +7,30 @@
   import { page } from '$app/state';
   import { fly } from 'svelte/transition';
   import { prefersReducedMotion } from 'svelte/motion';
-  import type { Snippet } from 'svelte';
+  import { onMount, type Snippet } from 'svelte';
   import { primaryNavigation } from '#lib/data/navigation.ts';
   import { experiments } from '#lib/data/experiments.ts';
   import Icon from '#lib/components/Icon.svelte';
   import Logo from '#lib/components/Logo.svelte';
 
   let { children }: { children: Snippet } = $props();
+  let dark = $state(false);
+  onMount(() => {
+    dark = document.documentElement.dataset.theme === 'dark';
+  });
+  function toggleTheme() {
+    dark = !dark;
+    const theme = dark ? 'dark' : 'light';
+    document.documentElement.dataset.theme = theme;
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute('content', dark ? '#1a1715' : '#f5f0eb');
+    try {
+      localStorage.setItem('q-atlas-theme', theme);
+    } catch {
+      // The current tab can still change theme with storage disabled.
+    }
+  }
   let active = $derived(primaryNavigation.find((item) => page.url.pathname === item.href));
   // Retained experiment routes still have accurate breadcrumbs when opened directly.
   let title = $derived(
@@ -57,6 +74,9 @@
       <div class="breadcrumb">
         <span>Q-Atlas</span><Icon name="chevron" size={12} /><strong>{title}</strong>
       </div>
+      <button class="theme-switch" role="switch" aria-checked={dark} onclick={toggleTheme}>
+        Dark mode <span class="track" aria-hidden="true"></span>
+      </button>
     </header>
     <main id="main-content" tabindex="-1">
       {#key page.url.pathname}
@@ -70,3 +90,39 @@
     </main>
   </div>
 </div>
+
+<style>
+  .theme-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 44px;
+    flex-shrink: 0;
+    font-size: 0.85rem;
+  }
+  .track {
+    display: flex;
+    align-items: center;
+    width: 2rem;
+    height: 1.15rem;
+    padding: 2px;
+    border: 1px solid var(--muted);
+    border-radius: 1rem;
+    background: var(--surface);
+  }
+  .track::after {
+    content: '';
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    background: var(--muted);
+  }
+  [aria-checked='true'] .track {
+    justify-content: flex-end;
+    background: var(--blue);
+    border-color: var(--blue);
+  }
+  [aria-checked='true'] .track::after {
+    background: var(--bg);
+  }
+</style>

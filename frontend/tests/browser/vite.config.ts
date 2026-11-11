@@ -5,6 +5,8 @@ import app from '../../vite.config.ts';
 
 export default mergeConfig(
   defineConfig({
+    define: { 'import.meta.env.VITE_API_BASE_URL': JSON.stringify('/api') },
+    server: { proxy: { '/api': 'http://127.0.0.1:8000' } },
     plugins: [
       {
         name: 'neutrino-browser-regression',

@@ -140,29 +140,34 @@ U(ℓ) = exp(−i G ℓ)</pre>
             width="170"
             role="img"
             aria-label="Bloch vector for the ideal pre-measurement state"
-            ><circle cx="85" cy="80" r="58" fill="none" stroke="#607588" /><ellipse
+            ><circle cx="85" cy="80" r="58" fill="none" stroke="var(--muted)" /><ellipse
               cx="85"
               cy="80"
               rx="58"
               ry={58 * Math.sin(0.3)}
               fill="none"
-              stroke="#41536a"
+              stroke="var(--border)"
             />{#each xyz as v, i}<line
                 x1="85"
                 y1="80"
                 x2={project(v)[0]}
                 y2={project(v)[1]}
-                stroke="#71849c"
-              /><text x={project(v)[0] + 4} y={project(v)[1] - 3} fill="#b7c8da"
+                stroke="var(--muted)"
+              /><text x={project(v)[0] + 4} y={project(v)[1] - 3} fill="var(--muted)"
                 >{['x', 'y', 'z'][i]}</text
               >{/each}<line
               x1="85"
               y1="80"
               x2={project(bloch)[0]}
               y2={project(bloch)[1]}
-              stroke="#56dec2"
+              stroke="var(--accent)"
               stroke-width="3"
-            /><circle cx={project(bloch)[0]} cy={project(bloch)[1]} r="4" fill="#56dec2" /></svg
+            /><circle
+              cx={project(bloch)[0]}
+              cy={project(bloch)[1]}
+              r="4"
+              fill="var(--accent)"
+            /></svg
           >
           <div>
             <h4>Before measurement</h4>
@@ -240,8 +245,8 @@ U(ℓ) = exp(−i G ℓ)</pre>
 
 <style>
   .inspector {
-    background: var(--lab-panel);
-    border: 1px solid var(--lab-border);
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 14px;
     overflow: hidden;
     margin-top: 1rem;
@@ -255,7 +260,7 @@ U(ℓ) = exp(−i G ℓ)</pre>
   }
   nav {
     padding: 0.65rem;
-    border-bottom: 1px solid var(--lab-border);
+    border-bottom: 1px solid var(--border);
   }
   button {
     padding: 0.5rem 0.8rem;
@@ -265,8 +270,8 @@ U(ℓ) = exp(−i G ℓ)</pre>
   }
   button[aria-pressed='true'],
   .actions button {
-    background: #233951;
-    color: #d9edff;
+    background: var(--lab-selected);
+    color: var(--text);
   }
   .body {
     padding: 1.3rem;
@@ -275,7 +280,7 @@ U(ℓ) = exp(−i G ℓ)</pre>
   .body li {
     font-size: 0.94rem;
     line-height: 1.65;
-    color: var(--lab-muted);
+    color: var(--muted);
     max-width: 85ch;
     margin: 0.7rem 0;
   }
@@ -293,7 +298,7 @@ U(ℓ) = exp(−i G ℓ)</pre>
   }
   pre {
     font: 0.82rem/1.6 var(--mono);
-    background: #0b1524;
+    background: var(--surface-raised);
     padding: 1rem;
     border-radius: 8px;
     margin: 1rem 0;
@@ -307,7 +312,7 @@ U(ℓ) = exp(−i G ℓ)</pre>
   th,
   td {
     text-align: left;
-    border-bottom: 1px solid var(--lab-border);
+    border-bottom: 1px solid var(--border);
     padding: 0.6rem;
   }
   td,

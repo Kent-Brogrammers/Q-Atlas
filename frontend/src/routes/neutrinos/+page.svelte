@@ -13,21 +13,21 @@
       title: 'Vacuum',
       pitch: 'Follow a neutrino through empty space.',
       icon: 'activity',
-      tone: '#82aaff'
+      tone: 'var(--blue)'
     },
     {
       id: 'density',
       title: 'MSW resonance',
       pitch: 'Find the density where mixing peaks.',
       icon: 'atom',
-      tone: '#f2c078'
+      tone: 'var(--lab-marker)'
     },
     {
       id: 'layers',
       title: 'Two layers',
       pitch: 'Cross a boundary between two regions.',
       icon: 'layers',
-      tone: '#63d8be'
+      tone: 'var(--accent)'
     }
   ] as const;
   const percent = (p: number) => (p > 0 && p < 0.0001 ? '<0.01' : fmt(p * 100, 2));
@@ -301,38 +301,8 @@
 </div>
 
 <style>
-  :global(.app-shell:has(.lab) .sidebar) {
-    --surface-raised: #101b2b;
-    --muted: #b9c7d7;
-    --text: #e8f0fa;
-    --accent: #79b1fc;
-    --blue: #93bfff;
-    border-right: 1px solid #26384c;
-  }
-  :global(.app-shell:has(.lab) .sidebar nav a.active) {
-    background: #1c3047;
-  }
-
-  :global(.workspace:has(.lab)) {
-    background: #0b1423;
-    color: #e9f0fa;
-  }
-  :global(.workspace:has(.lab) .topbar) {
-    background: #101c2d;
-    border-color: #2d4159;
-  }
-  :global(.workspace:has(.lab) .breadcrumb),
-  :global(.workspace:has(.lab) .breadcrumb strong) {
-    color: #bbc9da;
-  }
   .lab {
-    --lab-panel: #122135;
-    --lab-border: #31445c;
-    --lab-muted: #b4c3d4;
-    --lab-teal: #66dec2;
-    --blue: #91bbff;
-    color-scheme: dark;
-    color: #edf3fc;
+    --lab-selected: color-mix(in srgb, var(--blue) 12%, var(--surface));
     max-width: 1420px;
     margin: auto;
     padding-bottom: 2rem;
@@ -357,7 +327,7 @@
   .plot-title p,
   .learn p,
   .foot {
-    color: var(--lab-muted);
+    color: var(--muted);
     line-height: 1.6;
   }
   header p {
@@ -365,7 +335,7 @@
   }
   .switch {
     display: flex;
-    border: 1px solid var(--lab-border);
+    border: 1px solid var(--border);
     border-radius: 9px;
     padding: 4px;
     flex-shrink: 0;
@@ -376,8 +346,8 @@
     font-size: 0.88rem;
   }
   .switch button[aria-pressed='true'] {
-    background: #c6dafa;
-    color: #102239;
+    background: var(--blue);
+    color: var(--bg);
     font-weight: 600;
   }
   .choices {
@@ -392,17 +362,17 @@
     align-items: center;
     gap: 0.8rem;
     text-align: left;
-    background: #101d2f;
-    border: 1px solid var(--lab-border);
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 11px;
     padding: 1rem;
     transition: background 0.15s;
   }
   .choice:hover {
-    background: #1c2c40;
+    background: var(--surface-raised);
   }
   .choice[aria-pressed='true'] {
-    background: #1a2b41;
+    background: color-mix(in srgb, var(--tone) 10%, var(--surface));
     border-color: var(--tone);
   }
   .choice strong {
@@ -411,7 +381,7 @@
     font-weight: 600;
   }
   .choice small {
-    color: var(--lab-muted);
+    color: var(--muted);
     line-height: 1.4;
     display: block;
     font-size: 0.8rem;
@@ -427,7 +397,7 @@
   .radio {
     margin-left: auto;
     align-self: flex-start;
-    border: 1px solid #65798f;
+    border: 1px solid var(--muted);
     width: 10px;
     height: 10px;
     border-radius: 50%;
@@ -446,9 +416,9 @@
   .instrument,
   .controls,
   .learn {
-    border: 1px solid var(--lab-border);
+    border: 1px solid var(--border);
     border-radius: 14px;
-    background: var(--lab-panel);
+    background: var(--surface);
     min-width: 0;
     padding: clamp(1rem, 2vw, 1.65rem);
   }
@@ -466,12 +436,12 @@
     font-size: 0.81rem;
   }
   .source {
-    color: #a9c2de;
+    color: var(--muted);
     font: 0.7rem var(--mono);
     white-space: nowrap;
   }
   .readout {
-    border-top: 1px solid var(--lab-border);
+    border-top: 1px solid var(--border);
     margin-top: 1rem;
     padding-top: 1rem;
   }
@@ -480,11 +450,11 @@
   }
   output {
     font: 0.78rem var(--mono);
-    color: var(--lab-muted);
+    color: var(--muted);
   }
   .readout input {
     width: 100%;
-    accent-color: #86adff;
+    accent-color: var(--blue);
     margin: 0.4rem 0;
   }
   .metrics {
@@ -495,16 +465,16 @@
   }
   .metrics small {
     font-size: 0.8rem;
-    color: var(--lab-muted);
+    color: var(--muted);
   }
   .metrics strong {
     display: block;
-    color: #82afff;
+    color: var(--blue);
     font: 500 clamp(1.4rem, 3vw, 2.25rem) var(--mono);
     letter-spacing: -0.07em;
   }
   .metrics div:nth-child(2) strong {
-    color: var(--lab-teal);
+    color: var(--accent);
   }
   .metrics em {
     font-size: 0.55em;
@@ -514,7 +484,7 @@
   .metrics p {
     font-size: 0.73rem;
     max-width: 12ch;
-    color: var(--lab-muted);
+    color: var(--muted);
     margin-bottom: 0.45rem;
   }
   .reset {
@@ -524,7 +494,7 @@
     font-size: 0.8rem;
   }
   .foot {
-    border-top: 1px solid var(--lab-border);
+    border-top: 1px solid var(--border);
     padding-top: 1rem;
     margin-top: 1.15rem;
   }
@@ -533,11 +503,11 @@
     align-items: start;
     gap: 1rem;
     margin-top: 1rem;
-    background: #10272e;
-    border-color: #294c51;
+    background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+    border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
   }
   .learn-icon {
-    color: var(--lab-teal);
+    color: var(--accent);
     margin-top: 2px;
   }
   .learn p {
@@ -551,7 +521,7 @@
   }
   .learn summary {
     cursor: pointer;
-    color: #9ae7d5;
+    color: var(--accent);
   }
   .controls h3 {
     margin: 1rem 0 0.5rem;
@@ -567,9 +537,9 @@
   .numbers input,
   select {
     width: 100%;
-    background: #101d30;
+    background: var(--surface);
     color: inherit;
-    border: 1px solid #52667d;
+    border: 1px solid var(--muted);
     padding: 0.4rem;
     border-radius: 5px;
     font-size: 0.82rem;
@@ -583,14 +553,14 @@
     text-align: center;
   }
   .placeholder button {
-    background: #233951;
+    background: var(--lab-selected);
     padding: 0.6em 1em;
     border-radius: 6px;
   }
   .progress {
     width: 30px;
     height: 4px;
-    background: var(--lab-teal);
+    background: var(--accent);
     border-radius: 3px;
     animation: pulse 1s ease-in-out infinite alternate;
   }

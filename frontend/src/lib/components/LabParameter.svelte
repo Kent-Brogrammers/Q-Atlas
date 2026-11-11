@@ -63,7 +63,7 @@
   }
   .parameter-label span,
   small {
-    color: var(--lab-muted);
+    color: var(--muted);
     font-size: 0.75rem;
   }
   .inputs {
@@ -72,14 +72,14 @@
   .inputs input[type='range'] {
     min-width: 0;
     width: 100%;
-    accent-color: var(--lab-teal);
+    accent-color: var(--accent);
   }
   input[type='number'] {
     width: 6.4em;
     padding: 0.4em 0.5em;
-    background: #101d30;
+    background: var(--surface);
     color: inherit;
-    border: 1px solid #52667d;
+    border: 1px solid var(--muted);
     border-radius: 5px;
     font: 0.82rem var(--mono);
   }
