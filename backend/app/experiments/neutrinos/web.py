@@ -4,6 +4,7 @@ import numpy as np
 
 from app.experiments.neutrinos.experiment import density_sweep, run
 from app.experiments.neutrinos.model import Experiment, Layer
+from app.experiments.neutrinos.physics import coefficients
 from app.schemas.neutrinos import NeutrinoRequest, NeutrinoResponse
 
 
@@ -35,4 +36,16 @@ def run_curve(request: NeutrinoRequest) -> NeutrinoResponse:
                 seed=(experiment.seed + index) % 2**32,
             )
             results.append(run(point))
-    return NeutrinoResponse(axis=request.axis, coordinates=grid, results=results)
+    parameters = experiment.parameters
+    _, vacuum_z = coefficients(parameters, 0)
+    sign = 1 if parameters.particle == "neutrino" else -1
+    resonance = -sign * vacuum_z
+    has_resonance = (
+        0 < parameters.theta < np.pi / 2 and parameters.theta != np.pi / 4 and resonance > 0
+    )
+    return NeutrinoResponse(
+        axis=request.axis,
+        coordinates=grid,
+        results=results,
+        resonance_potential=float(resonance) if has_resonance else None,
+    )

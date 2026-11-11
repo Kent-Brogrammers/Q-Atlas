@@ -68,6 +68,11 @@ quantum packages. Missing simulation dependencies return 503; timeout returns 50
 invalid inputs return 422 through the shared error envelope. Failed workers are
 reaped and unexpected failures use the sanitized shared 500 handler.
 
+Newly measured points include the Qiskit text diagram, ordered rotation angles
+in radians and ideal pre-measurement statevector as [real, imaginary] pairs.
+Older records can omit these fields. The curve also reports the positive
+resonant potential when the supplied mixing parameters permit one.
+
 The live Svelte page uses generated types and this endpoint; earlier
 `frontend/src/lib/neutrinos/proposal.ts` remains a historical discussion draft,
 not the live wire format. See `docs/NEUTRINOS.md` for physical conventions.
@@ -297,6 +302,12 @@ after transpilation; record the gate basis/backend), `shots` (sample count). Exp
 - Search: `success_probability`, `theoretical_success_probability` (0–1),
   `quantum_oracle_queries` (count), `classical_expected_queries` (nonnegative expectation),
   `classical_worst_case_queries` (count). These are query counts, never milliseconds.
+  Optional nullable `circuit_gate_counts` maps gate names to positive integer counts
+  in one Aer-transpiled search circuit. It excludes measurement, reset, barriers and
+  other non-gate instructions. Composite gates retained by transpilation count once;
+  this is not a native-hardware decomposition or a count of internal Aer operations.
+  The sum is the per-circuit gate total, never multiplied by shots. Null/omitted means
+  unavailable; an empty map means a measured circuit with zero gates.
   Optional nullable evidence fields: `successful_shots` (marked outcomes among all
   shots), `classical_observed_queries` (actual fixed-instance predicate checks), and
   `quantum_total_oracle_queries` (combined-oracle calls across the sampling batch,

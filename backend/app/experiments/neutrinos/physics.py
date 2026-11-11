@@ -9,7 +9,9 @@ from app.experiments.neutrinos.model import Experiment, Layer, Parameters
 def coefficients(parameters: Parameters, potential: float) -> tuple[float, float]:
     k = parameters.delta_m2 / parameters.energy
     sign = 1 if parameters.particle == "neutrino" else -1
-    return k * np.sin(2 * parameters.theta), sign * potential - k * np.cos(2 * parameters.theta)
+    # sin(pi) has a small floating-point residual at the exact zero-mixing endpoint.
+    transverse = 0.0 if parameters.theta == np.pi / 2 else k * np.sin(2 * parameters.theta)
+    return transverse, sign * potential - k * np.cos(2 * parameters.theta)
 
 
 def analytical(parameters: Parameters, layer: Layer) -> dict:
@@ -33,7 +35,7 @@ def hamiltonian(parameters: Parameters, potential: float) -> np.ndarray:
     k = parameters.delta_m2 / parameters.energy
     matter = potential if parameters.particle == "neutrino" else -potential
     diagonal = matter - k * np.cos(2 * parameters.theta)
-    off_diagonal = k * np.sin(2 * parameters.theta)
+    off_diagonal = 0.0 if parameters.theta == np.pi / 2 else k * np.sin(2 * parameters.theta)
     return np.array([[diagonal, off_diagonal], [off_diagonal, -diagonal]], dtype=complex)
 
 

@@ -1,5 +1,6 @@
 """Synthetic IBM responses only. Never authenticate, train, transpile or submit jobs."""
 
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock
 from uuid import uuid4
@@ -7,6 +8,7 @@ from uuid import uuid4
 import pytest
 
 from app.compiler import hardware
+from app.compiler.pipeline import CompilationError
 from app.schemas.compiler_hardware import CompilerHardwareRequest
 from app.schemas.contracts import QUBO, QAOAConfig, SolverResult, TimingBreakdown
 
@@ -135,12 +137,31 @@ def test_shared_circuit_binding_and_measurement_without_execution(monkeypatch):
 
 def test_width_limit_rejects_before_provider_contact(mocked):
     request, submit, train, service, _ = mocked
-    source = "@qatlas.objective\ndef wide(a,b,c,d): return a+b+c+d"
-    with pytest.raises(ValueError, match="three binary"):
+    source = "@qatlas.objective\ndef wide(a,b,c,d,e,f,g): return a+b+c+d+e+f+g"
+    with pytest.raises(CompilationError):
         hardware.submit(request.model_copy(update={"source": source}))
     submit.assert_not_called()
     train.assert_not_called()
     service.backends.assert_not_called()
+
+
+def test_six_qubit_portfolio_can_submit_and_decode_without_changing_job_caps(mocked):
+    request, submit, _, _, job = mocked
+    source = (
+        Path(__file__).resolve().parents[3] / "examples/compiler/programs/portfolio_6.py"
+    ).read_text()
+    hardware.run_classical.return_value = hardware.run_classical.return_value.model_copy(
+        update={"objective": -22, "best_bitstring": "110100"}
+    )
+    job.result.return_value[0].data.meas.get_counts = lambda: {"001011": 128}
+    result = hardware.submit(request.model_copy(update={"source": source}))
+    assert result.status == "SUBMITTED" and result.qubo.num_variables == 6
+    assert result.shots == 128 and result.max_execution_seconds == 10
+    completed = hardware.refresh(request.request_id)
+    assert completed.measurement.best_bitstring == "110100"
+    assert completed.measurement.optimality_gap == 0
+    assert hardware.devices().reserved_seconds == 10
+    submit.assert_called_once()
 
 
 def test_preparation_failure_spends_nothing_and_budget_blocks_extra_jobs(mocked):

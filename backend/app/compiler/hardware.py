@@ -130,10 +130,7 @@ def submit(request: CompilerHardwareRequest):
 
     config = QAOAConfig(p=1, shots=request.shots, max_iterations=20, timeout_seconds=30)
     plan = prepare_benchmark(request.source, config)
-    if plan.qubo.num_variables > 3:
-        raise ValueError(
-            "Initial hardware tests support at most three binary inputs and one layer."
-        )
+    # prepare_benchmark enforces the compiler's shared one-to-six-input limit.
     token, instance, folder, budget = _settings()
     path = folder / f"{request.request_id}.json"
     # Cross-process lock only for reservation/claim; never across remote calls.
