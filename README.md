@@ -1,5 +1,10 @@
 # Q-Atlas
 
+For the limited quantum-testing allowance, use the
+[Qiskit connection setup guide](docs/QUANTUM_CONNECTION_SETUP.md). SDK installation
+and the default readiness check submit no jobs; provider authentication/device listing
+is a separate operator action. The existing compiler execution path remains local Aer.
+
 Q-Atlas is a five-developer quantum computing hackathon project for reproducible,
 scientifically honest comparisons with classical methods. It combines a restricted
 Python optimization compiler, small spin-system experiments, QAOA optimization, and
