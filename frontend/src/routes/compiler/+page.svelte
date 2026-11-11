@@ -133,8 +133,9 @@
         if (!active) return;
         plan = prepared;
         if (!hardwareRequestId) {
-          hardwareRequestId = crypto.randomUUID();
-          localStorage.setItem('qatlas-compiler-qpu-request', hardwareRequestId);
+          const requestId = crypto.randomUUID();
+          localStorage.setItem('qatlas-compiler-qpu-request', requestId);
+          hardwareRequestId = requestId;
         }
         const job = await api.submitCompilerHardware({
           source,

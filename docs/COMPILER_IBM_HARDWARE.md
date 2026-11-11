@@ -85,6 +85,8 @@ This is a single-machine development workflow, not a distributed job service.
 ## Recovering without spending twice
 
 The browser stores only the request UUID in local storage before sending a job.
+If storage is unavailable, submission remains blocked, including repeated clicks,
+so a job cannot be sent without a saved recovery ID.
 After a reload it offers **Check hardware job**; it never submits automatically.
 Keep the same browser origin/port and the same backend instance configuration.
 The backend stores a claim before preparation and marks a request ambiguous
