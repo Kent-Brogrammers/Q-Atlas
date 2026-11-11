@@ -142,6 +142,14 @@ terminal (Bash 4.3+):
 ./dev.sh
 ```
 
+In an interactive terminal the launcher prompts for your IBM Quantum API token
+(hidden while you paste) and instance name/CRN. Press Enter at the token prompt to
+skip. Values are kept only for this launch and passed to the backend, never the
+frontend or a saved file. Existing environment credentials are reused. Startup
+does not authenticate, run simulations, or submit quantum jobs.
+Use `QATLAS_SKIP_QUANTUM_PROMPT=1 ./dev.sh` to skip prompts; non-interactive startup
+also skips them automatically.
+
 The launcher works from any current directory when invoked by its path. Both servers
 share the terminal output; **Ctrl+C stops both**, including their worker processes.
 If either server exits, the other is stopped too. It uses the existing backend virtual
