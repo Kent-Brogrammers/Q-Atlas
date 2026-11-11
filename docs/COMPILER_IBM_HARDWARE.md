@@ -13,7 +13,10 @@ from the older opt-in local Aer benchmark endpoint.
    prompt, then the intended IBM instance name or CRN. Credentials remain in the
    backend process; no saved account or frontend credential field is created.
 3. Open `http://127.0.0.1:5173/compiler`. Use the default example, or a supported
-   objective with **one to three binary inputs**. Keep **one circuit layer**.
+   objective with **one to six binary inputs**. The default is a six-project
+   energy portfolio; the example picker also offers three-, four- and five-qubit
+   versions. Keep **one circuit layer**. Six is the compiler's software limit,
+   separate from the account's time allowance.
 4. Choose **Convert Python**, review the generated code, then **Continue to test**.
 5. Click **Load IBM devices**. This authenticates and requests device metadata;
    it does not submit a circuit. Select an accessible operational device.
@@ -54,6 +57,13 @@ fully hardware-trained QAOA benchmark. Classical enumeration time, local trainin
 time, provider QPU usage and network timing cover different work; they cannot
 establish quantum speedup. Queue, remote processing and full round-trip time
 remain unmeasured rather than being invented from manual refresh intervals.
+
+The Results & analytics page focuses on measured classical solving time and IBM
+QPU usage. Its comparison chart uses milliseconds for both readings, with an
+optional logarithmic scale (`log10(1 + milliseconds)`) to keep small values visible.
+Unknown timings are omitted. Local training, send/receive times and test settings
+are in an expandable section; the full raw record is still downloadable. QPU usage
+is not a complete quantum-assisted runtime, and no speedup ratio is calculated.
 
 ## Protecting the ten-minute allowance
 

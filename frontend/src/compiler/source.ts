@@ -4,23 +4,23 @@ export const MAX_SOURCE_LENGTH = 20_000;
 // Read a bounded amount of UTF-8 text before enforcing the API's character limit.
 const MAX_SOURCE_FILE_BYTES = 80_000;
 
-export const DEFAULT_SOURCE = `@qatlas.objective
-def assess_selection(choose_red, choose_blue, choose_green):
-    selected = choose_red + choose_blue + choose_green
-    benefit = choose_red + 2 * choose_blue + 3 * choose_green
-    return 10 * (selected - 1)**2 - benefit
+export const DEFAULT_FILENAME = 'portfolio_6.py';
+export const DEFAULT_SOURCE = `@qatlas.objective  # noqa: F821 - static compiler marker
+def plan_projects(solar, insulation, lighting, storage, heating, monitoring):
+    selected = solar + insulation + lighting + storage + heating + monitoring
+    impact = 8 * solar + 7 * insulation + 6 * lighting + 5 * storage + 4 * heating + 3 * monitoring
+    synergy = 2 * solar * storage + insulation * heating
+    return 30 * (selected - 3) ** 2 - impact - synergy
 `;
 
-export const DEFAULT_SCRIPT = `# Mark one ordinary Python objective. No circuit code is needed.
+export const DEFAULT_SCRIPT = `"""Choose three of six energy projects. Minimize penalty minus impact and synergy."""
 
-def describe_selection(value):
-    return f"Selection score: {value}"
 
 ${DEFAULT_SOURCE}
 
 if __name__ == "__main__":
-    score = assess_selection(0, 0, 1)
-    print(describe_selection(score))
+    score = plan_projects(1, 1, 1, 0, 0, 0)
+    print(f"Portfolio objective: {score}")
 `;
 
 export function generatedFilename(inputName: string): string {

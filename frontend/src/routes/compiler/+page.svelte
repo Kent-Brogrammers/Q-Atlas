@@ -3,6 +3,8 @@
   import Icon from '#lib/components/Icon.svelte';
   import Panel from '#lib/components/Panel.svelte';
   import Metric from '#lib/components/Metric.svelte';
+  import CompilerRuntimeChart from '#lib/components/CompilerRuntimeChart.svelte';
+  import { runtimeMeasurements } from '../../compiler/runtimes.ts';
   import { api, ApiError } from '../../api/client.ts';
   import type {
     CompilerAnalyzeResult,
@@ -13,6 +15,7 @@
   } from '../../types/index.ts';
   import {
     DEFAULT_SCRIPT,
+    DEFAULT_FILENAME,
     MAX_SOURCE_LENGTH,
     readObjectiveFile,
     generatedFilename,
@@ -28,39 +31,12 @@
     { id: 'results', label: 'Results & analytics', title: 'Review your results and analytics' }
   ] as const;
   type Step = (typeof steps)[number]['id'];
-  const communicationFields = [
-    {
-      key: 'submission_ms',
-      label: 'Send / submit',
-      note: 'Sampler submission to provider job acknowledgement'
-    },
-    {
-      key: 'result_retrieval_ms',
-      label: 'Receive results',
-      note: 'Ready-result download'
-    },
-    {
-      key: 'queue_ms',
-      label: 'Provider queue',
-      note: 'Remote waiting time, reported by the provider'
-    },
-    {
-      key: 'remote_processing_ms',
-      label: 'Remote processing',
-      note: 'Provider-reported processing · not QPU quota usage'
-    },
-    {
-      key: 'round_trip_ms',
-      label: 'Provider round trip',
-      note: 'Submit through received results, including waits and overhead'
-    }
-  ] as const;
   let step = $state<Step>('input');
   let stageHeading = $state<HTMLHeadingElement>();
 
   let source = $state(DEFAULT_SCRIPT);
-  let fileName = $state('selection.py');
-  let example = $state('default');
+  let fileName = $state(DEFAULT_FILENAME);
+  let example = $state<string>(DEFAULT_FILENAME);
   let layers = $state(1);
   let analysis = $state<CompilerAnalyzeResult>();
   let artifact = $state<GeneratedPythonArtifact>();
@@ -84,16 +60,16 @@
   const busy = $derived(loading !== null || reading || hardwareBusy);
   const stepIndex = $derived(steps.findIndex((item) => item.id === step));
   const currentHardwareJob = $derived(
-    hardwareJob?.problem_id === plan?.problem_id ? hardwareJob : undefined
+    !plan || hardwareJob?.problem_id === plan.problem_id ? hardwareJob : undefined
   );
-  function communicationValue(key: (typeof communicationFields)[number]['key']) {
-    if (currentHardwareJob) {
-      if (key === 'submission_ms') return currentHardwareJob.submission_ms;
-      if (key === 'result_retrieval_ms') return currentHardwareJob.measurement?.retrieval_ms;
-      return null;
-    }
-    return plan?.communication_timing?.[key];
-  }
+  const resultQubo = $derived(plan?.qubo ?? hardwareJob?.qubo);
+  const resultConfig = $derived(plan?.config ?? hardwareJob?.local_training_config);
+  const measuredRuntimes = $derived(
+    runtimeMeasurements(
+      currentHardwareJob?.classical?.elapsed_ms,
+      currentHardwareJob?.measurement?.quantum_seconds
+    )
+  );
   onMount(() => {
     try {
       hardwareRequestId = localStorage.getItem('qatlas-compiler-qpu-request') ?? '';
@@ -156,7 +132,10 @@
           action === 'cancel'
             ? await api.cancelCompilerHardwareJob(hardwareRequestId)
             : await api.compilerHardwareJob(hardwareRequestId);
-        if (active) hardwareJob = job;
+        if (active) {
+          hardwareJob = job;
+          if (!plan) await goToStep('results');
+        }
       }
     } catch (caught) {
       if (active)
@@ -179,10 +158,11 @@
     hardwareRequestId = '';
     hardwareJob = undefined;
     hardwareConfirmed = false;
+    void goToStep('input');
   }
 
   function canVisit(target: Step) {
-    return target === 'input' || (target === 'results' ? !!plan : !!artifact);
+    return target === 'input' || (target === 'results' ? !!plan || !!hardwareJob : !!artifact);
   }
   async function goToStep(target: Step) {
     if (!canVisit(target)) return;
@@ -450,7 +430,6 @@
               <legend>Example</legend>
               <label for="program-example">Python program</label>
               <select id="program-example" bind:value={example} disabled={busy}>
-                <option value="default">Ordinary Python · one decorator</option>
                 {#each PROGRAM_EXAMPLES as item}<option value={item.filename}>{item.label}</option
                   >{/each}
               </select>
@@ -461,10 +440,14 @@
                   const selected = PROGRAM_EXAMPLES.find((item) => item.filename === example);
                   replaceSource(
                     selected?.source ?? DEFAULT_SCRIPT,
-                    selected?.filename ?? 'selection.py'
+                    selected?.filename ?? DEFAULT_FILENAME
                   );
                 }}>Load example<Icon name="reset" size={15} /></button
               >
+              <p class="field-note">
+                Choose energy projects with the highest combined impact. Each example uses one
+                binary choice per qubit, with three to six qubits and a fixed selection target.
+              </p>
             </fieldset>
             <div class="marker-guide">
               <h3>Mark your objective</h3>
@@ -647,8 +630,8 @@
           <h3>Submit one physical quantum job</h3>
           <p>
             Angles are trained locally, then one bound circuit is sampled on your selected IBM QPU.
-            Initial tests allow three inputs, one layer, 128 shots and a 10-second QPU cap. Check
-            your actual remaining IBM allowance before submitting.
+            Tests allow up to six inputs, one layer, 128 shots and a 10-second QPU cap. Check your
+            actual remaining IBM allowance before submitting.
           </p>
           <div class="comparison-actions">
             <button class="button" disabled={busy} onclick={() => hardwareAction('devices')}
@@ -675,12 +658,12 @@
                 !hardwareConfirmed ||
                 !hardwareBackend ||
                 layers !== 1 ||
-                (analysis?.qubo?.num_variables ?? 99) > 3}
+                (analysis?.qubo?.num_variables ?? 99) > 6}
               onclick={() => hardwareAction('submit')}
               >{hardwareBusy ? 'Working…' : 'Submit one IBM QPU job'}</button
             >
-            {#if layers !== 1 || (analysis?.qubo?.num_variables ?? 99) > 3}<p class="field-note">
-                Use one layer and at most three binary inputs for this initial test.
+            {#if layers !== 1 || (analysis?.qubo?.num_variables ?? 99) > 6}<p class="field-note">
+                Use one layer and at most six binary inputs for a hardware test.
               </p>{/if}
           {/if}
         </div>
@@ -702,7 +685,7 @@
             : 'Prepare test plan'}<Icon name="arrow" size={15} />
       </button>
     </div>
-  {:else if step === 'results' && plan && analysis?.status === 'supported'}
+  {:else if step === 'results' && resultQubo && resultConfig}
     <div class="analytics-workspace">
       <Panel
         title="Test status"
@@ -718,209 +701,185 @@
         <div class="output-body">
           <p role="status">
             {#if currentHardwareJob}
-              The hardware request is recorded above. Check its status manually to retrieve results.
-              QAOA angles are trained locally; final sampling uses the selected physical QPU. Your
-              surrounding Python application is not executed.
+              {currentHardwareJob.measurement
+                ? 'Hardware results received.'
+                : 'The hardware request is recorded. Use Check hardware job to retrieve results.'}
+              Your surrounding Python application is not executed.
             {:else}
               Your comparison plan is ready. No script or solver has been executed, so measured
               performance results are not available yet.
             {/if}
           </p>
-          <dl class="test-summary">
-            <div>
-              <dt>{currentHardwareJob ? 'Hardware' : 'Planned'} layers / shots / seed</dt>
-              <dd>
-                {currentHardwareJob?.local_training_config.p ?? plan.config.p} / {currentHardwareJob?.shots ??
-                  plan.config.shots} / {currentHardwareJob?.local_training_config.seed ??
-                  plan.config.seed}
-              </dd>
-            </div>
-            <div>
-              <dt>Problem ID</dt>
-              <dd>{plan.problem_id}</dd>
-            </div>
-          </dl>
+          <p class="field-note">
+            {resultQubo.num_variables} qubits · {currentHardwareJob?.backend_name ??
+              'Plan prepared'} · Objective-only test
+          </p>
         </div>
       </Panel>
-      <section aria-labelledby="compilation-analytics-title">
-        <h3 id="compilation-analytics-title">Compilation analytics</h3>
-        <div class="analytics-grid">
-          <Metric
-            label="Binary inputs"
-            value={plan.qubo.num_variables}
-            note="Verified objective width"
-          />
-          <Metric
-            label="Circuit layers"
-            value={plan.circuit.p}
-            note="Generated plan · not executed"
-          />
-          <Metric
-            label="Logical depth"
-            value={plan.circuit.logical_depth}
-            note="Before transpilation · not measured"
-          />
-        </div>
-      </section>
       <section aria-labelledby="performance-title">
-        <h3 id="performance-title">Measured performance</h3>
-        <div class="analytics-grid performance-grid">
-          <Metric
-            label="Classical runtime"
-            value={currentHardwareJob?.classical
-              ? formatOptionalMs(currentHardwareJob.classical.elapsed_ms)
-              : 'Not run'}
-            note="Exact enumeration of the same canonical QUBO"
-          />
-          <Metric
-            label="Local angle training"
-            value={currentHardwareJob?.local_training_ms != null
-              ? formatOptionalMs(currentHardwareJob.local_training_ms)
-              : 'Not run'}
-            note="Local simulator · before physical sampling"
-          />
-          <Metric
-            label="QPU usage"
-            value={currentHardwareJob?.measurement?.quantum_seconds != null
-              ? `${currentHardwareJob.measurement.quantum_seconds} s`
-              : 'Not reported'}
-            note="Provider usage · excludes local training and queue"
-          />
-          <Metric
-            label="Optimality gap"
-            value={currentHardwareJob?.measurement?.optimality_gap ?? 'Not measured'}
-            note="Sampled canonical objective minus exact minimum"
-          />
-        </div>
-        <p class="timing-note">
-          The timings cover different work and do not establish a speedup. This is local angle
-          training followed by physical QPU sampling, rather than optimization on the QPU.
-        </p>
-      </section>
-      <section aria-labelledby="communication-title">
-        <h3 id="communication-title">Quantum communication timing</h3>
-        <p class="timing-note">
-          {currentHardwareJob
-            ? 'Submission and ready-result retrieval are measured when available. Queue, remote processing and full round trip remain unmeasured.'
-            : 'These placeholders are included in your downloaded test plan. Submit a hardware job to record submission and retrieval timings.'}
-        </p>
-        <div class="analytics-grid">
-          {#each communicationFields as field}
-            <Metric
-              label={field.label}
-              value={formatOptionalMs(communicationValue(field.key))}
-              note={field.note}
-            />
-          {/each}
-        </div>
-        <p class="timing-note">
-          Round-trip time already includes sending, remote waits and processing, and receiving. Do
-          not add those components to it again. Unknown timing stays unmeasured, not zero.
-        </p>
-      </section>
-      <details class="panel conversion-details">
-        <summary>Objective & circuit details</summary>
-        <div class="detail-section">
-          {#each analysis.diagnostics as diagnostic}
-            <p class="diagnostic-note"><strong>{diagnostic.code}</strong> {diagnostic.message}</p>
-          {/each}
-        </div>
-        {#if analysis.qubo}
-          <div class="detail-section">
-            <h3>Extracted objective</h3>
-            <p>
-              Original sense: {analysis.qubo.original_sense ?? 'minimize'} · Canonical solver sense: minimize
-              · Constant: {analysis.qubo.constant ?? 0}
-            </p>
-            <p>
-              Declared input order maps to canonical bit indices; names are not sorted
-              alphabetically.
-            </p>
-            <div class="coefficient-tables">
-              <div class="table-scroll">
-                <table>
-                  <caption>Linear coefficients</caption>
-                  <thead
-                    ><tr><th scope="col">Canonical bit</th><th scope="col">Coefficient</th></tr
-                    ></thead
-                  >
-                  <tbody>
-                    {#each analysis.qubo.linear as coefficient, index}<tr
-                        ><td>{index}</td><td>{coefficient}</td></tr
-                      >{/each}
-                  </tbody>
-                </table>
-              </div>
-              <div class="table-scroll">
-                <table>
-                  <caption>Pair coefficients</caption>
-                  <thead><tr><th scope="col">Bits</th><th scope="col">Coefficient</th></tr></thead>
-                  <tbody>
-                    {#each analysis.qubo.quadratic ?? [] as term}<tr
-                        ><td>{term.i}, {term.j}</td><td>{term.coefficient}</td></tr
-                      >
-                    {:else}<tr><td colspan="2">No pair terms</td></tr>{/each}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+        <h3 id="performance-title">Measured runtimes</h3>
+        {#if measuredRuntimes.length}
+          <div class="analytics-grid">
+            {#each measuredRuntimes as reading (reading.kind)}
+              <Metric
+                label={reading.label}
+                value={formatOptionalMs(reading.milliseconds)}
+                note={reading.kind === 'classical'
+                  ? 'Exact enumeration of the same objective'
+                  : 'Provider-reported usage · hardware sampling and overhead'}
+              />
+            {/each}
           </div>
+        {:else}
+          <p class="timing-note">
+            No runtimes yet. Preparing a plan does not execute a solver. Submit a hardware test to
+            collect measurements.
+          </p>
         {/if}
-        {#if analysis.circuit}
-          <details class="result-disclosure">
-            <summary>Generated circuit plan · not executed</summary>
-            <div class="detail-section">
-              <p>
-                {analysis.circuit.num_qubits} qubits · {analysis.circuit.p} layers · Logical depth {analysis
-                  .circuit.logical_depth}. Transpiled depth is unavailable.
-              </p>
-              <p>Parameter order: {analysis.circuit.parameters.join(', ')}</p>
-              <div class="table-scroll">
-                <table>
-                  <caption>Ordered gates</caption>
-                  <thead
-                    ><tr
-                      ><th scope="col">Gate</th><th scope="col">Qubits</th><th scope="col">Angle</th
-                      ></tr
-                    ></thead
-                  >
-                  <tbody>
-                    {#each analysis.circuit.gates as gate}<tr>
-                        <td>{gate.name}</td><td>{gate.qubits.join(', ')}</td>
-                        <td>{gate.angle ? formatAngle(gate.angle) : '—'}</td>
-                      </tr>{/each}
-                  </tbody>
-                </table>
-              </div>
-              <p>Global phase: {analysis.circuit.global_phase.map(formatAngle).join(' + ')}</p>
-            </div>
-          </details>
+        {#if currentHardwareJob?.measurement}
+          <p class="timing-note">
+            Best sample: {currentHardwareJob.measurement.best_bitstring} · Objective: {currentHardwareJob
+              .measurement.objective} · Gap from exact optimum: {currentHardwareJob.measurement
+              .optimality_gap}.
+          </p>
         {/if}
-
-        <details class="result-disclosure">
-          <summary>Raw analysis JSON</summary>
-          <pre class="code-block">{JSON.stringify(analysis, null, 2)}</pre>
-        </details>
-      </details>
+      </section>
+      {#if measuredRuntimes.length}
+        <Panel title="Runtime comparison" subtitle="Measured values · same objective">
+          <CompilerRuntimeChart rows={measuredRuntimes} />
+        </Panel>
+      {/if}
       <details class="panel conversion-details">
-        <summary>Execution readiness</summary>
+        <summary>Timing details & test settings</summary>
         <div class="detail-section">
-          {#if currentHardwareJob}
-            <p>
-              Recorded device: {currentHardwareJob.backend_name}. Maximum QPU usage: {currentHardwareJob.max_execution_seconds}
-              seconds. The plan JSON remains a nonexecuting artifact; download the QPU record above for
-              measured results.
-            </p>
-          {:else}
-            <ul class="blockers">
-              {#each plan.blockers as blocker}<li>{blocker}</li>{/each}
-            </ul>
-          {/if}
+          <dl class="test-summary">
+            {#if currentHardwareJob?.local_training_ms != null}<div>
+                <dt>Local angle training</dt>
+                <dd>{formatOptionalMs(currentHardwareJob.local_training_ms)}</dd>
+              </div>{/if}
+            {#if currentHardwareJob?.submission_ms != null}<div>
+                <dt>Send / submit</dt>
+                <dd>{formatOptionalMs(currentHardwareJob.submission_ms)}</dd>
+              </div>{/if}
+            {#if currentHardwareJob?.measurement?.retrieval_ms != null}<div>
+                <dt>Receive results</dt>
+                <dd>{formatOptionalMs(currentHardwareJob.measurement.retrieval_ms)}</dd>
+              </div>{/if}
+            <div>
+              <dt>Qubits</dt>
+              <dd>{resultQubo.num_variables}</dd>
+            </div>
+            <div>
+              <dt>Layers / shots / seed</dt>
+              <dd>
+                {currentHardwareJob?.local_training_config.p ?? resultConfig.p} / {currentHardwareJob?.shots ??
+                  resultConfig.shots} / {currentHardwareJob?.local_training_config.seed ??
+                  resultConfig.seed}
+              </dd>
+            </div>
+            {#if currentHardwareJob?.circuit_depth != null}<div>
+                <dt>Transpiled depth</dt>
+                <dd>{currentHardwareJob.circuit_depth}</dd>
+              </div>{/if}
+          </dl>
+          <p>
+            QAOA angles are trained locally before physical sampling. Full elapsed time, including
+            training, transpilation, queue and network waits, is not recorded; the bars do not
+            establish an end-to-end speedup.
+          </p>
         </div>
       </details>
+      {#if plan && analysis?.status === 'supported'}<details class="panel conversion-details">
+          <summary>Objective & circuit details</summary>
+          <div class="detail-section">
+            {#each analysis.diagnostics as diagnostic}
+              <p class="diagnostic-note"><strong>{diagnostic.code}</strong> {diagnostic.message}</p>
+            {/each}
+          </div>
+          {#if analysis.qubo}
+            <div class="detail-section">
+              <h3>Extracted objective</h3>
+              <p>
+                Original sense: {analysis.qubo.original_sense ?? 'minimize'} · Canonical solver sense:
+                minimize · Constant: {analysis.qubo.constant ?? 0}
+              </p>
+              <p>
+                Declared input order maps to canonical bit indices; names are not sorted
+                alphabetically.
+              </p>
+              <div class="coefficient-tables">
+                <div class="table-scroll">
+                  <table>
+                    <caption>Linear coefficients</caption>
+                    <thead
+                      ><tr><th scope="col">Canonical bit</th><th scope="col">Coefficient</th></tr
+                      ></thead
+                    >
+                    <tbody>
+                      {#each analysis.qubo.linear as coefficient, index}<tr
+                          ><td>{index}</td><td>{coefficient}</td></tr
+                        >{/each}
+                    </tbody>
+                  </table>
+                </div>
+                <div class="table-scroll">
+                  <table>
+                    <caption>Pair coefficients</caption>
+                    <thead><tr><th scope="col">Bits</th><th scope="col">Coefficient</th></tr></thead
+                    >
+                    <tbody>
+                      {#each analysis.qubo.quadratic ?? [] as term}<tr
+                          ><td>{term.i}, {term.j}</td><td>{term.coefficient}</td></tr
+                        >
+                      {:else}<tr><td colspan="2">No pair terms</td></tr>{/each}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          {/if}
+          {#if analysis.circuit}
+            <details class="result-disclosure">
+              <summary>Generated circuit plan · not executed</summary>
+              <div class="detail-section">
+                <p>
+                  {analysis.circuit.num_qubits} qubits · {analysis.circuit.p} layers · Logical depth {analysis
+                    .circuit.logical_depth}. Transpiled depth is unavailable.
+                </p>
+                <p>Parameter order: {analysis.circuit.parameters.join(', ')}</p>
+                <div class="table-scroll">
+                  <table>
+                    <caption>Ordered gates</caption>
+                    <thead
+                      ><tr
+                        ><th scope="col">Gate</th><th scope="col">Qubits</th><th scope="col"
+                          >Angle</th
+                        ></tr
+                      ></thead
+                    >
+                    <tbody>
+                      {#each analysis.circuit.gates as gate}<tr>
+                          <td>{gate.name}</td><td>{gate.qubits.join(', ')}</td>
+                          <td>{gate.angle ? formatAngle(gate.angle) : '—'}</td>
+                        </tr>{/each}
+                    </tbody>
+                  </table>
+                </div>
+                <p>Global phase: {analysis.circuit.global_phase.map(formatAngle).join(' + ')}</p>
+              </div>
+            </details>
+          {/if}
+
+          <details class="result-disclosure">
+            <summary>Raw analysis JSON</summary>
+            <pre class="code-block">{JSON.stringify(analysis, null, 2)}</pre>
+          </details>
+        </details>{/if}
     </div>
     <div class="step-actions">
-      <button class="button" disabled={busy} onclick={() => goToStep('test')}>Back to test</button>
+      {#if artifact}<button class="button" disabled={busy} onclick={() => goToStep('test')}
+          >Back to test</button
+        >{/if}
       <button class="button" disabled={busy} onclick={() => goToStep('input')}
         >Edit Python<Icon name="code" size={15} /></button
       >
@@ -998,7 +957,7 @@
   }
   .analytics-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
   }
   .timing-note {
@@ -1336,7 +1295,6 @@
     gap: 10px;
     margin-top: 16px;
   }
-  .blockers,
   .diagnostics {
     list-style: disc;
     padding-left: 18px;
