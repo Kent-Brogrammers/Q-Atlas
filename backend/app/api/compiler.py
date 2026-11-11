@@ -5,6 +5,7 @@ import os
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
+from app.api.compiler_hardware import router as hardware_router
 from app.api.errors import error_response, not_implemented
 from app.compiler.analysis import analyze_source
 from app.compiler.generation import generate_source
@@ -22,6 +23,7 @@ from app.schemas.contracts import (
 )
 
 router = APIRouter(prefix="/compiler", tags=["compiler"])
+router.include_router(hardware_router)
 
 
 @router.post("/analyze", response_model=CompilerAnalyzeResult)

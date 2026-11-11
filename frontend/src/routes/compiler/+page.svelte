@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy, tick } from 'svelte';
+  import { onDestroy, onMount, tick } from 'svelte';
   import Icon from '#lib/components/Icon.svelte';
   import Panel from '#lib/components/Panel.svelte';
   import Metric from '#lib/components/Metric.svelte';
@@ -7,7 +7,9 @@
   import type {
     CompilerAnalyzeResult,
     GeneratedPythonArtifact,
-    CompilerBenchmarkPlan
+    CompilerBenchmarkPlan,
+    CompilerHardwareJob,
+    CompilerHardwareDevices
   } from '../../types/index.ts';
   import {
     DEFAULT_SCRIPT,
@@ -30,12 +32,12 @@
     {
       key: 'submission_ms',
       label: 'Send / submit',
-      note: 'Request preparation to provider job acknowledgement'
+      note: 'Sampler submission to provider job acknowledgement'
     },
     {
       key: 'result_retrieval_ms',
       label: 'Receive results',
-      note: 'Ready-result download and decoding'
+      note: 'Ready-result download'
     },
     {
       key: 'queue_ms',
@@ -63,6 +65,13 @@
   let analysis = $state<CompilerAnalyzeResult>();
   let artifact = $state<GeneratedPythonArtifact>();
   let plan = $state<CompilerBenchmarkPlan>();
+  let hardwareDevices = $state<CompilerHardwareDevices>();
+  let hardwareBackend = $state('');
+  let hardwareConfirmed = $state(false);
+  let hardwareBusy = $state(false);
+  let hardwareJob = $state<CompilerHardwareJob>();
+  let hardwareRequestId = $state('');
+  let hardwareUrl = $state('');
   let error = $state('');
   let loading = $state<'generate' | 'plan' | null>(null);
   let reading = $state(false);
@@ -72,8 +81,104 @@
   let revision = 0;
   let readSequence = 0;
   let active = true;
-  const busy = $derived(loading !== null || reading);
+  const busy = $derived(loading !== null || reading || hardwareBusy);
   const stepIndex = $derived(steps.findIndex((item) => item.id === step));
+  const currentHardwareJob = $derived(
+    hardwareJob?.problem_id === plan?.problem_id ? hardwareJob : undefined
+  );
+  function communicationValue(key: (typeof communicationFields)[number]['key']) {
+    if (currentHardwareJob) {
+      if (key === 'submission_ms') return currentHardwareJob.submission_ms;
+      if (key === 'result_retrieval_ms') return currentHardwareJob.measurement?.retrieval_ms;
+      return null;
+    }
+    return plan?.communication_timing?.[key];
+  }
+  onMount(() => {
+    try {
+      hardwareRequestId = localStorage.getItem('qatlas-compiler-qpu-request') ?? '';
+    } catch {
+      /* Storage may be unavailable. */
+    }
+  });
+  $effect(() => {
+    hardwareUrl = '';
+    if (!hardwareJob) return;
+    const url = URL.createObjectURL(
+      new Blob([JSON.stringify(hardwareJob, null, 2)], { type: 'application/json' })
+    );
+    hardwareUrl = url;
+    return () => URL.revokeObjectURL(url);
+  });
+  async function hardwareAction(action: 'devices' | 'submit' | 'refresh' | 'cancel') {
+    if (busy) return;
+    if (
+      action === 'submit' &&
+      (!hardwareConfirmed || !hardwareBackend || layers !== 1 || !artifact)
+    )
+      return;
+    hardwareBusy = true;
+    error = '';
+    try {
+      if (action === 'devices') {
+        const devices = await api.compilerHardwareDevices();
+        if (active) hardwareDevices = devices;
+      } else if (action === 'submit') {
+        const prepared =
+          plan ??
+          (await api.prepareCompilerBenchmark({
+            source,
+            config: { p: 1, shots: 128, max_iterations: 20, timeout_seconds: 30 }
+          }));
+        if (!active) return;
+        plan = prepared;
+        if (!hardwareRequestId) {
+          hardwareRequestId = crypto.randomUUID();
+          localStorage.setItem('qatlas-compiler-qpu-request', hardwareRequestId);
+        }
+        const job = await api.submitCompilerHardware({
+          source,
+          backend_name: hardwareBackend,
+          request_id: hardwareRequestId,
+          confirmed: true,
+          shots: 128,
+          max_execution_seconds: 10
+        });
+        if (active) {
+          hardwareJob = job;
+          hardwareConfirmed = false;
+          await goToStep('results');
+        }
+      } else {
+        if (!hardwareRequestId) return;
+        const job =
+          action === 'cancel'
+            ? await api.cancelCompilerHardwareJob(hardwareRequestId)
+            : await api.compilerHardwareJob(hardwareRequestId);
+        if (active) hardwareJob = job;
+      }
+    } catch (caught) {
+      if (active)
+        error =
+          caught instanceof Error
+            ? caught.message
+            : 'Hardware request failed. Recover the recorded request before submitting again.';
+    } finally {
+      if (active) hardwareBusy = false;
+    }
+  }
+  function newHardwareTest() {
+    if (
+      busy ||
+      !hardwareJob ||
+      !['DONE', 'CANCELLED', 'ERROR', 'FAILED_BEFORE_SUBMISSION'].includes(hardwareJob.status)
+    )
+      return;
+    localStorage.removeItem('qatlas-compiler-qpu-request');
+    hardwareRequestId = '';
+    hardwareJob = undefined;
+    hardwareConfirmed = false;
+  }
 
   function canVisit(target: Step) {
     return target === 'input' || (target === 'results' ? !!plan : !!artifact);
@@ -113,6 +218,7 @@
   });
 
   function invalidate() {
+    hardwareConfirmed = false;
     step = 'input';
     revision++;
     analysis = undefined;
@@ -213,9 +319,67 @@
   <Icon name="info" size={17} />
   <span
     ><strong>Source conversion available.</strong> Your Python is parsed and verified without execution.
-    Quantum execution stays disabled.</span
+    The Test step can submit one confirmed IBM QPU sampling job.</span
   >
 </p>
+
+{#if hardwareRequestId}
+  <Panel title="IBM QPU job tracker" subtitle="Hardware sampling after local QAOA angle training">
+    <div class="output-body">
+      <p>
+        Request {hardwareRequestId} · {hardwareJob?.status ?? 'Recover recorded request status'}
+      </p>
+      {#if hardwareJob}<p>
+          Device: {hardwareJob.backend_name} · Provider job: {hardwareJob.job_id ??
+            'Not acknowledged yet'} · Problem: {hardwareJob.problem_id}
+        </p>{/if}
+      {#if hardwareJob?.status === 'SUBMISSION_UNKNOWN'}<p role="alert">
+          Submission acknowledgement was lost. Do not create another job. Recover the tagged request
+          in IBM's dashboard.
+        </p>{/if}
+      {#if hardwareJob?.measurement}
+        <p role="status">
+          Physical QPU result received · simulated: false. Bitstring {hardwareJob.measurement
+            .best_bitstring}, canonical objective {hardwareJob.measurement.objective}, optimality
+          gap {hardwareJob.measurement.optimality_gap}.
+        </p>
+        <p>
+          Actual shots: {hardwareJob.measurement.shots} · Provider-reported QPU usage: {hardwareJob
+            .measurement.quantum_seconds == null
+            ? 'Not available'
+            : hardwareJob.measurement.quantum_seconds + ' seconds'}
+        </p>
+        <p>
+          Send: {formatOptionalMs(hardwareJob.submission_ms)} · Receive: {formatOptionalMs(
+            hardwareJob.measurement.retrieval_ms
+          )}
+        </p>
+      {/if}
+      <div class="comparison-actions">
+        <button class="button" disabled={busy} onclick={() => hardwareAction('refresh')}
+          >Check hardware job</button
+        >
+        {#if hardwareJob?.job_id && !hardwareJob.measurement}<button
+            class="button"
+            disabled={busy}
+            onclick={() => hardwareAction('cancel')}>Cancel hardware job</button
+          >{/if}
+        {#if hardwareUrl}<a class="button" href={hardwareUrl} download="q_atlas_qpu_job.json"
+            >Download QPU record</a
+          >{/if}
+        {#if hardwareJob && ['DONE', 'CANCELLED', 'ERROR', 'FAILED_BEFORE_SUBMISSION'].includes(hardwareJob.status)}<button
+            class="button"
+            disabled={busy}
+            onclick={newHardwareTest}>Start a new hardware test</button
+          >{/if}
+      </div>
+      <p class="field-note">
+        This tracker retains the job's own problem ID even if you edit the source. Checking or
+        recovering never submits another job.
+      </p>
+    </div>
+  </Panel>
+{/if}
 
 <nav class="workflow-nav" aria-label="Compiler workflow">
   <ol>
@@ -464,7 +628,7 @@
           </div>
           <div>
             <dt>Comparison</dt>
-            <dd>Classical optimization and local QAOA</dd>
+            <dd>Exact classical optimum and QPU samples</dd>
           </div>
           <div>
             <dt>Circuit layers</dt>
@@ -472,21 +636,52 @@
           </div>
           <div>
             <dt>Execution</dt>
-            <dd>Disabled · preparation only</dd>
+            <dd>IBM QPU · confirmed submission only</dd>
           </div>
         </dl>
       </div>
       <div class="output-placeholder">
         <Icon name="info" size={24} />
         <div>
-          <h3>Prepare now, run when authorized</h3>
+          <h3>Submit one physical quantum job</h3>
           <p>
-            This step validates the comparison settings and creates a downloadable plan. It runs
-            neither solver and uses no quantum time.
+            Angles are trained locally, then one bound circuit is sampled on your selected IBM QPU.
+            Initial tests allow three inputs, one layer, 128 shots and a 10-second QPU cap. Check
+            your actual remaining IBM allowance before submitting.
           </p>
           <div class="comparison-actions">
-            <button class="button" disabled>Run comparison — execution disabled</button>
+            <button class="button" disabled={busy} onclick={() => hardwareAction('devices')}
+              >Load IBM devices</button
+            >
           </div>
+          {#if hardwareDevices}
+            <p class="field-note">
+              Compiler reservation: {hardwareDevices.reserved_seconds} / {hardwareDevices.budget_seconds}
+              seconds. This is not provider remaining quota.
+            </p>
+            <label for="hardware-backend">IBM device</label>
+            <select id="hardware-backend" bind:value={hardwareBackend} disabled={busy}>
+              <option value="">Choose a device</option
+              >{#each hardwareDevices.backends as name}<option value={name}>{name}</option>{/each}
+            </select>
+            <label class="hardware-confirm"
+              ><input type="checkbox" bind:checked={hardwareConfirmed} disabled={busy} />I checked
+              IBM's remaining allowance and authorize one job with a 10-second QPU cap.</label
+            >
+            <button
+              class="button primary"
+              disabled={busy ||
+                !hardwareConfirmed ||
+                !hardwareBackend ||
+                layers !== 1 ||
+                (analysis?.qubo?.num_variables ?? 99) > 3}
+              onclick={() => hardwareAction('submit')}
+              >{hardwareBusy ? 'Working…' : 'Submit one IBM QPU job'}</button
+            >
+            {#if layers !== 1 || (analysis?.qubo?.num_variables ?? 99) > 3}<p class="field-note">
+                Use one layer and at most three binary inputs for this initial test.
+              </p>{/if}
+          {/if}
         </div>
       </div>
     </Panel>
@@ -508,7 +703,12 @@
     </div>
   {:else if step === 'results' && plan && analysis?.status === 'supported'}
     <div class="analytics-workspace">
-      <Panel title="Test status" subtitle="Comparison prepared · not executed">
+      <Panel
+        title="Test status"
+        subtitle={currentHardwareJob
+          ? `IBM QPU · ${currentHardwareJob.status}`
+          : 'Comparison prepared · not executed'}
+      >
         {#snippet toolbar()}
           {#if planUrl}<a class="button" href={planUrl} download="q_atlas_benchmark_plan.json"
               >Download test plan<Icon name="download" size={15} /></a
@@ -516,13 +716,23 @@
         {/snippet}
         <div class="output-body">
           <p role="status">
-            Your comparison plan is ready. No script or solver has been executed, so measured
-            performance results are not available yet.
+            {#if currentHardwareJob}
+              The hardware request is recorded above. Check its status manually to retrieve results.
+              QAOA angles are trained locally; final sampling uses the selected physical QPU. Your
+              surrounding Python application is not executed.
+            {:else}
+              Your comparison plan is ready. No script or solver has been executed, so measured
+              performance results are not available yet.
+            {/if}
           </p>
           <dl class="test-summary">
             <div>
-              <dt>Planned layers / shots / seed</dt>
-              <dd>{plan.config.p} / {plan.config.shots} / {plan.config.seed}</dd>
+              <dt>{currentHardwareJob ? 'Hardware' : 'Planned'} layers / shots / seed</dt>
+              <dd>
+                {currentHardwareJob?.local_training_config.p ?? plan.config.p} / {currentHardwareJob?.shots ??
+                  plan.config.shots} / {currentHardwareJob?.local_training_config.seed ??
+                  plan.config.seed}
+              </dd>
             </div>
             <div>
               <dt>Problem ID</dt>
@@ -556,28 +766,48 @@
         <div class="analytics-grid performance-grid">
           <Metric
             label="Classical runtime"
-            value="Not run"
-            note="No classical measurement available"
+            value={currentHardwareJob?.classical
+              ? formatOptionalMs(currentHardwareJob.classical.elapsed_ms)
+              : 'Not run'}
+            note="Exact enumeration of the same canonical QUBO"
           />
-          <Metric label="QAOA runtime" value="Not run" note="No quantum measurement available" />
           <Metric
-            label="Solution quality"
-            value="Not measured"
-            note="Requires an executed comparison"
+            label="Local angle training"
+            value={currentHardwareJob?.local_training_ms != null
+              ? formatOptionalMs(currentHardwareJob.local_training_ms)
+              : 'Not run'}
+            note="Local simulator · before physical sampling"
+          />
+          <Metric
+            label="QPU usage"
+            value={currentHardwareJob?.measurement?.quantum_seconds != null
+              ? `${currentHardwareJob.measurement.quantum_seconds} s`
+              : 'Not reported'}
+            note="Provider usage · excludes local training and queue"
+          />
+          <Metric
+            label="Optimality gap"
+            value={currentHardwareJob?.measurement?.optimality_gap ?? 'Not measured'}
+            note="Sampled canonical objective minus exact minimum"
           />
         </div>
+        <p class="timing-note">
+          The timings cover different work and do not establish a speedup. This is local angle
+          training followed by physical QPU sampling, rather than optimization on the QPU.
+        </p>
       </section>
       <section aria-labelledby="communication-title">
         <h3 id="communication-title">Quantum communication timing</h3>
         <p class="timing-note">
-          Provider connection pending. These placeholders are included in your downloaded test plan.
-          Actual timings need to be recorded when provider instrumentation is connected.
+          {currentHardwareJob
+            ? 'Submission and ready-result retrieval are measured when available. Queue, remote processing and full round trip remain unmeasured.'
+            : 'These placeholders are included in your downloaded test plan. Submit a hardware job to record submission and retrieval timings.'}
         </p>
         <div class="analytics-grid">
           {#each communicationFields as field}
             <Metric
               label={field.label}
-              value={formatOptionalMs(plan.communication_timing?.[field.key])}
+              value={formatOptionalMs(communicationValue(field.key))}
               note={field.note}
             />
           {/each}
@@ -674,9 +904,17 @@
       <details class="panel conversion-details">
         <summary>Execution readiness</summary>
         <div class="detail-section">
-          <ul class="blockers">
-            {#each plan.blockers as blocker}<li>{blocker}</li>{/each}
-          </ul>
+          {#if currentHardwareJob}
+            <p>
+              Recorded device: {currentHardwareJob.backend_name}. Maximum QPU usage: {currentHardwareJob.max_execution_seconds}
+              seconds. The plan JSON remains a nonexecuting artifact; download the QPU record above for
+              measured results.
+            </p>
+          {:else}
+            <ul class="blockers">
+              {#each plan.blockers as blocker}<li>{blocker}</li>{/each}
+            </ul>
+          {/if}
         </div>
       </details>
     </div>
@@ -847,6 +1085,16 @@
     font-size: 12px;
     margin-bottom: 7px;
     color: var(--muted);
+  }
+  .hardware-confirm {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    line-height: 1.6;
+    margin: 14px 0;
+  }
+  .output-body p {
+    overflow-wrap: anywhere;
   }
   select {
     display: block;
