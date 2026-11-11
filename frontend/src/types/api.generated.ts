@@ -21,6 +21,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/compiler/hardware/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Devices */
+        get: operations["devices_api_compiler_hardware_devices_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/compiler/hardware/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit */
+        post: operations["submit_api_compiler_hardware_submit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/compiler/hardware/jobs/{request_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status */
+        get: operations["status_api_compiler_hardware_jobs__request_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/compiler/hardware/jobs/{request_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel */
+        post: operations["cancel_api_compiler_hardware_jobs__request_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/compiler/analyze": {
         parameters: {
             query?: never;
@@ -373,6 +441,107 @@ export interface components {
             qubo?: components["schemas"]["QUBO"] | null;
             circuit?: components["schemas"]["CircuitPreview"] | null;
             artifact?: components["schemas"]["GeneratedPythonArtifact"] | null;
+        };
+        /** CompilerHardwareDevices */
+        CompilerHardwareDevices: {
+            /** Backends */
+            backends: string[];
+            /** Reserved Seconds */
+            reserved_seconds: number;
+            /** Budget Seconds */
+            budget_seconds: number;
+            /**
+             * Message
+             * @default Local reservation cap, not your provider's remaining allowance.
+             */
+            message?: string;
+        };
+        /** CompilerHardwareJob */
+        CompilerHardwareJob: {
+            /** Request Id */
+            request_id: string;
+            /** Status */
+            status: string;
+            /** Backend Name */
+            backend_name: string;
+            /** Job Id */
+            job_id?: string | null;
+            /** Problem Id */
+            problem_id: string;
+            qubo: components["schemas"]["QUBO"];
+            local_training_config: components["schemas"]["QAOAConfig"];
+            /** Shots */
+            shots: number;
+            /** Max Execution Seconds */
+            max_execution_seconds: number;
+            classical?: components["schemas"]["SolverResult"] | null;
+            /** Circuit Depth */
+            circuit_depth?: number | null;
+            /** Angles */
+            angles?: number[] | null;
+            /** Local Training Ms */
+            local_training_ms?: number | null;
+            /** Submission Ms */
+            submission_ms?: number | null;
+            measurement?: components["schemas"]["CompilerHardwareMeasurement"] | null;
+        };
+        /** CompilerHardwareMeasurement */
+        CompilerHardwareMeasurement: {
+            /**
+             * Simulated
+             * @default false
+             * @constant
+             */
+            simulated?: false;
+            /**
+             * Method
+             * @default local_angle_training_then_qpu_sampling
+             * @constant
+             */
+            method?: "local_angle_training_then_qpu_sampling";
+            /** Best Bitstring */
+            best_bitstring: string;
+            /** Objective */
+            objective: number;
+            /** Optimality Gap */
+            optimality_gap: number;
+            /** Shots */
+            shots: number;
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /** Quantum Seconds */
+            quantum_seconds?: number | null;
+            /** Retrieval Ms */
+            retrieval_ms: number;
+        };
+        /** CompilerHardwareRequest */
+        CompilerHardwareRequest: {
+            /** Source */
+            source: string;
+            /** Backend Name */
+            backend_name: string;
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /**
+             * Confirmed
+             * @constant
+             */
+            confirmed: true;
+            /**
+             * Shots
+             * @default 128
+             */
+            shots?: number;
+            /**
+             * Max Execution Seconds
+             * @default 10
+             */
+            max_execution_seconds?: number;
         };
         /** Diagnostic */
         Diagnostic: {
@@ -1299,6 +1468,274 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+            /** @description Route not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method not allowed */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Feature not implemented */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    devices_api_compiler_hardware_devices_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompilerHardwareDevices"];
+                };
+            };
+            /** @description Route not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method not allowed */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Feature not implemented */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    submit_api_compiler_hardware_submit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompilerHardwareRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompilerHardwareJob"];
+                };
+            };
+            /** @description Route not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method not allowed */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Feature not implemented */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    status_api_compiler_hardware_jobs__request_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompilerHardwareJob"];
+                };
+            };
+            /** @description Route not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method not allowed */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Feature not implemented */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    cancel_api_compiler_hardware_jobs__request_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompilerHardwareJob"];
                 };
             };
             /** @description Route not found */

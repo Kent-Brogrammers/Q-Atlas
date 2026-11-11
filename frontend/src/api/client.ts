@@ -1,4 +1,7 @@
 import type {
+  CompilerHardwareRequest,
+  CompilerHardwareJob,
+  CompilerHardwareDevices,
   CompilerGenerateRequest,
   CompilerGenerateResult,
   CompilerBenchmarkPlan,
@@ -102,6 +105,13 @@ export function createApiClient({
     return request<BenchmarkResults[E]>(endpoint.slice('/api'.length), body, signal);
   }
   return {
+    compilerHardwareDevices: () => request<CompilerHardwareDevices>('/compiler/hardware/devices'),
+    submitCompilerHardware: (body: CompilerHardwareRequest) =>
+      request<CompilerHardwareJob>('/compiler/hardware/submit', body),
+    compilerHardwareJob: (id: string) =>
+      request<CompilerHardwareJob>(`/compiler/hardware/jobs/${encodeURIComponent(id)}`),
+    cancelCompilerHardwareJob: (id: string) =>
+      request<CompilerHardwareJob>(`/compiler/hardware/jobs/${encodeURIComponent(id)}/cancel`, {}),
     health: (signal?: AbortSignal) => request<HealthResponse>('/health', undefined, signal),
     analyze: (body: CompilerAnalyzeRequest, signal?: AbortSignal) =>
       request<CompilerAnalyzeResult>('/compiler/analyze', body, signal),

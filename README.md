@@ -3,7 +3,9 @@
 For the limited quantum-testing allowance, use the
 [Qiskit connection setup guide](docs/QUANTUM_CONNECTION_SETUP.md). SDK installation
 and the default readiness check submit no jobs; provider authentication/device listing
-is a separate operator action. The existing compiler execution path remains local Aer.
+is a separate operator action. The compiler Test step now offers
+[one explicitly confirmed IBM QPU job](docs/COMPILER_IBM_HARDWARE.md), using local
+angle training followed by physical sampling.
 
 Q-Atlas is a five-developer quantum computing hackathon project for reproducible,
 scientifically honest comparisons with classical methods. It combines a restricted
@@ -20,7 +22,9 @@ Python-to-QUBO analysis, symbolic QAOA circuit previews, and downloadable Qiskit
 builder code work. Compiler benchmarking consumes the shared runner entrypoints,
 which now implement classical enumeration and local Aer QAOA. Compiler benchmark
 requests default to HTTP 501 until the server explicitly enables local execution
-with `QATLAS_ENABLE_COMPILER_AER=1`; the compiler UI still only converts and plans.
+with `QATLAS_ENABLE_COMPILER_AER=1`. The compiler UI separately supports an explicit
+IBM device selection and one bounded physical sampling job; that flow does not
+require the local Aer endpoint flag.
 The optimization route at `POST /api/optimization/run` accepts a graph or canonical
 QUBO and returns an exact classical baseline and local Aer QAOA comparison. It records
 the sampled assignment, objective gap, circuit metrics, timing and provenance in
@@ -61,8 +65,9 @@ are arbitrary, named scalar inputs need no indexing, and width is inferred witho
 The page also offers [six full-program examples](examples/compiler/programs/README.md),
 three [generated output scripts](examples/compiler/programs/README.md#generated-output-files),
 and advanced conversion details plus nonexecuting comparison planning.
-Local numeric weight vectors are supported inside objectives. Quantum/script execution
-stays disabled in the compiler page; see [benchmark planning](docs/COMPILER_BENCHMARK_PLAN.md).
+Local numeric weight vectors are supported inside objectives. Test planning remains
+nonexecuting; the separate [hardware action](docs/COMPILER_IBM_HARDWARE.md) submits
+one confirmed IBM job. User-submitted Python itself is never executed.
 See [the manual validation record](docs/COMPILER_MANUAL_CHECKS.md) and
 [Developer 5's integration handoff](docs/DEVELOPER_5_HANDOFF.md).
 
@@ -163,7 +168,9 @@ Open <http://127.0.0.1:5173>. Backend docs are at <http://127.0.0.1:8000/docs>;
 health is <http://127.0.0.1:8000/api/health>. Start either server independently.
 The frontend serves `/`, `/compiler`, `/neutrinos`, `/materials`, `/optimization`, and
 `/search`. The Svelte compiler sends static generation/planning requests; conversion
-does not execute user code or run a benchmark. The Neutrino Lab runs vacuum, matter,
+does not execute user code or run a benchmark. Its Test step can explicitly submit
+and retrieve a bounded IBM QPU sample after device selection and authorization.
+The Neutrino Lab runs vacuum, matter,
 layered propagation, and density sweeps through its own API using normalized inputs;
 see [the experiment guide](docs/NEUTRINOS.md). With the quantum extra installed, the
 Materials page submits configurable requests and displays returned simulation results,
@@ -252,5 +259,6 @@ helpers with all owners. No second QAOA engine belongs in the compiler.
 - Search owner must specify oracle construction cost and classical query assumptions.
 - Materials enforces a wall-clock budget using a disposable simulation process. Other
   owners must enforce their runners' budgets; field validation alone cannot stop native work.
-- The initial API is synchronous and simulator-only. Any async jobs or hardware contracts
-  require coordinated changes, rather than silently extending current semantics.
+- Shared benchmark endpoints retain synchronous simulator semantics. The compiler's
+  separate hardware contracts support explicit single-job submission and retrieval;
+  further shared hardware integration requires owner coordination.
