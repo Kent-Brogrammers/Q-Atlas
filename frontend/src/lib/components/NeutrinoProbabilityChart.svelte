@@ -1,222 +1,267 @@
 <script lang="ts">
   import type { NeutrinoResponse } from '../../types/index.ts';
-  import { curveValues, flavorChannels } from '../neutrinos/live.ts';
-  import { formatValue, probabilityPath } from '../neutrinos/presentation.ts';
-
-  let { result = null }: { result?: NeutrinoResponse | null } = $props();
-  let extent = $derived(result?.coordinates.at(-1) ?? 0);
-  let axis = $derived(
-    result?.axis === 'potential'
-      ? 'Matter potential (normalized)'
-      : 'Propagation distance (normalized)'
+  import { formatValue as fmt } from '../neutrinos/presentation.ts';
+  let {
+    result,
+    index = $bindable(),
+    advanced = false
+  }: { result: NeutrinoResponse; index: number; advanced?: boolean } = $props();
+  let width = $state(660),
+    hover = $state<number | null>(null);
+  const channels = [
+    { key: 'electron', name: 'Electron flavor', color: '#78abff' },
+    { key: 'other', name: 'Other flavor', color: '#4ce0c2' }
+  ] as const;
+  const methods = ['ideal', 'numerical', 'analytical', 'measured'] as const;
+  type Method = (typeof methods)[number];
+  let uncertainty = $state(false);
+  let visible = $state({ ideal: true, numerical: false, analytical: false, measured: true });
+  const labels = {
+    ideal: 'Ideal Aer',
+    numerical: 'SciPy',
+    analytical: 'Analytical',
+    measured: 'Shots'
+  };
+  let extent = $derived(result.coordinates.at(-1) ?? 0);
+  let axis = $derived(result.axis === 'distance' ? 'Travel distance' : 'Matter potential');
+  let layers = $derived(result.results.at(-1)!.configuration.layers);
+  let boundary = $derived(
+    result.axis === 'distance' && layers.length === 2 ? layers[0].distance : null
   );
+  let marker = $derived(result.axis === 'potential' ? result.resonance_potential : null);
+  let end = $derived(Math.max(width, 190) - 18);
+  const x = (v: number) => 40 + (v / (extent || 1)) * (end - 40),
+    y = (v: number) => 224 - 184 * v;
+  function path(method: Method, key: 'electron' | 'other') {
+    let connected = false;
+    return result.results
+      .map((r, i) => {
+        const p = r[method]?.[key];
+        if (p == null) {
+          connected = false;
+          return '';
+        }
+        const cmd = connected ? 'L' : 'M';
+        connected = true;
+        return cmd + x(result.coordinates[i]) + ',' + y(p);
+      })
+      .join(' ');
+  }
+  function target(e: PointerEvent) {
+    const box = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const fraction = (e.clientX - box.left - 40) / (end - 40);
+    return Math.max(
+      0,
+      Math.min(
+        result.coordinates.length - 1,
+        Math.round(fraction * (result.coordinates.length - 1))
+      )
+    );
+  }
+  function keypress(e: KeyboardEvent) {
+    const n = result.coordinates.length - 1;
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+    e.preventDefault();
+    index =
+      e.key === 'Home'
+        ? 0
+        : e.key === 'End'
+          ? n
+          : Math.max(0, Math.min(n, index + (e.key === 'ArrowLeft' ? -1 : 1)));
+  }
 </script>
 
-<div class="probability-chart">
-  <div class="chart-controls">
-    <span class="chart-state">{result ? 'Qiskit Aer · simulated' : 'No experiment run yet'}</span>
-  </div>
-  <figure>
-    <div class="plot-region">
-      <!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard users need to scroll the plot.) -->
-      <div class="plot-scroll" tabindex="0" role="region" aria-label="Flavor probability plot">
-        <svg
-          viewBox="0 0 860 330"
-          role="img"
-          aria-label={`Flavor probabilities versus ${axis.toLowerCase()}`}
-        >
-          <title>Flavor probabilities versus {axis.toLowerCase()}</title>
-          {#each [0, 0.25, 0.5, 0.75, 1] as value}
-            <line
-              x1="64"
-              x2="818"
-              y1={272 - value * 230}
-              y2={272 - value * 230}
-              stroke="var(--border)"
-            />
-            <text x="49" y={276 - value * 230} text-anchor="end">{value}</text>
-          {/each}
-          <text x="64" y="22" class="axis-title">Flavor probability</text>
-          <line x1="64" x2="64" y1="42" y2="272" stroke="var(--border)" />
-          <line x1="64" x2="818" y1="272" y2="272" stroke="var(--border)" />
-          {#each extent > 0 ? [0, 0.25, 0.5, 0.75, 1] : [0] as fraction}
-            <text x={64 + fraction * 754} y="295" text-anchor="middle"
-              >{formatValue(fraction * extent, 2)}</text
-            >
-          {/each}
-          <text x="818" y="320" text-anchor="end" class="axis-title">{axis}</text>
-          {#if result}
-            {#each flavorChannels as flavor}
-              <path
-                d={probabilityPath(
-                  result.coordinates,
-                  curveValues(result, flavor.key, 'numerical'),
-                  extent
-                )}
-                stroke={flavor.color}
-                stroke-width="3"
-                fill="none"><title>{flavor.label} · SciPy reference</title></path
-              >
-              <path
-                d={probabilityPath(
-                  result.coordinates,
-                  curveValues(result, flavor.key, 'ideal'),
-                  extent
-                )}
-                stroke={flavor.color}
-                stroke-width="2"
-                stroke-dasharray="6 4"
-                fill="none"><title>{flavor.label} · ideal Qiskit</title></path
-              >
-              {#each curveValues(result, flavor.key, 'measured') as probability, i}
-                <circle
-                  cx={64 + (result.coordinates[i] / (extent || 1)) * 754}
-                  cy={272 - probability * 230}
-                  r="3"
-                  fill={flavor.color}
-                  ><title>{flavor.label} · shots {formatValue(probability)}</title></circle
-                >
-              {/each}
-            {/each}
-          {/if}
-        </svg>
-      </div>
-      {#if !result}<div class="plot-empty">
-          <h3>Run an experiment</h3>
-          <p>
-            Choose a configuration, then select Run experiment to calculate real simulation results.
-          </p>
-        </div>{/if}
-    </div>
-    <figcaption>
-      <div class="flavor-legend">
-        {#each flavorChannels as flavor}<span
-            ><i style:background={flavor.color}></i>{flavor.label}</span
-          >{/each}
-      </div>
-      <p>Solid: SciPy reference · Dashed: ideal Qiskit · Dots: finite-shot measurements</p>
-      <p class="mobile-scroll-note">Scroll horizontally to inspect the full plot.</p>
-    </figcaption>
-  </figure>
+<div class="legend">
+  {#each channels as c}<span><i style:background={c.color}></i>{c.name}</span>{/each}
 </div>
+<div
+  class="plot"
+  bind:clientWidth={width}
+  role="slider"
+  tabindex="0"
+  aria-label="Inspect graph point"
+  aria-valuemin={0}
+  aria-valuemax={result.results.length - 1}
+  aria-valuenow={index}
+  aria-valuetext={axis + ' ' + fmt(result.coordinates[index])}
+  onkeydown={keypress}
+  onpointermove={(e) => (hover = target(e))}
+  onpointerleave={() => (hover = null)}
+  onpointerdown={(e) => (index = target(e))}
+>
+  <svg
+    viewBox={'0 0 ' + Math.max(width, 190) + ' 268'}
+    aria-label="Flavor probabilities"
+    role="img"
+  >
+    <title>Probability versus {axis.toLowerCase()}</title>
+    {#if boundary !== null}<rect
+        x={x(boundary)}
+        y="34"
+        width={end - x(boundary)}
+        height="190"
+        fill="#eab96b"
+        opacity=".065"
+      /><text x={x(boundary) - 6} y="22" text-anchor="end">Layer 1</text><text
+        x={x(boundary) + 6}
+        y="22">Layer 2</text
+      >{/if}
+    {#each [0, 0.25, 0.5, 0.75, 1] as p}<line
+        x1="40"
+        x2={end}
+        y1={y(p)}
+        y2={y(p)}
+        stroke="#314259"
+      /><text x="34" y={y(p) + 4} text-anchor="end">{p * 100}%</text>{/each}
+    {#each extent ? [0, 0.25, 0.5, 0.75, 1] : [0] as p}<text
+        x={x(extent * p)}
+        y="246"
+        text-anchor="middle">{fmt(extent * p, 2)}</text
+      >{/each}
+    {#if marker != null && marker <= extent}<text
+        x={Math.max(85, Math.min(end - 42, x(marker)))}
+        y="22"
+        text-anchor="middle"
+        class="amber">Resonance</text
+      >{/if}
+    {#each [boundary, marker] as v}{#if v != null && v <= extent}<line
+          x1={x(v)}
+          x2={x(v)}
+          y1="31"
+          y2="224"
+          stroke="#efbd73"
+          stroke-dasharray="3 4"
+        />{/if}{/each}
+    {#each channels as c}
+      {#each methods as m}{#if advanced ? visible[m] : m === 'ideal' || m === 'measured'}
+          {#if m === 'measured'}{#each result.results as r, i}
+              {@const p = r.ideal[c.key]}
+              {@const sd = Math.sqrt(Math.max(0, p * (1 - p)) / r.shots)}
+              {#if advanced && uncertainty}<line
+                  x1={x(result.coordinates[i])}
+                  x2={x(result.coordinates[i])}
+                  y1={y(Math.min(1, p + sd))}
+                  y2={y(Math.max(0, p - sd))}
+                  stroke={c.color}
+                  stroke-width="2"
+                />{/if}
+              <circle
+                cx={x(result.coordinates[i])}
+                cy={y(r.measured[c.key])}
+                r="2.4"
+                fill={c.color}
+              />{/each}
+          {:else}<path
+              d={path(m, c.key)}
+              stroke={c.color}
+              stroke-width={m === 'ideal' ? 2 : 3}
+              stroke-dasharray={m === 'ideal' ? 'none' : m === 'analytical' ? '2 5' : '8 4'}
+              fill="none"
+            />{/if}
+        {/if}{/each}
+    {/each}
+    <line
+      x1={x(result.coordinates[index])}
+      x2={x(result.coordinates[index])}
+      y1="34"
+      y2="224"
+      stroke="#9daec0"
+      stroke-dasharray="2 5"
+    />
+    {#each channels as c}{#if !advanced || visible.ideal}<circle
+          cx={x(result.coordinates[index])}
+          cy={y(result.results[index].ideal[c.key])}
+          r="4"
+          stroke={c.color}
+          fill="#0f1c2d"
+          stroke-width="2"
+        />{/if}{/each}
+  </svg>
+  {#if hover !== null && result.results[hover]}<div
+      class="tip"
+      style:left={Math.min(
+        Math.max(x(result.coordinates[hover]) - 70, 0),
+        Math.max(0, width - 165)
+      ) + 'px'}
+    >
+      {axis}
+      {fmt(result.coordinates[hover], 3)}<br />Ideal electron {fmt(
+        result.results[hover].ideal.electron * 100,
+        2
+      )}%<br />Ideal other {fmt(result.results[hover].ideal.other * 100, 2)}%
+    </div>{/if}
+</div>
+<div class="axis">{axis} · normalized</div>
+{#if advanced}<div class="overlays">
+    {#each methods as m}<label><input type="checkbox" bind:checked={visible[m]} />{labels[m]}</label
+      >{/each}
+    <label
+      ><input type="checkbox" disabled={!visible.measured} bind:checked={uncertainty} />Expected
+      shot spread (±1σ)</label
+    >
+  </div>{:else}<p>
+    Lines show ideal probability. Dots show the fraction measured in repeated shots.
+  </p>{/if}
 
 <style>
-  .chart-controls {
+  .legend,
+  .overlays {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 0 24px 20px;
+    gap: 1rem;
     flex-wrap: wrap;
+    font-size: 0.8rem;
   }
-  .chart-state {
-    font-size: 12px;
-    color: var(--muted);
-  }
-  figure {
-    margin: 0;
-  }
-  .plot-region {
-    position: relative;
-    border-top: 1px solid var(--border);
-    background: var(--surface-raised);
-  }
-  .plot-scroll {
-    overflow-x: auto;
-    padding: 14px 14px 0 0;
-  }
-  svg {
-    width: 100%;
-    min-width: 560px;
-    display: block;
-  }
-  text {
-    font: 12px var(--mono);
-    fill: var(--muted);
-  }
-  .axis-title {
-    font-family: var(--font-sans);
-    font-size: 13px;
-  }
-  .plot-empty {
-    position: absolute;
-    inset: 34px 30px 64px 64px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    text-align: center;
-    padding: 20px;
-    pointer-events: none;
-  }
-  h3 {
-    margin: 0 0 8px;
-    font-size: 16px;
-    font-weight: 500;
-  }
-  .plot-empty p {
-    margin: 0;
-    max-width: 370px;
-    color: var(--muted);
-    font-size: 13px;
-    line-height: 1.6;
-  }
-  figcaption {
-    padding: 16px 24px;
-    border-top: 1px solid var(--border);
-    color: var(--muted);
-    font-size: 12px;
-    line-height: 1.6;
-  }
-  figcaption p {
-    margin: 0;
-  }
-  .flavor-legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    margin-bottom: 8px;
-  }
-  .flavor-legend span {
+  .legend span {
     display: inline-flex;
-    gap: 7px;
     align-items: center;
-  }
-  .mobile-scroll-note {
-    display: none;
+    gap: 0.45rem;
   }
   i {
-    width: 8px;
-    height: 8px;
-    display: inline-block;
+    width: 1.3rem;
+    height: 3px;
+    border-radius: 3px;
   }
-  @media (max-width: 600px) {
-    text,
-    .axis-title {
-      font-size: 18px;
-    }
-    .mobile-scroll-note {
-      display: block;
-      margin-top: 6px;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.6;
-    }
-    .chart-controls {
-      padding: 0 18px 16px;
-      gap: 10px;
-    }
-    .plot-region {
-      min-height: 280px;
-    }
-    .plot-scroll {
-      min-height: 280px;
-    }
-    .plot-empty {
-      inset: 30px 20px 50px 40px;
-    }
-    figcaption {
-      padding: 16px 18px;
-    }
+  .plot {
+    position: relative;
+    cursor: crosshair;
+    margin-top: 0.6rem;
+  }
+  .plot svg {
+    width: 100%;
+    display: block;
+  }
+  .plot text {
+    font: 11px var(--mono);
+    fill: #bdcada;
+  }
+  .plot .amber {
+    fill: #efbd73;
+  }
+  .axis {
+    text-align: center;
+    font-size: 0.78rem;
+    color: #d3dceb;
+    margin-top: -0.7rem;
+  }
+  .tip {
+    position: absolute;
+    top: 30%;
+    pointer-events: none;
+    border: 1px solid #64819a;
+    background: #132336;
+    color: white;
+    padding: 0.55rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+  }
+  .overlays,
+  p {
+    margin: 0.9rem 0 0;
+    color: var(--lab-muted);
+    font-size: 0.77rem;
+  }
+  .overlays input {
+    margin-right: 0.35rem;
+    accent-color: var(--lab-teal);
   }
 </style>

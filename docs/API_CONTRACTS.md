@@ -68,6 +68,11 @@ quantum packages. Missing simulation dependencies return 503; timeout returns 50
 invalid inputs return 422 through the shared error envelope. Failed workers are
 reaped and unexpected failures use the sanitized shared 500 handler.
 
+Newly measured points include the Qiskit text diagram, ordered rotation angles
+in radians and ideal pre-measurement statevector as [real, imaginary] pairs.
+Older records can omit these fields. The curve also reports the positive
+resonant potential when the supplied mixing parameters permit one.
+
 The live Svelte page uses generated types and this endpoint; earlier
 `frontend/src/lib/neutrinos/proposal.ts` remains a historical discussion draft,
 not the live wire format. See `docs/NEUTRINOS.md` for physical conventions.

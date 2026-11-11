@@ -119,3 +119,37 @@ def test_web_worker_timeout_is_reaped(client):
     )
     assert response.status_code == 504
     assert {process.pid for process in mp.active_children()} <= before
+
+
+def test_inspection_data_matches_executed_state_and_rotations():
+    from qiskit import QuantumCircuit
+    from qiskit.quantum_info import Statevector
+
+    experiment = Experiment(
+        layers=[Layer(distance=1, potential=0.2), Layer(distance=1, potential=1.4)], shots=128
+    )
+    response = run_curve(NeutrinoRequest(experiment=experiment, samples=3))
+    assert response.resonance_potential == pytest.approx(np.cos(0.4))
+    record = response.results[-1]
+    circuit = QuantumCircuit(1)
+    for rotation in record.rotations:
+        getattr(circuit, rotation.gate)(rotation.angle, 0)
+    amplitudes = np.array([complex(*pair) for pair in record.statevector])
+    np.testing.assert_allclose(Statevector(circuit).data, amplitudes, atol=1e-13)
+    assert abs(amplitudes[1]) ** 2 == pytest.approx(record.ideal.other)
+    assert record.ideal.other == pytest.approx(0.4361827, abs=1e-6)
+    assert record.circuit_diagram == str(circuit.measure_all(inplace=False).draw("text", fold=-1))
+
+
+def test_zero_mixing_endpoint_in_cancelling_matter_is_degenerate():
+    experiment = Experiment(
+        parameters=Parameters(theta=np.pi / 2, particle="antineutrino"),
+        layers=[Layer(distance=1, potential=1)],
+        shots=32,
+    )
+    point = run_curve(NeutrinoRequest(experiment=experiment, samples=2)).results[-1]
+    assert point.analytical.frequency == 0
+    assert point.analytical.mixing_strength is None
+    assert point.analytical.theta_m is None
+    assert point.ideal.electron == 1
+    assert point.rotations == []

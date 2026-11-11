@@ -76,7 +76,11 @@ splitting it reduces to the input angle in vacuum. Signed splittings can
 relabel the matter eigenstates, so use mixing strength for comparisons.
 When `r = 0`, evolution is identity and the mixing angle/strength are `null`
 because the degenerate eigenbasis is undetermined. Zero splitting is supported
-without evaluating the singular ratio `a`.
+without evaluating the singular ratio `a`. At the exact endpoint θ = π/2, the
+transverse coefficient is set to zero to remove the floating-point residual in
+sin(π). This prevents a spurious mixing strength of one when the matter and
+vacuum diagonal terms also cancel. The three demonstration presets use θ = 0.2
+and their probabilities are unaffected.
 
 Maximum mixing means `z = 0`; complete conversion additionally requires
 `r distance = pi/2` modulo `pi`. A density peak in mixing does not imply a
@@ -244,12 +248,18 @@ cd /Users/nickv/Developer/Q-Atlas/frontend
 npm run dev
 ```
 
-Open http://127.0.0.1:5173/neutrinos/ and click **Run experiment**. The vacuum,
-MSW resonance, and two-layer buttons load configurations; execution happens only
-when requested. The resonance preset uses the documented positive-splitting
-neutrino example with a potential sweep at a fixed baseline. Select a point below
-the chart to inspect mixing, conversion, errors, timing, and the full JSON record.
-Inputs are explicitly normalized; the former GeV/km placeholders are replaced.
+Open http://127.0.0.1:5173/neutrinos/ and choose Vacuum, MSW resonance, or Two layers.
+Explore runs the initial example and recalculates after input settles. Drag a slider
+or enter an exact value. Click a plotted point or use the inspector slider to read
+its ideal flavor probabilities. The density sweep holds distance fixed, and the
+layered distance curve marks the boundary between regions.
+
+Advanced shares the current inputs and point selection. Results offers method
+overlays and exact values. Physics explains the normalized Hamiltonian. Quantum
+Circuit displays Qiskit's measured circuit and the Bloch vector derived from the
+ideal pre-measurement Aer amplitudes. Validation reports numerical and sampling
+errors. Run Record exports the submitted configuration or the full curve as JSON.
+Restart an API started before this update to load the additional metadata.
 
 `POST /api/neutrinos/run` accepts the validated experiment plus `axis`, `samples`,
 `max_potential`, and `timeout_seconds`. A distance curve follows the profile in
@@ -263,3 +273,8 @@ Additional integration files: `backend/app/schemas/neutrinos.py`,
 `backend/app/api/neutrinos.py`, experiment `web.py`/`runner.py`,
 `backend/tests/neutrinos/test_web.py`, frontend `live.ts`, the lab route/chart,
 typed client/generated types, and `frontend/tests/neutrinos-live.test.ts`.
+
+To run the live browser regression with the local API available, start the frontend
+with `npm run dev -- --config tests/browser/vite.config.ts` and open
+`/tests/browser/neutrinos.html`. Select **Test live controls** to check both input
+directions, invalid settings, selection across modes, and reset against actual runs.

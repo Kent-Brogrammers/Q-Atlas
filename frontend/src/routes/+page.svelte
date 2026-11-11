@@ -67,7 +67,7 @@
       </div>
     </dl>
     <p>
-      Open the Neutrino Lab and select Run experiment to calculate a normalized propagation curve.
+      Choose an experiment in the Neutrino Lab to explore its flavor probabilities.
     </p>
   </section>
 </div>

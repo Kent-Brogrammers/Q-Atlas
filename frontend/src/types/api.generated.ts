@@ -822,6 +822,21 @@ export interface components {
             counts: {
                 [key: string]: number;
             };
+            /** Circuit Diagram */
+            circuit_diagram?: string | null;
+            /** Rotations */
+            rotations?: components["schemas"]["NeutrinoRotation"][];
+            /** Statevector */
+            statevector?: [
+                [
+                    number,
+                    number
+                ],
+                [
+                    number,
+                    number
+                ]
+            ] | null;
             /** Basis Gates */
             basis_gates: string[];
             timing_ms: components["schemas"]["NeutrinoTimings"];
@@ -875,10 +890,22 @@ export interface components {
              * @enum {string}
              */
             axis: "distance" | "potential";
+            /** Resonance Potential */
+            resonance_potential?: number | null;
             /** Coordinates */
             coordinates: number[];
             /** Results */
             results: components["schemas"]["NeutrinoRecord"][];
+        };
+        /** NeutrinoRotation */
+        NeutrinoRotation: {
+            /**
+             * Gate
+             * @enum {string}
+             */
+            gate: "ry" | "rz";
+            /** Angle */
+            angle: number;
         };
         /** NeutrinoSubdivision */
         NeutrinoSubdivision: {
