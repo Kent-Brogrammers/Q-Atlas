@@ -68,7 +68,10 @@ def test_existing_output_is_preserved_before_computation(request_file, tmp_path,
     else:
         if kind == "symlink":
             original.write_text("previous measured evidence")
-        destination.symlink_to(original)
+        try:
+            destination.symlink_to(original)
+        except (NotImplementedError, OSError) as error:
+            pytest.skip(f"symlink creation unavailable: {error}")
     benchmark = Mock(side_effect=AssertionError("must not run"))
     monkeypatch.setattr(cli, "run_neutrino_benchmark", benchmark)
     assert cli.main(["--request", str(request_file), "--output", str(destination)]) == 1
