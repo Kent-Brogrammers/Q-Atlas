@@ -396,6 +396,27 @@ then probability curves/frontend integration. Review and approval precede each c
 
 ## Configurable repeated benchmarks
 
+### Sampling intervals in the dashboard
+
+Single-run and curve results show pointwise **95% Wilson score intervals** from
+the integer successful-shot and total-shot counts. The chart uses dashed whiskers;
+the results table provides numerical bounds for each run, including recorded demos.
+Intervals remain nonzero in width for zero or all successful shots. Older records
+without counts show “Not available”; probabilities are never rounded into counts.
+
+These approximate intervals assume independent Bernoulli shots at a fixed success
+probability and describe sampling uncertainty. Nominal 95% coverage describes the
+interval procedure under repeated sampling, rather than a probability that the
+fixed parameter lies in a particular observed interval. They do not quantify model
+error or device noise and are not a simultaneous confidence band over a curve.
+The repeated-trial chart retains its descriptive min/max range; the individual
+trial rows show their own sampling intervals, with no pooled interval for the mean.
+Measured JSON exports retain raw counts so the intervals can be recomputed.
+Method: [NIST Wilson confidence intervals](https://www.itl.nist.gov/div898/handbook/prc/section2/prc241.htm),
+two-sided, z = 1.959963984540054, without continuity correction.
+
+### Command-line batches
+
 The fixed demo recorder remains unchanged. For a custom local batch, run the
 search sweep from `backend/` in PowerShell:
 

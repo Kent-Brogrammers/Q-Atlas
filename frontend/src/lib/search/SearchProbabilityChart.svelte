@@ -5,6 +5,7 @@
     measurementLabel = 'Measured Aer shots'
   }: { points: CurvePoint[]; measurementLabel?: string } = $props();
   let hasRanges = $derived(points.some((point) => point.observedRange !== undefined));
+  let hasIntervals = $derived(points.some((point) => point.confidenceInterval !== undefined));
   let last = $derived(Math.max(1, ...points.map((point) => point.iteration)));
   const y = (probability: number) => 210 - probability * 180;
   let x = $derived((iteration: number) => 55 + (iteration / last) * 490);
@@ -49,6 +50,29 @@
       />
       <path d={path('measured')} fill="none" stroke="#0f62fe" stroke-width="2" />
       {#each points as point}
+        {#if point.confidenceInterval}
+          <g stroke="var(--blue)" stroke-width="2" stroke-dasharray="3 2">
+            <title
+              >95% Wilson sampling interval at iteration {point.iteration}:
+              {(point.confidenceInterval[0] * 100).toFixed(2)}% to
+              {(point.confidenceInterval[1] * 100).toFixed(2)}%</title
+            >
+            <line
+              x1={x(point.iteration)}
+              x2={x(point.iteration)}
+              y1={y(point.confidenceInterval[0])}
+              y2={y(point.confidenceInterval[1])}
+            />
+            {#each point.confidenceInterval as bound}
+              <line
+                x1={x(point.iteration) - 5}
+                x2={x(point.iteration) + 5}
+                y1={y(bound)}
+                y2={y(bound)}
+              />
+            {/each}
+          </g>
+        {/if}
         {#if point.observedRange}
           <g stroke="#0f62fe" stroke-width="2">
             <title
@@ -101,7 +125,9 @@
     <p class="hint">
       {hasRanges
         ? 'Whisker: observed min/max across trials, not a confidence interval.'
-        : 'Lines join integer-iteration samples.'} The table below provides every value.
+        : 'Lines join integer-iteration samples.'}
+      {#if hasIntervals}Dashed whiskers: pointwise 95% Wilson sampling intervals, not a simultaneous
+        confidence band.{/if} The table below provides every value.
     </p>
   {:else}
     <div class="empty">

@@ -15,6 +15,7 @@
   import { measureTrials, summarizeTrials, trialCurve } from '#lib/search/trials.ts';
   import { buildSearchExport, loadRecordedDemo } from '#lib/search/recorded.ts';
   import type { RecordingProvenance } from '#lib/search/recorded.ts';
+  import { intervalLabel, samplingInterval } from '#lib/search/uncertainty.ts';
 
   type RunMode = 'single' | 'curve' | 'trials';
 
@@ -409,6 +410,10 @@
             >
             <tbody>
               <tr
+                ><th scope="row">95% sampling interval (Wilson)</th><td>Not applicable</td>
+                <td>{intervalLabel(samplingInterval(selected))}</td></tr
+              >
+              <tr
                 ><th scope="row">Returned bitstring</th><td class="mono"
                   >{selected.classical?.best_bitstring ?? 'Not available'}</td
                 ><td class="mono"
@@ -483,8 +488,9 @@
               ><tr
                 ><th scope="col">{summary ? 'Trial / iteration' : 'Iteration'}</th><th scope="col"
                   >Seed</th
-                ><th scope="col">Measured</th><th scope="col">Theory</th><th scope="col">Shots</th
-                ><th scope="col">Depth</th></tr
+                ><th scope="col">Measured</th><th scope="col">95% sampling interval</th><th
+                  scope="col">Theory</th
+                ><th scope="col">Shots</th><th scope="col">Depth</th></tr
               ></thead
             >
             <tbody
@@ -499,9 +505,11 @@
                     ></th
                   ><td>{result.metadata.seed ?? 'Not available'}</td><td
                     >{percentage(result.metrics.success_probability)}</td
-                  ><td>{percentage(result.metrics.theoretical_success_probability)}</td><td
-                    >{result.metrics.shots ?? 'Not available'}</td
-                  ><td>{result.metrics.circuit_depth ?? 'Not available'}</td></tr
+                  ><td>{intervalLabel(samplingInterval(result))}</td><td
+                    >{percentage(result.metrics.theoretical_success_probability)}</td
+                  ><td>{result.metrics.shots ?? 'Not available'}</td><td
+                    >{result.metrics.circuit_depth ?? 'Not available'}</td
+                  ></tr
                 >{/each}</tbody
             >
           </table>
@@ -526,9 +534,14 @@
         <p>
           {summary
             ? 'Repeated trials use distinct recorded seeds at the same iteration setting.'
-            : 'Curves use the same seed at every iteration.'} Shot noise remains; no confidence interval
-          is claimed. Editing inputs clears previous results. Downloaded JSON contains every completed
-          point and its settings.
+            : 'Curves use the same seed at every iteration.'} Each raw run has a pointwise 95% Wilson
+          interval computed from successful and total shots, assuming independent shots at a fixed success
+          probability. The nominal 95% refers to repeated-sampling coverage, not a probability assigned
+          to this particular interval. These approximate intervals cover sampling uncertainty, not hardware
+          noise, model error or a whole curve simultaneously. The repeated-trial chart retains its observed
+          min/max range; it does not pool shots or display an interval for the mean. Missing shot counts
+          show “Not available.” Editing inputs clears previous results. Downloaded JSON contains the raw
+          counts needed to reproduce intervals, every completed point and its settings.
         </p>
       </details>
     {/if}
