@@ -1,0 +1,22 @@
+{
+  "experiment": {
+    "parameters": {
+      "theta": 0.2,
+      "delta_m2": 1,
+      "energy": 1,
+      "particle": "neutrino"
+    },
+    "layers": [
+      {
+        "distance": 4.0336988686318564,
+        "potential": 0
+      }
+    ],
+    "shots": 4096,
+    "seed": 42
+  },
+  "axis": "potential",
+  "samples": 9,
+  "timeout_seconds": 30,
+  "max_potential": 1.8421219880057702
+}

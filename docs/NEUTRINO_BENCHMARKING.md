@@ -120,6 +120,53 @@ These checks establish internal consistency. Scientific interpretation and revie
 of the measurement provenance remain with the experiment owners. Nick and
 Developer 5 should review the exported presentation before website integration.
 
+## Reproducing the demonstration cases
+
+The [example requests](../examples/neutrinos/) use the same electron initial
+flavor, mixing angle of 0.2 radians, and normalized splitting and energy of 1.
+They cover three configurations from the [neutrino experiment guide](NEUTRINOS.md).
+
+| Request | Curve | What to inspect |
+| --- | --- | --- |
+| [Vacuum](../examples/neutrinos/vacuum-distance.json) | Five distances from 0 to 1 at zero potential | The zero-distance control and the final conversion probability |
+| [Constant-density matter](../examples/neutrinos/matter-resonance.json) | Nine potentials from 0 to 1.8421220 at distance 4.0336989 | The resonant point at potential 0.9210610 and its neighboring points |
+| [Ordered layers](../examples/neutrinos/layered-distance.json) | Five distances from 0 to 1 across potentials 0.2 then 1.4 | The first layer ends at distance 0.5. Points beyond it use the numerical reference for the two-layer profile. |
+
+From `backend/`, run the same shot and base-seed grid for each case. The
+commands record 27 curves and 171 point results and verify the three reports.
+Each case uses a separate suite budget. Keep the requests, raw reports, reviews,
+and `recording-source.txt` together when sharing a recording.
+
+```sh
+output_dir=$(mktemp -d /tmp/q-atlas-neutrino-demo.XXXXXX)
+(
+  set -e
+  git rev-parse HEAD
+  git status --porcelain
+) > "$output_dir/recording-source.txt"
+(
+  set -e
+  for case_name in vacuum-distance matter-resonance layered-distance; do
+    cp "../examples/neutrinos/$case_name.json" "$output_dir/$case_name.json"
+    .venv/bin/python -m app.benchmarks \
+      --request "$output_dir/$case_name.json" \
+      --shots 256 1024 4096 --seeds 42 142 242 --total-timeout 120 \
+      --output "$output_dir/$case_name-evidence.json"
+    .venv/bin/python -m app.benchmarks.review \
+      "$output_dir/$case_name-evidence.json" \
+      --output "$output_dir/$case_name-review.md"
+  done
+  printf 'Evidence saved in %s\n' "$output_dir"
+)
+```
+
+Compare ideal Aer and SciPy at each coordinate to check circuit agreement.
+Compare the measured probability with ideal Aer at the same coordinate to
+isolate sampling error. The resonant point approaches full conversion, so its
+neighboring points are more informative about finite-shot variability. Each
+shot count has three observations per coordinate, and the shot groups reuse
+base seeds. Treat medians and ranges as descriptive results for these settings.
+
 ## Bounds and failures
 
 Plans support up to eight distinct shot counts, sixteen distinct base seeds,
