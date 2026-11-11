@@ -51,7 +51,7 @@ export const experiments: {
     number: '03',
     title: 'Optimization',
     short: 'Optimization',
-    description: 'Configure Max-Cut inputs and inspect classical and QAOA example data.',
+    description: 'Compare measured local QAOA results with the exact classical Max-Cut optimum.',
     method: 'Max-Cut · QAOA · classical',
     icon: 'graph',
     color: 'cyan'

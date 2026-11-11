@@ -4,17 +4,29 @@
 
   let {
     graph,
+    assignment,
+    assignmentLabel = 'Reference partition',
     interactive = true,
     compact = false
-  }: { graph: GraphFixture; interactive?: boolean; compact?: boolean } = $props();
+  }: {
+    graph: GraphFixture;
+    assignment?: string;
+    assignmentLabel?: string;
+    interactive?: boolean;
+    compact?: boolean;
+  } = $props();
   const gridId = $props.id();
   let partition = $state<number[] | null>(null);
   let zoom = $state(1);
-  let current = $derived(partition ?? graph.assignment);
+  let current = $derived(
+    partition ?? (assignment ? assignment.split('').map(Number) : graph.assignment)
+  );
   let cut = $derived(graph.edges.filter(([i, j]) => current[i] !== current[j]).length);
 
   $effect(() => {
     graph.id;
+    assignment;
+    assignmentLabel;
     partition = null;
     zoom = 1;
   });
@@ -35,7 +47,7 @@
 <div class="graph-view" class:compact>
   {#if !compact}
     <div class="graph-overlay">
-      <span class="graph-caption">{partition ? 'Your partition' : 'Reference partition'}</span><span
+      <span class="graph-caption">{partition ? 'Your partition' : assignmentLabel}</span><span
         class="mono">G = (V, E)</span
       >
     </div>

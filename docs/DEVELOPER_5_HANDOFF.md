@@ -123,12 +123,42 @@ The present browser checks used temporary Firefox tooling outside the repository
 they are recorded evidence, not a new project CI dependency. See
 [COMPILER_MANUAL_CHECKS.md](COMPILER_MANUAL_CHECKS.md) for cases and reproduction.
 
+## Optimization live integration
+
+The user authorized connecting Developer 3's implemented optimization API to the
+existing Svelte page. `/optimization/` now calls the existing `api.optimization`
+client with graph presets and the agreed `OptimizationRequest`. The generated
+`OptimizationResult` supplies the displayed measured fields. This handoff adds
+frontend request validation, cancellation guards and measured JSON export.
+
+- Reuse the existing GraphView and SolverComparison components. GraphView accepts
+  an x[0]-first returned assignment and a source label. User node changes retain
+  their own partition label.
+- Keep measured assignments, objectives, gap, actual depth/shots, evaluation count
+  and solver timing attached to the completed request. Configuration edits clear
+  results. Late responses and duplicate submissions are guarded.
+- The live API exposes a best sampled assignment and aggregate metrics. Objective
+  traces and full shot-count histograms require an agreed backend extension.
+  The retained example charts remain explicitly labeled illustrative data.
+- Local Aer and classical end-to-end times include their own preparation and result
+  extraction. Graph conversion precedes the solver timers. QAOA components are
+  contained in its total and preserve the backend's timing inclusion flags.
+- Stop waiting aborts the frontend request. The existing synchronous backend retains
+  its per-solver deadlines. Its structured dependency, validation and timeout errors
+  remain visible in the page.
+
+Nick and Developer 5 still need to review the neutrino benchmark presentation.
+The [recording workflow](NEUTRINO_BENCHMARKING.md) produces full measured reports,
+checked reviews and source provenance for that discussion. Scientific review stays
+with the owners.
+
 ## Validation commands
 
 From `frontend/`:
 
 ```sh
 npm run test:compiler
+npm test
 npm run types:check
 npm run typecheck
 npm run build
