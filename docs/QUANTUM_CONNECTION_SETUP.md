@@ -21,6 +21,16 @@ uv sync --locked --extra quantum --extra hardware
 
 ## Credential configuration
 
+The easiest local startup is now `./dev.sh` from the repository root. In a terminal,
+it asks for a hidden API token and then the IBM instance name/CRN. Enter skips setup;
+already configured environment values are reused. Credentials go only to the backend
+child process and are not persisted, echoed, or sent to Vite. It does not connect or
+submit jobs. Set `QATLAS_SKIP_QUANTUM_PROMPT=1` to suppress prompts.
+
+Prompted credentials belong to that running backend, not your parent terminal.
+To run the separate connection checker in another terminal, configure that terminal
+using the manual instructions below. The launcher never silently authenticates.
+
 `QUANTUM-KEY` is treated as an environment-variable name, **not a literal token**.
 It is supported if your launcher already provides that variable. Hyphens are not
 valid in ordinary Bash variable names, so use `QATLAS_QUANTUM_KEY` for Bash.
