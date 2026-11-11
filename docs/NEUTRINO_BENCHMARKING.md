@@ -167,6 +167,51 @@ neighboring points are more informative about finite-shot variability. Each
 shot count has three observations per coordinate, and the shot groups reuse
 base seeds. Treat medians and ranges as descriptive results for these settings.
 
+## Recording a shareable demonstration bundle
+
+From `backend/`, record all three checked-in cases and their reviews in one ZIP.
+Choose an unused output filename in an existing directory.
+
+```sh
+.venv/bin/python -m app.benchmarks.demo \
+  --requests ../examples/neutrinos \
+  --output /tmp/q-atlas-neutrino-demo.zip
+```
+
+The command uses the shot counts and base seeds above. All three requests are
+snapshotted and validated before execution, and each case has a 120-second suite
+budget. The recording invokes the existing benchmark runner and checks every
+saved report with the existing review exporter.
+
+The completed archive contains twelve files.
+
+- Three original request JSON files.
+- Three full-precision evidence JSON files and their three checked Markdown reviews.
+- `README.md` with the recorded curve counts, interpretation and reproduction notes.
+- `provenance.json` with an aware UTC timestamp, Git revision, initial dirty-tree
+  status, and SHA-256 hashes of the benchmark, neutrino, schema and dependency files.
+- `SHA256SUMS` covering the other eleven files.
+
+The raw reports retain their existing local format. Each report preserves its
+own measured environment and simulation package versions. Git metadata is null
+when unavailable. A dirty-tree recording includes source hashes alongside its
+revision. The file fingerprints identify the implementation used for the
+recording, and scientific provenance review remains with the experiment owners.
+
+Publication happens after all cases and reviews complete and the source revision
+and fingerprints are checked for changes during recording. Failures clean up the
+staging directory. Atomic exclusive publication preserves existing output paths,
+including when another writer publishes to the same path during execution.
+
+After extracting the archive to a directory, check its contents from that directory.
+
+```sh
+shasum -a 256 -c SHA256SUMS
+```
+
+Label this archive as previously measured local simulator evidence when sharing
+it. Nick and Developer 5 should review its presentation before website integration.
+
 ## Bounds and failures
 
 Plans support up to eight distinct shot counts, sixteen distinct base seeds,
