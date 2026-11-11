@@ -25,6 +25,12 @@ analytics. Back buttons and the step navigation preserve the current source and
 downloads. Editing source or layers clears downstream data. Test preparation runs
 no solvers; performance metrics remain unmeasured. Function/input names are arbitrary;
 named scalar inputs and statically indexed vectors can infer width without `num_bits`.
+The Test step also offers **Load IBM devices** and an explicitly confirmed physical
+job: one layer, at most three inputs, 128 shots and a 10-second QPU cap. The backend
+trains angles locally and samples the final bound circuit on the selected QPU.
+Use **Check hardware job**, **Cancel hardware job** and **Download QPU record** to
+manage the recorded request; there is no automatic submission or polling.
+See the [hardware runbook](../docs/COMPILER_IBM_HARDWARE.md) for quota and recovery.
 Quantum controls and mathematical details are optional advanced sections. No circuit
 code or second decorator is needed. File contents are never executed.
 
@@ -32,8 +38,8 @@ FastAPI can be started independently using the root README or together with this
 frontend using `../dev.sh`. Its materials route runs the existing spin-system
 simulation only when requested; the Materials route displays live results. The
 Neutrino Lab and Grover Search also use their live backend APIs. The compiler
-workflow calls only generation and planning; it does not execute user code or run
-benchmarks. Optimization benchmarks remain unavailable.
+workflow never executes user code. Hardware metadata, submission and retrieval use
+separate typed compiler endpoints. Optimization benchmarks remain unavailable.
 
 ```sh
 npm run check
@@ -126,7 +132,9 @@ Compiler edits invalidate the returned QUBO, generated script, and plan; request
 use the shared typed API and ignore stale responses. The default example contains
 ordinary helpers, named binary choices, and a main caller with one bare decorator.
 Optional technical output shows source-to-bit mapping and honest unexecuted gates;
-comparison execution remains disabled. Materials and Search use their live APIs.
+physical sampling is available through the explicitly authorized Test flow. Its
+measurements stay separate from the nonexecuting plan and the local Aer contract.
+Materials and Search use their live APIs.
 
 ## Grover Search
 

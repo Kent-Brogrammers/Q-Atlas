@@ -84,12 +84,12 @@ Confirm remaining allowance in the provider dashboard, identify the exact device
 agree how much is reserved for other team members. Connection success does not check
 remaining quota. Do not run an unbounded hardware optimizer loop as a smoke test.
 
-The compiler still generates code/plans; its existing opt-in enables **local Aer only**.
-A physical-provider adapter and hardware result/provenance contract remain separate.
-This connection setup must not label local Aer output as QPU output. A future reviewed
-submission should use one tiny bound circuit, explicit shots and a conservative job
-execution limit, save the job ID immediately, and retrieve that job after a disconnect
-rather than submit a duplicate. Only the operator should authorize that submission.
+The compiler now has a separate [physical IBM test workflow](COMPILER_IBM_HARDWARE.md).
+Select a device in its Test step and explicitly authorize one 128-shot job with a
+10-second QPU cap. Local angle training precedes final sampling on the QPU. The
+existing Aer endpoint opt-in still enables **local Aer only**; it is not the hardware
+switch. The connection checker itself remains metadata-only. Hardware request IDs
+are recorded durably so a disconnect does not require a duplicate submission.
 
 Provider job execution limits control QPU usage rather than general wall-clock wait;
 do not equate queue time or the browser timeout with the ten-minute allowance.
