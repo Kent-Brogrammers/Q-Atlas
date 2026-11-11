@@ -88,6 +88,12 @@ def run(experiment: Experiment) -> dict:
         "circuit_depth": measured.depth(),
         "shots": experiment.shots,
         "counts": counts,
+        "circuit_diagram": str(measured.draw(output="text", fold=-1)),
+        "rotations": [
+            {"gate": item.operation.name, "angle": float(item.operation.params[0])}
+            for item in compiled.data
+        ],
+        "statevector": [(float(a.real), float(a.imag)) for a in state],
         "basis_gates": ["ry", "rz"],
         "timing_ms": {
             "classical": classical_ms,

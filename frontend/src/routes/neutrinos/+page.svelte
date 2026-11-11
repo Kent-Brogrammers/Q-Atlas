@@ -1,476 +1,660 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
-  import Panel from '#lib/components/Panel.svelte';
-  import NeutrinoProbabilityChart from '#lib/components/NeutrinoProbabilityChart.svelte';
-  import { api, ApiError } from '../../api/client.ts';
-  import type { NeutrinoResponse } from '../../types/index.ts';
-  import { buildRequest, defaultSettings, flavorChannels } from '#lib/neutrinos/live.ts';
-  import { formatValue } from '#lib/neutrinos/presentation.ts';
-
-  let settings = $state(defaultSettings());
-  let result = $state<NeutrinoResponse | null>(null);
-  let loading = $state(false);
-  let error = $state('');
-  let selectedIndex = $state(0);
-  let controller: AbortController | undefined;
-  let selected = $derived(result?.results[selectedIndex]);
-  onDestroy(() => controller?.abort());
-
-  function clearResult() {
-    result = null;
-    error = '';
-  }
-  function preset(kind: 'vacuum' | 'resonance' | 'layers') {
-    clearResult();
-    settings = defaultSettings();
-    if (kind === 'resonance') {
-      settings.environment = 'density';
-      // Published normalized example from docs/NEUTRINOS.md, not simulated results.
-      settings.distance = 4.0336988686318564;
-    } else if (kind === 'layers') {
-      settings.environment = 'layers';
-      settings.potential = 0.2;
-      settings.distance = 2;
+  import { api } from '../../api/client.ts';
+  import Chart from '#lib/components/NeutrinoProbabilityChart.svelte';
+  import Inspector from '#lib/components/NeutrinoInspector.svelte';
+  import Parameter from '#lib/components/LabParameter.svelte';
+  import Icon from '#lib/components/Icon.svelte';
+  import { preset, createLabRunner, type RunState } from '#lib/neutrinos/session.ts';
+  import { formatValue as fmt } from '#lib/neutrinos/presentation.ts';
+  const experiments = [
+    {
+      id: 'vacuum',
+      title: 'Vacuum',
+      pitch: 'Follow a neutrino through empty space.',
+      icon: 'activity',
+      tone: '#82aaff'
+    },
+    {
+      id: 'density',
+      title: 'MSW resonance',
+      pitch: 'Find the density where mixing peaks.',
+      icon: 'atom',
+      tone: '#f2c078'
+    },
+    {
+      id: 'layers',
+      title: 'Two layers',
+      pitch: 'Cross a boundary between two regions.',
+      icon: 'layers',
+      tone: '#63d8be'
     }
-  }
-  async function runExperiment(event: SubmitEvent) {
-    event.preventDefault();
-    if (loading) return;
-    clearResult();
-    try {
-      const request = buildRequest(settings);
-      loading = true;
-      controller = new AbortController();
-      result = await api.neutrinos(request, controller.signal);
-      selectedIndex =
-        result.axis === 'potential'
-          ? Math.floor(result.results.length / 2)
-          : result.results.length - 1;
-    } catch (cause) {
-      error =
-        cause instanceof ApiError
-          ? [
-              cause.message,
-              ...(cause.body.error.diagnostics ?? []).map((item) => item.message)
-            ].join(' ')
-          : cause instanceof Error
-            ? cause.message
-            : 'The experiment failed. Please try again.';
-    } finally {
-      loading = false;
+  ] as const;
+  const percent = (p: number) => (p > 0 && p < 0.0001 ? '<0.01' : fmt(p * 100, 2));
+  let settings = $state(preset('vacuum')),
+    advanced = $state(false),
+    index = $state(0);
+  let run = $state<RunState>({ status: 'waiting' });
+  const runner = createLabRunner(
+    (req, signal) => api.neutrinos(req, signal),
+    (state) => {
+      if (state.status === 'ready')
+        index =
+          state.result.axis === 'potential'
+            ? Math.floor(state.result.results.length / 2)
+            : state.result.results.length - 1;
+      run = state;
     }
-  }
+  );
+  $effect(() => {
+    runner.update({ ...settings });
+  });
+  onDestroy(() => runner.dispose());
+  let experiment = $derived(
+    experiments.find(
+      (e) => e.id === (settings.environment === 'matter' ? 'density' : settings.environment)
+    )!
+  );
+  let point = $derived(run.status === 'ready' ? run.result.results[index] : null);
+  let coordinate = $derived(run.status === 'ready' ? run.result.coordinates[index] : null);
+  let density = $derived(settings.environment === 'density');
 </script>
 
 <svelte:head
   ><title>Neutrino Lab · Q-Atlas</title><meta
     name="description"
-    content="Run two-flavor neutrino propagation and compare SciPy, Qiskit statevectors, and finite-shot measurements."
+    content="Explore how distance and matter change neutrino flavor in a two-flavor quantum simulation."
   /></svelte:head
 >
-<header class="page-heading">
-  <div>
-    <h1>Neutrino Lab</h1>
-    <p>Explore how matter changes flavor oscillations with a one-qubit simulation.</p>
+<div class="lab">
+  <header>
+    <div>
+      <h1>Neutrino Lab</h1>
+      <p>Discover how a neutrino changes flavor as it travels through space and matter.</p>
+    </div>
+    <div class="switch" aria-label="Laboratory mode">
+      <button aria-pressed={!advanced} onclick={() => (advanced = false)}>Explore</button><button
+        aria-pressed={advanced}
+        onclick={() => (advanced = true)}>Advanced</button
+      >
+    </div>
+  </header>
+  <div class="choices" aria-label="Experiment">
+    {#each experiments as e}
+      <button
+        class="choice"
+        aria-pressed={experiment.id === e.id}
+        style:--tone={e.tone}
+        onclick={() => (settings = preset(e.id))}
+        ><span class="emblem"><Icon name={e.icon} size={23} /></span><span
+          ><strong>{e.title}</strong><small>{e.pitch}</small></span
+        ><span class="radio"></span></button
+      >
+    {/each}
   </div>
-</header>
-<p class="notice">
-  Effective two-flavor model · initial electron flavor · Qiskit Aer simulator. Angle is in radians;
-  energy, mass splitting, distance, and potential use normalized units.
-</p>
-<div class="presets" aria-label="Example configurations">
-  <span>Load example:</span>
-  <button class="button" disabled={loading} onclick={() => preset('vacuum')}>Vacuum</button>
-  <button class="button" disabled={loading} onclick={() => preset('resonance')}
-    >MSW resonance</button
-  >
-  <button class="button" disabled={loading} onclick={() => preset('layers')}>Two layers</button>
-</div>
-{#if error}<div class="error" role="alert">
-    <strong>Experiment could not run.</strong>
-    {error}
-    <p>Check that the Q-Atlas backend is running at http://127.0.0.1:8000.</p>
-  </div>{/if}
-<div class="lab-layout">
-  <aside aria-label="Experiment configuration">
-    <Panel title="Configuration" subtitle="Effective two-flavor propagation">
-      <form onsubmit={runExperiment} oninput={clearResult}>
-        <fieldset disabled={loading}>
-          <legend>Propagation</legend>
-          <label for="environment">Environment</label>
-          <select id="environment" bind:value={settings.environment}>
-            <option value="vacuum">Vacuum</option><option value="matter"
-              >Constant-density matter</option
-            ><option value="layers">Two equal-length layers</option><option value="density"
-              >Matter density sweep</option
-            >
-          </select>
-          <label for="particle">Particle</label><select id="particle" bind:value={settings.particle}
-            ><option value="neutrino">Neutrino</option><option value="antineutrino"
-              >Antineutrino</option
-            ></select
-          >
-          <label for="theta">Mixing angle (radians)</label><input
-            id="theta"
-            type="number"
-            min="0"
-            max={Math.PI / 2}
-            step="any"
-            required
-            bind:value={settings.theta}
-          />
-          <label for="delta">Mass-squared splitting (normalized)</label><input
-            id="delta"
-            type="number"
-            min="-10"
-            max="10"
-            step="any"
-            required
-            bind:value={settings.delta_m2}
-          />
-          <label for="energy">Energy (normalized)</label><input
-            id="energy"
-            type="number"
-            min="0.01"
-            max="100"
-            step="any"
-            required
-            bind:value={settings.energy}
-          />
-          <label for="distance">Total distance (normalized)</label><input
-            id="distance"
-            type="number"
-            min="0"
-            max="100"
-            step="any"
-            required
-            bind:value={settings.distance}
-          />
-          {#if settings.environment === 'matter' || settings.environment === 'layers'}
-            <label for="potential"
-              >{settings.environment === 'layers' ? 'First layer potential' : 'Matter potential'} (normalized)</label
-            ><input
-              id="potential"
-              type="number"
-              min="0"
-              max="10"
-              step="any"
-              required
-              bind:value={settings.potential}
-            />
-          {/if}
-          {#if settings.environment === 'layers'}
-            <label for="second-potential">Second layer potential (normalized)</label><input
-              id="second-potential"
-              type="number"
-              min="0"
-              max="10"
-              step="any"
-              required
-              bind:value={settings.second_potential}
-            />
-          {/if}
-          {#if settings.environment === 'density'}
-            <label for="max-potential">Maximum potential (normalized)</label><input
-              id="max-potential"
-              type="number"
-              min="0"
-              max="10"
-              step="any"
-              required
-              bind:value={settings.max_potential}
-            />
-            <p class="hint">Sweep from zero to this potential at the fixed total distance.</p>
-          {/if}
-          <legend>Sampling</legend>
-          <label for="samples">Curve points</label><input
-            id="samples"
-            type="number"
-            min="2"
-            max="41"
-            step="1"
-            required
-            bind:value={settings.samples}
-          />
-          <label for="shots">Shots per point</label><input
-            id="shots"
-            type="number"
-            min="1"
-            max="100000"
-            step="1"
-            required
-            bind:value={settings.shots}
-          />
-          <label for="seed">Initial simulator seed</label><input
-            id="seed"
-            type="number"
-            min="0"
-            max="4294967295"
-            step="1"
-            required
-            bind:value={settings.seed}
-          />
-          <p class="hint">
-            Curve points × shots must be at most 500,000. Seeds increment at each point.
+  <div class="deck">
+    <section class="instrument">
+      <div class="plot-title">
+        <div>
+          <h2>Flavor probability</h2>
+          <p>
+            {density
+              ? 'Vary matter potential at a fixed travel distance of ' +
+                fmt(settings.distance) +
+                '.'
+              : settings.environment === 'layers'
+                ? 'Follow the particle through two equal-length regions.'
+                : 'Follow the particle from its starting point to the selected distance.'}
           </p>
-          <button class="button primary" type="submit"
-            >{loading ? 'Running experiment…' : 'Run experiment'}</button
-          >
-        </fieldset>
-      </form>
-    </Panel>
-  </aside>
-  <div class="results" aria-busy={loading}>
-    <p role="status" class="status">
-      {loading
-        ? 'Calculating classical references and sampling Qiskit Aer…'
-        : result
-          ? `Completed ${result.results.length} points · all results are simulated.`
-          : 'Choose a configuration and run the experiment.'}
-    </p>
-    <Panel
-      title="Flavor probabilities"
-      subtitle="Independent reference, ideal circuit, and finite shots"
-      ><NeutrinoProbabilityChart {result} /></Panel
-    >
-    <Panel title="Comparison & run details" subtitle="Inspect a measured point">
-      <div class="details">
-        {#if result && selected}
-          <label for="point"
-            >{result.axis === 'potential' ? 'Matter potential' : 'Propagation distance'} (normalized)</label
-          >
-          <select id="point" bind:value={selectedIndex}
-            >{#each result.coordinates as coordinate, index}<option value={index}
-                >{formatValue(coordinate)}</option
-              >{/each}</select
-          >
-          <div class="table-scroll">
-            <table>
-              <caption>Flavor probabilities at the selected point</caption>
-              <thead
-                ><tr
-                  ><th>Flavor</th><th>Analytical</th><th>SciPy</th><th>Ideal</th><th>Shots</th></tr
-                ></thead
-              >
-              <tbody
-                >{#each flavorChannels as flavor}<tr
-                    ><th>{flavor.label}</th><td>{formatValue(selected.analytical?.[flavor.key])}</td
-                    ><td>{formatValue(selected.numerical[flavor.key])}</td><td
-                      >{formatValue(selected.ideal[flavor.key])}</td
-                    ><td>{formatValue(selected.measured[flavor.key])}</td></tr
-                  >{/each}</tbody
-              >
-            </table>
-          </div>
-          <dl>
-            <div>
-              <dt>Mixing strength sin²(2θm)</dt>
-              <dd>{formatValue(selected.analytical?.mixing_strength)}</dd>
-            </div>
-            <div>
-              <dt>Effective mixing angle (radians)</dt>
-              <dd>{formatValue(selected.analytical?.theta_m)}</dd>
-            </div>
-            <div>
-              <dt>Ideal vs SciPy conversion error</dt>
-              <dd>{formatValue(selected.absolute_errors.ideal_vs_numerical.other)}</dd>
-            </div>
-            <div>
-              <dt>Shot sampling conversion error</dt>
-              <dd>{formatValue(selected.absolute_errors.sampling.other)}</dd>
-            </div>
-            <div>
-              <dt>Subdivision state change</dt>
-              <dd>{formatValue(selected.numerics.subdivision_check.state_change_l2)}</dd>
-            </div>
-            <div>
-              <dt>Qubits / depth (with measurement)</dt>
-              <dd>{selected.num_qubits} / {selected.circuit_depth}</dd>
-            </div>
-            <div>
-              <dt>Shots / seed</dt>
-              <dd>{selected.shots} / {selected.configuration.seed}</dd>
-            </div>
-            <div>
-              <dt>Classical reference (ms)</dt>
-              <dd>{formatValue(selected.timing_ms.classical, 3)}</dd>
-            </div>
-            <div>
-              <dt>Circuit end-to-end (ms)</dt>
-              <dd>{formatValue(selected.timing_ms.circuit_end_to_end, 3)}</dd>
-            </div>
-          </dl>
-          <p class="hint">
-            Maximum mixing and maximum conversion are distinct. Mixing is unavailable for multiple
-            layers or a degenerate generator. Timing scopes differ; these values do not establish
-            quantum speedup.
-          </p>
-          <details>
-            <summary>Full reproducibility record</summary>
-            <pre>{JSON.stringify(selected, null, 2)}</pre>
-          </details>
-        {:else}<p>No results yet. Run a simulation to compare both flavor probabilities.</p>{/if}
+        </div>
+        <span class="source">Aer simulator</span>
       </div>
-    </Panel>
-    <p class="hint">
-      The other flavor is an effective active-flavor combination. Smooth profiles, three-flavor
-      interference, and neutrino interactions are outside this model. <a href="/methodology/"
-        >Read the methodology</a
-      >.
-    </p>
+      {#if run.status === 'ready' && point}
+        <Chart result={run.result} bind:index {advanced} />
+        <div class="readout">
+          <div class="readout-head">
+            <label for="inspect">Inspect a point</label><output
+              >{density ? 'Potential' : 'Distance'} {fmt(coordinate, 4)}</output
+            >
+          </div>
+          <input
+            id="inspect"
+            aria-label="Selected graph point"
+            type="range"
+            min="0"
+            max={run.result.results.length - 1}
+            step="1"
+            bind:value={index}
+          />
+          <div class="metrics">
+            <div>
+              <small>Electron flavor</small><strong
+                >{percent(point.ideal.electron)}<em>%</em></strong
+              >
+            </div>
+            <div>
+              <small>Other flavor</small><strong>{percent(point.ideal.other)}<em>%</em></strong>
+            </div>
+            <p>Ideal detection chances at this point</p>
+          </div>
+        </div>
+      {:else}<div class="placeholder" aria-live="polite">
+          {#if run.status === 'error'}<strong>Unable to plot this run</strong>
+            <p>{run.message}</p>
+            <button onclick={() => runner.update({ ...settings }, 0)}>Retry simulation</button
+            >{:else}<span class="progress"></span><strong
+              >{run.status === 'running'
+                ? 'Simulating flavor probabilities…'
+                : 'Preparing your curve…'}</strong
+            >{/if}
+        </div>{/if}
+    </section>
+    <aside class="controls">
+      <div class="control-title">
+        <h2>Controls</h2>
+        <button class="reset" onclick={() => (settings = preset(settings.environment))}
+          ><Icon name="reset" size={14} /> Reset</button
+        >
+      </div>
+      {#if advanced && experiment.id === 'density'}<label for="scan">Matter experiment</label
+        ><select id="scan" bind:value={settings.environment}
+          ><option value="density">Sweep matter potential</option><option value="matter"
+            >Travel at constant density</option
+          ></select
+        >{/if}
+      <Parameter
+        label="Travel distance"
+        unit="L/L₀"
+        help={density
+          ? 'Baseline held fixed across the density sweep.'
+          : 'Length of the path through this environment.'}
+        min={0}
+        max={100}
+        bind:value={settings.distance}
+      />
+      {#if settings.environment === 'layers' || settings.environment === 'matter'}<Parameter
+          label={settings.environment === 'layers' ? 'First layer potential' : 'Matter potential'}
+          unit="V/V₀"
+          help="Higher potential represents more electrons per unit volume."
+          min={0}
+          max={10}
+          bind:value={settings.potential}
+        />{/if}
+      {#if settings.environment === 'layers'}<Parameter
+          label="Second layer potential"
+          unit="V/V₀"
+          help="Potential after the halfway point."
+          min={0}
+          max={10}
+          bind:value={settings.second_potential}
+        />{/if}
+      {#if density}<Parameter
+          label="Sweep limit"
+          unit="V/V₀"
+          help="The largest matter potential on the horizontal axis."
+          min={0}
+          max={10}
+          bind:value={settings.max_potential}
+        />{/if}
+      {#if advanced || experiment.id === 'vacuum'}<Parameter
+          label="Mixing angle"
+          unit="rad"
+          help="Sets how the two mass states combine into a flavor."
+          min={0}
+          max={Math.PI / 2}
+          bind:value={settings.theta}
+        />{/if}
+      {#if advanced}
+        <Parameter
+          label="Energy"
+          unit="E/E₀"
+          help="At fixed mass splitting, energy changes the oscillation phase."
+          min={0.01}
+          max={100}
+          bind:value={settings.energy}
+        />
+        <Parameter
+          label="Mass-squared splitting"
+          unit="Δm²/Δ₀"
+          help="Signed difference between the squared masses."
+          min={-10}
+          max={10}
+          bind:value={settings.delta_m2}
+        />
+        <label for="particle">Particle</label><select id="particle" bind:value={settings.particle}
+          ><option value="neutrino">Neutrino</option><option value="antineutrino"
+            >Antineutrino</option
+          ></select
+        >
+        <h3>Sampling</h3>
+        <div class="numbers">
+          <label>Points<input type="number" min="2" max="41" bind:value={settings.samples} /></label
+          ><label
+            >Shots / point<input
+              type="number"
+              min="1"
+              max="100000"
+              bind:value={settings.shots}
+            /></label
+          ><label
+            >Initial seed<input
+              type="number"
+              min="0"
+              max="4294967295"
+              bind:value={settings.seed}
+            /></label
+          >
+        </div>
+      {/if}
+      <p class="foot">
+        The curve updates when you pause. Length, energy and potential use normalized scales.
+      </p>
+    </aside>
   </div>
+  <section class="learn">
+    <span class="learn-icon"><Icon name="book" size={22} /></span>
+    <div>
+      <h2>
+        {settings.environment === 'vacuum'
+          ? 'Why does flavor change in empty space?'
+          : settings.environment === 'layers'
+            ? 'What happens at the boundary?'
+            : 'How does matter change mixing?'}
+      </h2>
+      {#if settings.environment === 'vacuum'}<p>
+          An electron-flavor neutrino starts as a combination of two mass states. They accumulate
+          phase at different rates as they travel. Their interference changes the chance of
+          detecting each flavor. The mixing angle controls how large that swing can be.
+        </p>
+      {:else if settings.environment === 'layers'}<p>
+          The neutrino carries its state across the boundary. The second potential changes how the
+          state evolves from there. Follow the marker across the shaded region to see how the
+          detection chances develop.
+        </p>
+      {:else}<p>
+          Electrons in matter change how the two flavors mix. At resonance they mix maximally. The
+          distance traveled still determines the oscillation phase, so even maximal mixing can give
+          a small conversion probability.
+        </p>{/if}
+      {#if point?.analytical?.mixing_strength != null}<p>
+          At this point the mixing allows up to <b
+            >{fmt(point.analytical.mixing_strength * 100, 2)}%</b
+          >
+          conversion. The ideal conversion probability at the sampled distance is
+          <b>{percent(point.ideal.other)}%</b>.
+        </p>{/if}
+      <details>
+        <summary>What are flavor, qubits and shots?</summary>
+        <p>
+          Flavor describes how a neutrino interacts when detected. One simulated qubit can represent
+          the two outcomes in this simplified model. A shot prepares and measures the circuit once.
+          Repeating it estimates the probability of each outcome.
+        </p>
+      </details>
+    </div>
+  </section>
+  {#if advanced && run.status === 'ready'}<Inspector
+      result={run.result}
+      request={run.request}
+      {index}
+    />{/if}
 </div>
 
 <style>
-  .notice,
-  .hint,
-  .status {
-    color: var(--muted);
-    font-size: 13px;
+  :global(.app-shell:has(.lab) .sidebar) {
+    --surface-raised: #101b2b;
+    --muted: #b9c7d7;
+    --text: #e8f0fa;
+    --accent: #79b1fc;
+    --blue: #93bfff;
+    border-right: 1px solid #26384c;
+  }
+  :global(.app-shell:has(.lab) .sidebar nav a.active) {
+    background: #1c3047;
+  }
+
+  :global(.workspace:has(.lab)) {
+    background: #0b1423;
+    color: #e9f0fa;
+  }
+  :global(.workspace:has(.lab) .topbar) {
+    background: #101c2d;
+    border-color: #2d4159;
+  }
+  :global(.workspace:has(.lab) .breadcrumb),
+  :global(.workspace:has(.lab) .breadcrumb strong) {
+    color: #bbc9da;
+  }
+  .lab {
+    --lab-panel: #122135;
+    --lab-border: #31445c;
+    --lab-muted: #b4c3d4;
+    --lab-teal: #66dec2;
+    --blue: #91bbff;
+    color-scheme: dark;
+    color: #edf3fc;
+    max-width: 1420px;
+    margin: auto;
+    padding-bottom: 2rem;
+  }
+  header,
+  .control-title,
+  .plot-title,
+  .readout-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+  h1 {
+    font-weight: 500;
+    letter-spacing: -0.05em;
+    font-size: clamp(2.2rem, 4vw, 3.7rem);
+    line-height: 1.1;
+    margin: 0.15em 0;
+  }
+  header p,
+  .plot-title p,
+  .learn p,
+  .foot {
+    color: var(--lab-muted);
     line-height: 1.6;
   }
-  .notice {
-    border-left: 3px solid var(--blue);
-    padding: 12px 16px;
-    background: #f4f7fc;
+  header p {
+    max-width: 54ch;
   }
-  .presets {
+  .switch {
+    display: flex;
+    border: 1px solid var(--lab-border);
+    border-radius: 9px;
+    padding: 4px;
+    flex-shrink: 0;
+  }
+  .switch button {
+    border-radius: 5px;
+    padding: 0.5em 0.9em;
+    font-size: 0.88rem;
+  }
+  .switch button[aria-pressed='true'] {
+    background: #c6dafa;
+    color: #102239;
+    font-weight: 600;
+  }
+  .choices {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.8rem;
+    margin: 1.65rem 0;
+  }
+  .choice {
+    position: relative;
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin: 20px 0;
-    font-size: 13px;
+    gap: 0.8rem;
+    text-align: left;
+    background: #101d2f;
+    border: 1px solid var(--lab-border);
+    border-radius: 11px;
+    padding: 1rem;
+    transition: background 0.15s;
   }
-  .lab-layout {
+  .choice:hover {
+    background: #1c2c40;
+  }
+  .choice[aria-pressed='true'] {
+    background: #1a2b41;
+    border-color: var(--tone);
+  }
+  .choice strong {
+    display: block;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  .choice small {
+    color: var(--lab-muted);
+    line-height: 1.4;
+    display: block;
+    font-size: 0.8rem;
+    margin-top: 0.15rem;
+  }
+  .emblem,
+  .learn-icon {
+    color: var(--tone);
     display: grid;
-    grid-template-columns: 300px minmax(0, 1fr);
-    gap: 24px;
+    place-items: center;
+    flex: none;
+  }
+  .radio {
+    margin-left: auto;
+    align-self: flex-start;
+    border: 1px solid #65798f;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex: none;
+  }
+  .choice[aria-pressed='true'] .radio {
+    background: var(--tone);
+    border-color: var(--tone);
+  }
+  .deck {
+    display: grid;
+    grid-template-columns: minmax(0, 2.6fr) minmax(225px, 1fr);
+    gap: 1rem;
     align-items: start;
   }
-  aside,
-  .results {
+  .instrument,
+  .controls,
+  .learn {
+    border: 1px solid var(--lab-border);
+    border-radius: 14px;
+    background: var(--lab-panel);
     min-width: 0;
+    padding: clamp(1rem, 2vw, 1.65rem);
   }
-  .results {
-    display: grid;
-    gap: 20px;
-  }
-  .status {
-    margin: 0;
-  }
-  form,
-  .details {
-    padding: 0 24px 24px;
-  }
-  fieldset {
-    border: 0;
-    padding: 0;
-    margin: 0;
-    min-width: 0;
-  }
-  legend {
-    font-size: 14px;
+  h2 {
+    font-size: 1.2rem;
     font-weight: 500;
-    margin: 0 0 16px;
+    letter-spacing: -0.025em;
   }
-  label {
-    display: block;
-    color: var(--muted);
-    font-size: 12px;
-    margin: 0 0 7px;
+  .plot-title {
+    align-items: start;
+    margin-bottom: 1rem;
   }
-  select,
-  input {
-    width: 100%;
-    min-height: 40px;
-    padding: 9px 10px;
-    margin-bottom: 14px;
-    background: var(--surface-raised);
-    border: 1px solid var(--border);
-    border-radius: 2px;
-    color: var(--text);
-    font-size: 12px;
+  .plot-title p,
+  .foot {
+    font-size: 0.81rem;
   }
-  form .button {
-    width: 100%;
-  }
-  .error {
-    padding: 16px;
-    border-left: 3px solid #b42318;
-    background: #fff0ed;
-    color: #8b251c;
-    margin: 16px 0;
-    font-size: 14px;
-    line-height: 1.6;
-  }
-  .error p {
-    margin-bottom: 0;
-  }
-  .table-scroll {
-    overflow-x: auto;
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    text-align: left;
-    font-size: 12px;
-  }
-  caption {
-    text-align: left;
-    margin: 10px 0;
-    color: var(--muted);
-  }
-  th,
-  td {
-    border-bottom: 1px solid var(--border);
-    padding: 12px 8px;
+  .source {
+    color: #a9c2de;
+    font: 0.7rem var(--mono);
     white-space: nowrap;
   }
-  th {
-    font-weight: 400;
+  .readout {
+    border-top: 1px solid var(--lab-border);
+    margin-top: 1rem;
+    padding-top: 1rem;
   }
-  thead {
-    background: var(--surface-raised);
-    color: var(--muted);
+  .readout-head {
+    font-size: 0.8rem;
   }
-  td,
-  dd {
-    font-family: var(--mono);
+  output {
+    font: 0.78rem var(--mono);
+    color: var(--lab-muted);
   }
-  dl {
-    margin: 16px 0;
+  .readout input {
+    width: 100%;
+    accent-color: #86adff;
+    margin: 0.4rem 0;
   }
-  dl div {
+  .metrics {
     display: flex;
-    gap: 16px;
-    justify-content: space-between;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 12px;
+    align-items: end;
+    gap: clamp(0.8rem, 3vw, 3rem);
+    flex-wrap: wrap;
   }
-  dt {
-    color: var(--muted);
+  .metrics small {
+    font-size: 0.8rem;
+    color: var(--lab-muted);
   }
-  dd {
-    margin: 0;
-    text-align: right;
+  .metrics strong {
+    display: block;
+    color: #82afff;
+    font: 500 clamp(1.4rem, 3vw, 2.25rem) var(--mono);
+    letter-spacing: -0.07em;
   }
-  summary {
+  .metrics div:nth-child(2) strong {
+    color: var(--lab-teal);
+  }
+  .metrics em {
+    font-size: 0.55em;
+    font-style: normal;
+    margin-left: 0.12em;
+  }
+  .metrics p {
+    font-size: 0.73rem;
+    max-width: 12ch;
+    color: var(--lab-muted);
+    margin-bottom: 0.45rem;
+  }
+  .reset {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+  }
+  .foot {
+    border-top: 1px solid var(--lab-border);
+    padding-top: 1rem;
+    margin-top: 1.15rem;
+  }
+  .learn {
+    display: flex;
+    align-items: start;
+    gap: 1rem;
+    margin-top: 1rem;
+    background: #10272e;
+    border-color: #294c51;
+  }
+  .learn-icon {
+    color: var(--lab-teal);
+    margin-top: 2px;
+  }
+  .learn p {
+    max-width: 95ch;
+    margin: 0.45rem 0;
+    font-size: 0.93rem;
+  }
+  .learn details {
+    margin-top: 0.7rem;
+    font-size: 0.85rem;
+  }
+  .learn summary {
     cursor: pointer;
-    padding: 12px 0;
-    font-size: 13px;
+    color: #9ae7d5;
   }
-  pre {
-    max-height: 320px;
-    overflow: auto;
-    font-size: 11px;
-    background: #f4f7fc;
-    padding: 12px;
+  .controls h3 {
+    margin: 1rem 0 0.5rem;
+  }
+  .controls label {
+    font-size: 0.8rem;
+  }
+  .numbers {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+  .numbers input,
+  select {
+    width: 100%;
+    background: #101d30;
+    color: inherit;
+    border: 1px solid #52667d;
+    padding: 0.4rem;
+    border-radius: 5px;
+    font-size: 0.82rem;
+  }
+  .placeholder {
+    min-height: 320px;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 0.8rem;
+    text-align: center;
+  }
+  .placeholder button {
+    background: #233951;
+    padding: 0.6em 1em;
+    border-radius: 6px;
+  }
+  .progress {
+    width: 30px;
+    height: 4px;
+    background: var(--lab-teal);
+    border-radius: 3px;
+    animation: pulse 1s ease-in-out infinite alternate;
+  }
+  @keyframes pulse {
+    to {
+      opacity: 0.3;
+    }
   }
   @media (max-width: 900px) {
-    .lab-layout {
+    .deck {
       grid-template-columns: 1fr;
+    }
+    .choices {
+      gap: 0.5rem;
+    }
+    .choice {
+      padding: 0.8rem;
+    }
+    .choice .radio {
+      display: none;
+    }
+    .controls {
+      max-width: 100%;
+    }
+  }
+  @media (max-width: 650px) {
+    header {
+      align-items: start;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .choices {
+      grid-template-columns: 1fr;
+      margin: 1rem 0;
+    }
+    .choice {
+      padding: 0.65rem 0.85rem;
+    }
+    .choice small {
+      margin: 0;
+    }
+    .choice .radio {
+      display: block;
+    }
+    .plot-title {
+      flex-wrap: wrap;
+      gap: 0.25rem;
+    }
+    .learn {
+      gap: 0.6rem;
+    }
+    .metrics p {
+      max-width: none;
+    }
+    .source {
+      font-size: 0.65rem;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .choice {
+      transition: none;
+    }
+    .progress {
+      animation: none;
     }
   }
 </style>

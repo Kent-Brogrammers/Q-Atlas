@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" /><title>Neutrino Lab browser regression</title>
+  <h1>Neutrino Lab browser regression</h1>
+  <p>Run against the local development server and simulation API.</p>
+  <button id="run">Test live controls</button>
+  <pre id="report" role="status"></pre>
+  <iframe
+    title="Application under test"
+    src="/neutrinos/"
+    style="width: 100%; height: 70vh"
+  ></iframe>
+  <script type="module">
+    const report = document.querySelector('#report');
+    const frame = document.querySelector('iframe');
+    const doc = () => frame.contentDocument;
+    const button = (name) =>
+      [...doc().querySelectorAll('button')].find((el) => el.textContent.trim() === name);
+    const exact = () =>
+      doc()
+        .querySelector('input[aria-label="Travel distance slider"]')
+        .parentElement.querySelector('input[type=number]');
+    const point = () => doc().querySelector('[aria-label="Inspect graph point"]');
+    async function until(predicate, message) {
+      const deadline = performance.now() + 35000;
+      while (!predicate()) {
+        if (performance.now() > deadline) throw new Error(message);
+        await new Promise((resolve) => setTimeout(resolve, 40));
+      }
+    }
+    function edit(input, value) {
+      input.value = value;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    document.querySelector('#run').onclick = async (event) => {
+      event.target.disabled = true;
+      report.textContent = 'Running…';
+      try {
+        await until(point, 'Initial simulation did not finish');
+        const slider = () => doc().querySelector('[aria-label="Travel distance slider"]');
+        edit(exact(), '3.125');
+        await until(
+          () => +slider().value === 3.125 && !point(),
+          'Exact input did not update its slider or invalidate the curve'
+        );
+        edit(slider(), '2');
+        await until(() => +exact().value === 2, 'Slider did not update exact input');
+        await until(
+          () => point()?.getAttribute('aria-valuetext') === 'Travel distance 2',
+          'Latest input was not simulated'
+        );
+        edit(doc().querySelector('#inspect'), '5');
+        await until(
+          () => point()?.getAttribute('aria-valuenow') === '5',
+          'Graph and inspector are out of sync'
+        );
+        const readout = doc().querySelector('.metrics').textContent;
+        button('Advanced').click();
+        await until(() => button('Validation'), 'Advanced inspection did not appear');
+        if (
+          +exact().value !== 2 ||
+          point()?.getAttribute('aria-valuenow') !== '5' ||
+          doc().querySelector('.metrics').textContent !== readout
+        )
+          throw new Error('Switching modes changed parameters, selection or probabilities');
+        button('Explore').click();
+        await until(() => !button('Validation'), 'Explore mode did not return');
+        if (point()?.getAttribute('aria-valuenow') !== '5') throw new Error('Selected point lost');
+        edit(exact(), '-1');
+        await until(
+          () => !point() && doc().body.textContent.includes('distance must be'),
+          'Invalid settings did not replace the old curve with an error'
+        );
+        button('Reset').click();
+        await until(() => +exact().value === 4 && point(), 'Reset did not restore the vacuum run');
+        report.textContent =
+          'PASS — slider and numeric synchronization, normalized validation, loading invalidation, live run, graph selection, mode preservation and reset.';
+      } catch (error) {
+        report.textContent = 'FAIL — ' + error.message;
+      } finally {
+        event.target.disabled = false;
+      }
+    };
+  </script>
+</html>
