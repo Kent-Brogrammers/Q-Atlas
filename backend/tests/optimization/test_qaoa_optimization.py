@@ -1,10 +1,9 @@
 """Seeded search, strict evaluation budgets, and disposable-worker deadlines."""
 
-import ctypes
 import multiprocessing as mp
 from functools import partial
 from pathlib import Path
-from time import perf_counter
+from time import perf_counter, sleep
 from types import SimpleNamespace
 from unittest.mock import Mock
 
@@ -16,7 +15,7 @@ from app.schemas.contracts import QUBO, QAOAConfig
 
 def _blocked_worker(connection, qubo_payload, config_payload, compute, *, marker):
     Path(marker).write_text("entered native call")
-    ctypes.CDLL(None).sleep(30)
+    sleep(30)
     connection.close()
 
 
