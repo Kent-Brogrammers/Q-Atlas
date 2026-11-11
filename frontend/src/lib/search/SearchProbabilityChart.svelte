@@ -44,11 +44,11 @@
       <path
         d={path('theoretical')}
         fill="none"
-        stroke="#7864b4"
+        stroke="var(--violet)"
         stroke-width="2"
         stroke-dasharray="6 4"
       />
-      <path d={path('measured')} fill="none" stroke="#0f62fe" stroke-width="2" />
+      <path d={path('measured')} fill="none" stroke="var(--blue)" stroke-width="2" />
       {#each points as point}
         {#if point.confidenceInterval}
           <g stroke="var(--blue)" stroke-width="2" stroke-dasharray="3 2">
@@ -74,7 +74,7 @@
           </g>
         {/if}
         {#if point.observedRange}
-          <g stroke="#0f62fe" stroke-width="2">
+          <g stroke="var(--blue)" stroke-width="2">
             <title
               >Observed trial range: {(point.observedRange[0] * 100).toFixed(2)}% to {(
                 point.observedRange[1] * 100
@@ -100,8 +100,8 @@
             cx={x(point.iteration)}
             cy={y(point.theoretical)}
             r="5"
-            fill="white"
-            stroke="#7864b4"
+            fill="var(--surface)"
+            stroke="var(--violet)"
             stroke-width="2"
             ><title
               >Iteration {point.iteration}: theory {(point.theoretical * 100).toFixed(2)}%</title
@@ -111,7 +111,7 @@
             cx={x(point.iteration)}
             cy={y(point.measured)}
             r="3"
-            fill="#0f62fe"
+            fill="var(--blue)"
             ><title
               >Iteration {point.iteration}: measured {(point.measured * 100).toFixed(2)}%</title
             ></circle
@@ -157,10 +157,10 @@
     font-size: 13px;
   }
   .measured {
-    color: #0f62fe;
+    color: var(--blue);
   }
   .theory {
-    color: #7864b4;
+    color: var(--violet);
   }
   .hint,
   .empty p {

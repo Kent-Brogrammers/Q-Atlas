@@ -587,14 +587,14 @@
     flex-shrink: 0;
     padding: 7px 10px;
     border: 1px solid var(--border);
-    background: white;
+    background: var(--surface);
     border-radius: 4px;
     font-size: 12px;
   }
   .notice {
     padding: 14px 18px;
     border-left: 3px solid var(--blue);
-    background: #edf4ff;
+    background: color-mix(in srgb, var(--blue) 6%, var(--surface));
     margin: 0 0 24px;
   }
   .search-layout {
@@ -635,9 +635,10 @@
     display: block;
     width: 100%;
     min-height: 40px;
-    border: 1px solid #cdd7e3;
+    border: 1px solid var(--border);
     border-radius: 3px;
-    background: white;
+    background: var(--surface);
+    color: var(--text);
     padding: 8px 10px;
     font-family: var(--mono);
     font-size: 13px;
@@ -650,6 +651,9 @@
     align-items: center;
     gap: 9px;
     line-height: 1.5;
+  }
+  input[type='checkbox'] {
+    accent-color: var(--blue);
   }
   .hint {
     color: var(--muted);
@@ -684,8 +688,9 @@
     margin: 4px 4px 4px 0;
   }
   .recorded-banner {
-    border: 1px solid #d9b963;
-    background: #fff8e6;
+    border: 1px solid var(--accent, var(--violet));
+    background: color-mix(in srgb, var(--accent, var(--violet)) 8%, var(--surface));
+    color: var(--text);
     padding: 16px 20px;
     border-radius: 4px;
     font-size: 13px;
@@ -744,12 +749,12 @@
     font-weight: 500;
   }
   tr.selected {
-    background: #edf4ff;
+    background: color-mix(in srgb, var(--blue) 10%, var(--surface));
   }
   .point-button {
     border: 0;
     background: transparent;
-    color: #0f62fe;
+    color: var(--blue);
     padding: 0;
     text-decoration: underline;
     white-space: nowrap;
@@ -766,7 +771,7 @@
   }
   .method {
     border: 1px solid var(--border);
-    background: white;
+    background: var(--surface);
     padding: 18px 24px;
     border-radius: 5px;
     font-size: 13px;
@@ -781,11 +786,11 @@
     overflow-wrap: anywhere;
   }
   .error {
-    border: 1px solid #edbbbb;
+    border: 1px solid var(--error, var(--accent, var(--violet)));
     padding: 16px;
     margin-bottom: 20px;
-    color: #922c2c;
-    background: #fff8f8;
+    color: var(--text);
+    background: color-mix(in srgb, var(--error, var(--accent, var(--violet))) 6%, var(--surface));
     font-size: 13px;
     line-height: 1.6;
   }
