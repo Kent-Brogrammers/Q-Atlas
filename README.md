@@ -58,9 +58,13 @@ are arbitrary, named scalar inputs need no indexing, and width is inferred witho
 [named_decisions.py](examples/compiler/programs/named_decisions.py) and the
 [script-generation guide](docs/COMPILER_SCRIPT_GENERATION.md). The optional second
 `@qatlas.circuit` marker is only for replacing an existing circuit factory.
-The page also offers [six full-program examples](examples/compiler/programs/README.md),
+The page offers [energy-project examples at three through six qubits](examples/compiler/programs/README.md),
+defaulting to a six-project selection problem, alongside
 three [generated output scripts](examples/compiler/programs/README.md#generated-output-files),
 and advanced conversion details plus nonexecuting comparison planning.
+Measured results focus on classical solving time and IBM QPU usage, with a runtime
+chart and expandable supporting timings. The two readings have distinct scopes;
+they are not an end-to-end speedup measurement.
 Local numeric weight vectors are supported inside objectives. Test planning remains
 nonexecuting; the separate [hardware action](docs/COMPILER_IBM_HARDWARE.md) submits
 one confirmed IBM job. User-submitted Python itself is never executed.

@@ -26,11 +26,15 @@ downloads. Editing source or layers clears downstream data. Test preparation run
 no solvers; performance metrics remain unmeasured. Function/input names are arbitrary;
 named scalar inputs and statically indexed vectors can infer width without `num_bits`.
 The Test step also offers **Load IBM devices** and an explicitly confirmed physical
-job: one layer, at most three inputs, 128 shots and a 10-second QPU cap. The backend
+job: one layer, at most six inputs, 128 shots and a 10-second QPU cap. The backend
 trains angles locally and samples the final bound circuit on the selected QPU.
 Use **Check hardware job**, **Cancel hardware job** and **Download QPU record** to
 manage the recorded request; there is no automatic submission or polling.
 See the [hardware runbook](../docs/COMPILER_IBM_HARDWARE.md) for quota and recovery.
+The default input selects three of six energy projects. The picker offers the
+same problem family at three, four, five and six qubits. Analytics shows measured
+classical time and IBM QPU usage with a linear/log runtime chart; supporting
+timings and settings are expandable rather than displayed as empty metric cards.
 Quantum controls and mathematical details are optional advanced sections. No circuit
 code or second decorator is needed. File contents are never executed.
 

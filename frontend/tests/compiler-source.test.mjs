@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { readFile } from 'node:fs/promises';
 import {
   DEFAULT_SCRIPT,
+  DEFAULT_FILENAME,
   MAX_SOURCE_LENGTH,
   generatedFilename,
   formatOptionalMs,
@@ -75,8 +77,15 @@ test('ordinary-script example needs one marker and no circuit knowledge', async 
   assert.equal(await readObjectiveFile(file), DEFAULT_SCRIPT);
   assert.match(
     DEFAULT_SCRIPT,
-    /@qatlas.objective\ndef assess_selection\(choose_red, choose_blue, choose_green\)/
+    /@qatlas.objective[^\n]*\ndef plan_projects\(solar, insulation, lighting, storage, heating, monitoring\)/
   );
-  assert.match(DEFAULT_SCRIPT, /score = assess_selection\(0, 0, 1\)/);
+  assert.match(DEFAULT_SCRIPT, /score = plan_projects\(1, 1, 1, 0, 0, 0\)/);
+  assert.equal(
+    DEFAULT_SCRIPT,
+    await readFile(
+      new URL(`../../examples/compiler/programs/${DEFAULT_FILENAME}`, import.meta.url),
+      'utf8'
+    )
+  );
   assert.doesNotMatch(DEFAULT_SCRIPT, /@qatlas.circuit|qiskit|QuantumCircuit|num_bits/);
 });

@@ -35,7 +35,7 @@ def _call(operation):
             422,
             ErrorDetail(
                 code="VALIDATION_ERROR",
-                message="Check hardware settings, credentials/instance, three-input limit, "
+                message="Check hardware settings, credentials/instance, six-input limit, "
                 "and remaining local reservation cap.",
             ),
         )
