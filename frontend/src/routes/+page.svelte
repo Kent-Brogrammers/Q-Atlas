@@ -12,10 +12,14 @@
       workspace shows its validation and execution status.
     </p>
     <div class="workspace-actions">
-      <a class="button primary" href="/compiler/"
-        >Open Python Compiler<Icon name="arrow" size={18} /></a
-      >
-      <a class="button" href="/neutrinos/">Launch Neutrino Lab<Icon name="arrow" size={18} /></a>
+      <a class="button primary workspace-action-button" href="/compiler/">
+        <span class="button-text">Open Python Compiler</span>
+        <span class="button-icon"><Icon name="arrow" size={30} /></span>
+      </a>
+      <a class="button primary workspace-action-button" href="/neutrinos/">
+        <span class="button-text">Launch Neutrino Lab</span>
+        <span class="button-icon"><Icon name="arrow" size={30} /></span>
+      </a>
       <a class="button" href="/search/">Explore Grover Search<Icon name="arrow" size={18} /></a>
     </div>
   </header>
@@ -86,10 +90,83 @@
     margin: 0 0 24px;
     font-size: 19px;
     line-height: 1.55;
-    color: #45536a;
+    color: var(--muted);
   }
-  .introduction .button {
-    min-width: 230px;
+  .introduction .workspace-action-button {
+    min-width: 215px;
+    min-height: 0;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border: 6px solid #88add3;
+    border-radius: 50px;
+    background: #12345b;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    transition:
+      background-color 0.3s,
+      border-color 0.3s,
+      border-width 0.15s;
+  }
+  .introduction .workspace-action-button:hover {
+    border-color: #6e9bc9;
+    background: #194a79;
+  }
+  .introduction .workspace-action-button:active {
+    border-width: 5px;
+  }
+  .introduction .workspace-action-button:focus-visible {
+    outline-color: var(--text);
+  }
+  .button-text {
+    font-size: 1.4em;
+    line-height: 1.15;
+  }
+  .button-icon {
+    display: inline-flex;
+    align-items: center;
+    padding-top: 5px;
+  }
+  .button-icon :global(svg) {
+    width: 24px;
+    height: 24px;
+  }
+  .workspace-action-button:hover .button-icon :global(svg) {
+    animation: jello-vertical 0.9s both;
+    transform-origin: left;
+  }
+  @keyframes jello-vertical {
+    0% {
+      transform: scale3d(1, 1, 1);
+    }
+    30% {
+      transform: scale3d(0.75, 1.25, 1);
+    }
+    40% {
+      transform: scale3d(1.25, 0.75, 1);
+    }
+    50% {
+      transform: scale3d(0.85, 1.15, 1);
+    }
+    65% {
+      transform: scale3d(1.05, 0.95, 1);
+    }
+    75% {
+      transform: scale3d(0.95, 1.05, 1);
+    }
+    100% {
+      transform: scale3d(1, 1, 1);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .introduction .workspace-action-button {
+      transition: none;
+    }
+    .workspace-action-button:hover .button-icon :global(svg) {
+      animation: none;
+    }
   }
   .workspace-actions {
     display: flex;
@@ -128,7 +205,7 @@
     font-size: 14px;
   }
   dt {
-    color: #344158;
+    color: var(--text);
   }
   dd {
     margin: 0;
@@ -143,6 +220,10 @@
   @media (max-width: 650px) {
     .introduction {
       padding-top: 4px;
+    }
+    .introduction .workspace-action-button {
+      width: 100%;
+      min-width: 0;
     }
     h1 {
       font-size: 32px;

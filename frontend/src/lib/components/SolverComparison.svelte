@@ -107,7 +107,7 @@
     display: inline-flex;
     gap: 7px;
     align-items: center;
-    color: #63738a;
+    color: var(--muted);
     font-size: 12px;
   }
   i {
@@ -115,46 +115,46 @@
     width: 5px;
     height: 5px;
     border-radius: 50%;
-    background: #5eade9;
+    background: var(--blue);
   }
   i.qaoa {
-    background: #a38cc6;
+    background: var(--accent);
   }
   strong {
     font: 400 13px var(--mono);
-    color: #344760;
+    color: var(--text);
   }
   strong small {
     font-size: 12px;
     font-weight: 400;
-    color: #687382;
+    color: var(--muted);
     margin-left: 5px;
   }
   .comparison-track {
     height: 10px;
-    background: #f0f5fb;
+    background: var(--surface);
     border-radius: 4px;
     overflow: hidden;
   }
   .comparison-track > span {
     height: 100%;
     display: block;
-    background: #7cbaec;
+    background: var(--blue);
     border-radius: 4px;
     transition: width 0.15s;
   }
   .comparison-track > span.qaoa {
-    background: #b6a3d8;
+    background: var(--accent);
   }
   .comparison-foot {
     margin-top: 22px;
     padding-top: 15px;
-    border-top: 1px solid #edf1f7;
+    border-top: 1px solid var(--border);
   }
   .comparison-foot p {
     font-size: 12px;
     line-height: 1.65;
-    color: #677383;
+    color: var(--muted);
     margin: 4px 0 0;
   }
 </style>

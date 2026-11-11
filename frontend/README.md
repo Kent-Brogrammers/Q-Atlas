@@ -29,8 +29,11 @@ Quantum controls and mathematical details are optional advanced sections. No cir
 code or second decorator is needed. File contents are never executed.
 
 FastAPI can be started independently using the root README or together with this
-frontend using `../dev.sh`. The compiler workflow calls only generation and planning;
-other experiment pages retain their own simulation controls and API integrations.
+frontend using `../dev.sh`. Its materials route runs the existing spin-system
+simulation only when requested; the Materials route displays live results. The
+Neutrino Lab and Grover Search also use their live backend APIs. The compiler
+workflow calls only generation and planning; it does not execute user code or run
+benchmarks. Optimization benchmarks remain unavailable.
 
 ```sh
 npm run check
@@ -48,7 +51,8 @@ example-data consistency. `build` prerenders all seven routes into `build/`.
 ## Structure
 
 - `src/routes/`: primary Overview, Python Compiler, Neutrino Lab, Grover Search, and Methodology views.
-  Materials and Optimization remain at their original URLs.
+  Materials and Optimization remain accessible at their original URLs; Materials
+  provides the live Ising-chain request and result view.
 - `src/lib/data/navigation.ts`: the five primary links, separate from the retained
   experiment catalog in `experiments.ts`.
 - `src/lib/components/`: reusable panels, controls, SVG diagrams, and example displays.
@@ -69,8 +73,10 @@ example-data consistency. `build` prerenders all seven routes into `build/`.
 SvelteKit 3 configuration lives in `vite.config.ts`; `#lib/*` imports are declared
 in `package.json`. Tailwind CSS 4 is integrated through its Vite plugin. IBM Plex
 Sans handles UI text; Plex Mono handles code, numbers, and technical metadata.
-The light workspace, navy navigation, blue feature panels, 4–6px card corners,
-and minimally rounded controls preserve the current design.
+The warm-neutral editorial palette uses `#FAFAF8` for the canvas, `#F5F0EB` for
+cards and navigation, `#1C1917` / `#57534E` for text, `#0369A1` for interactive
+elements, `#C2410C` for accent states, `#166534` for success, and `#D6D3D1` for
+dividers. Cards use 4–6px corners and controls remain minimally rounded.
 
 ## Neutrino Oscillation Lab
 
@@ -79,31 +85,22 @@ Overview provides a prominent **Open Python Compiler** action, a compiler capabi
 summary, and the existing Neutrino science/availability information without example statistics.
 Methodology records the model scope and classical validation requirements.
 
-`/neutrinos/` is the primary workspace. Model/flavor selection, energy/distance,
-vacuum/constant-density matter, matter parameters, and requested shots are visible
-but disabled until capabilities and the API are agreed. There are no assumed
-physical defaults or enabled propagation modes. Run sends no requests.
-
-The probability plot starts empty, with no assumed flavor channels or example
-dataset. Comparison, accuracy, and circuit/execution information are grouped in
-expandable sections rather than empty measurement cards. No physics or error
-calculation runs in the browser. Local draft-export helpers remain available for
-future integration but are not exposed as an approved request workflow.
-
-Draft discussion types live in `src/lib/neutrinos/proposal.ts`, outside the approved
-generated API schema. See [Nick's proposed handoff](../docs/NEUTRINO_INTERFACE_PROPOSAL.md)
-for supported models/flavors, units, matter conventions, independent classical
-reference, measured errors, encoding, and timing requirements. No neutrino endpoint
-is added to the shared client. The existing Materials backend and React scaffold
-are preserved.
+`/neutrinos/` is the live two-flavor propagation workspace. It supports vacuum,
+constant matter, two equal-length matter layers, and a matter-potential sweep for
+neutrinos and antineutrinos. Inputs and outputs use normalized units; the initial
+state is electron flavor, and the other channel is an effective active-flavor
+combination. The backend returns SciPy reference, ideal Qiskit, and finite-shot
+results with metrics and timing. See [the experiment guide](../docs/NEUTRINOS.md)
+for the model, assumptions, and limitations. The UI starts without fabricated
+results, validates settings before requests, and shows backend errors explicitly.
 
 ## Retained workspaces and data provenance
 
 The compiler at `/compiler/` is linked from the sidebar and Overview. The original
-`/optimization/` and `/materials/` routes remain accessible by direct URL,
-with their source and functionality preserved. Those two routes are hidden from
-primary navigation pending the team's decision about their long-term role. Their
-backend implementations, shared schemas, and React reference are unchanged.
+`/optimization/` and `/materials/` remain accessible by direct URL. Materials sends
+live requests to its implemented backend endpoint; optimization benchmarks remain
+unavailable. `/search/` is linked from primary navigation and runs live Grover /
+classical comparisons. Shared schemas and the React reference remain available.
 
 ## Retained behavior
 
@@ -129,8 +126,7 @@ Compiler edits invalidate the returned QUBO, generated script, and plan; request
 use the shared typed API and ignore stale responses. The default example contains
 ordinary helpers, named binary choices, and a main caller with one bare decorator.
 Optional technical output shows source-to-bit mapping and honest unexecuted gates;
-comparison execution remains disabled. Materials controls retain their presentation
-scaffold. Search now runs the real search API.
+comparison execution remains disabled. Materials and Search use their live APIs.
 
 ## Grover Search
 

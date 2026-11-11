@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ApiError, createApiClient } from '../src/lib/api/client.ts';
-import type { ErrorResponse, OptimizationRequest, OptimizationResult } from '../src/types/index.ts';
+import type {
+  ErrorResponse,
+  MaterialsRequest,
+  MaterialsResult,
+  OptimizationRequest,
+  OptimizationResult
+} from '../src/types/index.ts';
 import { graphs } from '../src/lib/data/fixtures.ts';
 
 const request: OptimizationRequest = {
@@ -64,6 +70,51 @@ test('health uses GET and keeps experiment readiness distinct from API readiness
   };
   const client = createApiClient({ baseUrl: 'http://localhost:8000/api', fetcher });
   assert.equal((await client.health()).experiments_ready, false);
+});
+
+test('materials request forwards simulation settings and accepts a live result', async () => {
+  const materialsRequest: MaterialsRequest = {
+    model: 'ising',
+    num_spins: 3,
+    coupling: 1,
+    field: 0.7,
+    boundary: 'open',
+    observable: 'magnetization',
+    evolution_time: 1,
+    trotter_steps: 32,
+    time_samples: 5,
+    config: { backend: 'aer_simulator', shots: 512, seed: 42, timeout_seconds: 30 }
+  };
+  const materialsResult: MaterialsResult = {
+    experiment: 'materials',
+    problem_id: 'materials-contract-test',
+    backend: 'aer_simulator',
+    status: 'completed',
+    classical: null,
+    quantum: null,
+    metrics: { time_series: [] },
+    metadata: {
+      seed: 42,
+      timing_scope: 'end_to_end',
+      simulation_method: 'statevector',
+      parameters: materialsRequest,
+      hamiltonian_convention: 'H = -J ZZ - h X',
+      energy_unit: 'dimensionless',
+      observable_unit: 'dimensionless'
+    }
+  };
+  const fetcher: typeof fetch = async (url, init) => {
+    assert.equal(url, 'http://localhost:8000/api/materials/run');
+    assert.equal(init?.method, 'POST');
+    assert.deepEqual(JSON.parse(String(init?.body)), materialsRequest);
+    return Response.json(materialsResult);
+  };
+  assert.deepEqual(
+    await createApiClient({ baseUrl: 'http://localhost:8000/api', fetcher }).materials(
+      materialsRequest
+    ),
+    materialsResult
+  );
 });
 
 test('analysis forwards source as JSON to the shared compiler endpoint', async () => {

@@ -136,7 +136,9 @@ timings, and provenance. These values describe classical simulator output, not a
 ## Contract and plotting handoff
 
 The existing `MaterialsResult` benchmark envelope and scalar metrics remain in place.
-The only frontend change is regenerated API types. No UI components were edited.
+The Materials route submits the documented Ising request fields to the shared typed
+API client and displays response metrics, provenance, timings, and exact/ideal/measured
+time-series values. Failed or cancelled requests do not fall back to example data.
 
 - `time_samples=1`: one result at `evolution_time`.
 - `time_samples>1`: an evenly spaced grid from zero through `evolution_time`, inclusive.
