@@ -1,5 +1,11 @@
 # Compiler page integration handoff
 
+The compiler now consumes shared surface, border, text and muted tokens throughout
+its forms, code previews, tables and notices. Active steps use `--accent`, falling
+back to `--blue` on main's current theme. This prepares all four views for Shagai's
+warm palette in open `dev5` PR #14, without importing that PR's unrelated features
+or fixing the compiler to an experimental color selection.
+
 The compiler is now visible in the primary sidebar and Overview's **Open Python
 Compiler** action. The home page identifies conversion/planning as available and
 quantum execution as disabled, alongside the preserved Neutrino Lab. Keeping a
