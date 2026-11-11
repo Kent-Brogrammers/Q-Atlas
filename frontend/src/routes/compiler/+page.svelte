@@ -713,9 +713,9 @@
     text-align: left;
   }
   .workflow-nav button.current {
-    border-color: var(--blue);
-    color: var(--blue);
-    background: #f4f7fc;
+    border-color: var(--accent, var(--blue));
+    color: var(--accent, var(--blue));
+    background: var(--surface-raised);
   }
   .workflow-nav button.complete {
     color: var(--text);
@@ -795,7 +795,7 @@
     padding: 14px 16px;
     margin: 0 0 24px;
     border-left: 3px solid var(--blue);
-    background: #f4f7fc;
+    background: var(--surface-raised);
     color: var(--muted);
     font-size: 13px;
     line-height: 1.6;
@@ -846,7 +846,7 @@
     display: block;
     font-size: 12px;
     margin-bottom: 7px;
-    color: #46546a;
+    color: var(--muted);
   }
   select {
     display: block;
@@ -855,8 +855,8 @@
     min-width: 0;
     padding: 9px 10px;
     margin-bottom: 14px;
-    background: #f8fafd;
-    border: 1px solid #dbe1e9;
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
     border-radius: 2px;
     color: var(--text);
     font-size: 12px;
@@ -938,7 +938,7 @@
   }
   .editor-heading {
     padding: 10px 12px;
-    background: #f8fafd;
+    background: var(--surface-raised);
     border: 1px solid var(--border);
     border-bottom: 0;
   }
@@ -962,10 +962,10 @@
     margin: 0;
     border: 1px solid var(--border);
     border-radius: 0;
-    color: #38567a;
+    color: var(--text);
     font: 12px/1.85 var(--mono);
     resize: vertical;
-    background: #f8fafd;
+    background: var(--surface-raised);
     tab-size: 4;
   }
   .editor-footer {
@@ -983,13 +983,13 @@
     margin: 0;
   }
   .error-notice {
-    border-left-color: #a87930;
-    background: #fffaf0;
+    border-left-color: var(--accent, var(--blue));
+    background: var(--surface-raised);
     white-space: pre-wrap;
     overflow-wrap: anywhere;
   }
   .error-notice :global(svg) {
-    color: #a87930;
+    color: var(--accent, var(--blue));
   }
   .output-body,
   .output-placeholder {
@@ -1075,7 +1075,7 @@
     font-weight: 400;
   }
   thead {
-    background: #f8fafd;
+    background: var(--surface-raised);
     color: var(--muted);
   }
   td {

@@ -380,10 +380,6 @@
     font-size: 12px;
     margin: 0 0 7px;
   }
-  label > span {
-    font-family: var(--mono);
-    color: var(--muted);
-  }
   select,
   input {
     width: 100%;
