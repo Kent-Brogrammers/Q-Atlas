@@ -81,17 +81,20 @@ Health returns `{"status":"ok","service":"q-atlas","backend":"aer_simulator","ex
 This signals API readiness, not readiness of all experiments. Compiler analysis,
 generation, and nonexecuting comparison plans are available. Compiler benchmarking
 revalidates source and returns 422 for rejected source or 501 while shared runners
-are unavailable. Materials and search return real simulation results with HTTP 200;
-optimization still validates first and returns HTTP 501:
-
-```json
-{"status":"error","error":{"code":"NOT_IMPLEMENTED","message":"Optimization benchmark is not implemented. Developer 3 owns this feature.","diagnostics":[]}}
-```
+are unavailable. Materials, search and optimization return measured simulation
+results with HTTP 200. Optimization accepts either a graph or canonical QUBO and
+returns `OptimizationResult` through the shared classical and QAOA runners.
+Graphs are converted to minimization QUBOs before both solver timers begin.
+The response includes each solver's measured elapsed time, best assignment and
+objective, the exact-baseline optimality gap, actual shots and transpiled depth,
+optimizer evaluation count, seed, effective configuration and package versions.
+Local Aer results identify `simulated=true` and `simulation_method=statevector`.
 
 Invalid payloads return **422** with the same envelope and `VALIDATION_ERROR`.
 Routing/method errors return `NOT_FOUND`/`METHOD_NOT_ALLOWED` (404/405); unexpected
 exceptions return sanitized INTERNAL_ERROR (500). Compiler runner TimeoutError
-and materials/search worker timeouts map to TIMEOUT (504). Materials/search use HTTP_ERROR (503)
+and materials/search/optimization timeouts map to TIMEOUT (504).
+Materials/search/optimization use HTTP_ERROR (503)
 when optional quantum dependencies are missing; HTTP_ERROR covers other HTTP failures.
 Errors expose no stack traces or submitted field values. Each diagnostic has required
 `code`, `message`, `severity` (`error|warning|info`), and optional nullable one-based
