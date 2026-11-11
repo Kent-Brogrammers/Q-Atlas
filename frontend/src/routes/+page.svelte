@@ -20,7 +20,10 @@
         <span class="button-text">Launch Neutrino Lab</span>
         <span class="button-icon"><Icon name="arrow" size={30} /></span>
       </a>
-      <a class="button" href="/search/">Explore Grover Search<Icon name="arrow" size={18} /></a>
+      <a class="button primary workspace-action-button" href="/search/">
+        <span class="button-text">Explore Grover Search</span>
+        <span class="button-icon"><Icon name="arrow" size={30} /></span>
+      </a>
     </div>
   </header>
 
