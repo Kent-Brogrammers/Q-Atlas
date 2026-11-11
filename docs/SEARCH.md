@@ -393,3 +393,85 @@ the documented operation changes. No new dependency or transport client is requi
 
 The four follow-up commit groups are classical baseline, benchmark runner, API,
 then probability curves/frontend integration. Review and approval precede each commit.
+
+## Configurable repeated benchmarks
+
+### Circuit gate resources
+
+Live search results include `metrics.circuit_gate_counts`: a sorted histogram of
+gate names from the actual Aer-transpiled circuit used for execution. The selected
+result panel shows the sum as **Gates per transpiled circuit** and the histogram as
+**Gate breakdown**, alongside the existing transpiled depth. API and sweep JSON
+retain this histogram for each measured run.
+
+These counts cover one circuit, independent of shots. They count top-level Qiskit
+`Gate` instances, excluding measurement, reset, barriers and other non-gate
+instructions. A retained multi-controlled or composite gate counts once; no extra
+hardware-basis transpilation is performed to produce this metric. Counts depend on
+the simulator's supported operations, transpiler settings, seed and package versions.
+They do not represent native hardware costs, internal Aer execution operations, or
+the shot-batch query count. Older recorded demos lack this measurement and show
+“Not available”; they are not silently remeasured or assigned estimated counts.
+
+See [Qiskit circuit data and operations](https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.QuantumCircuit).
+
+### Sampling intervals in the dashboard
+
+Single-run and curve results show pointwise **95% Wilson score intervals** from
+the integer successful-shot and total-shot counts. The chart uses dashed whiskers;
+the results table provides numerical bounds for each run, including recorded demos.
+Intervals remain nonzero in width for zero or all successful shots. Older records
+without counts show “Not available”; probabilities are never rounded into counts.
+
+These approximate intervals assume independent Bernoulli shots at a fixed success
+probability and describe sampling uncertainty. Nominal 95% coverage describes the
+interval procedure under repeated sampling, rather than a probability that the
+fixed parameter lies in a particular observed interval. They do not quantify model
+error or device noise and are not a simultaneous confidence band over a curve.
+The repeated-trial chart retains its descriptive min/max range; the individual
+trial rows show their own sampling intervals, with no pooled interval for the mean.
+Measured JSON exports retain raw counts so the intervals can be recomputed.
+Method: [NIST Wilson confidence intervals](https://www.itl.nist.gov/div898/handbook/prc/section2/prc241.htm),
+two-sided, z = 1.959963984540054, without continuity correction.
+
+### Command-line batches
+
+The fixed demo recorder remains unchanged. For a custom local batch, run the
+search sweep from `backend/` in PowerShell:
+
+```powershell
+.\.venv\Scripts\python.exe -m app.experiments.search.sweep `
+  --num-qubits 3 --marked-states 001 110 `
+  --iterations 0 1 2 3 4 --shots 256 1024 --seeds 42 43 44 `
+  --timeout 30 --total-timeout 300 --output "$env:TEMP\search-sweep.json"
+```
+
+Use a new output filename each time. The parent directory must already exist;
+an existing file or symlink is never replaced. This example executes 30 runs:
+five iteration counts × two shot counts × three seeds. Targets are supplied
+together as one marked set, rather than as separate search instances. To compare
+different marked sets, run separate commands with different output filenames.
+
+The JSON contains the complete plan, raw shared `SearchResult` records, UTC
+recording time, source revision/dirty status, source-file hashes, Python/OS and
+per-run package versions. Summaries group runs by iteration and shots and report
+mean/minimum/maximum success probability, sample standard deviation (null for a
+single seed), theoretical probability, and median classical/quantum solver time.
+Ranges and standard deviations describe these seeded observations; they are not
+confidence intervals. Seeds are reused between groups, so groups are not
+independent replicate samples. Seeded probabilities should reproduce in the same
+environment; measured runtimes need not.
+
+Limits: 1–6 qubits, 0–32 iterations, 1–10000 shots, up to 16 distinct seeds,
+eight shot counts, and 256 total runs. Every grid axis must contain unique values.
+The default grid is iterations 0–6, shots 256/1024, seeds 42/43/44 (42 runs).
+The total budget defaults to 300 seconds and is capped at 3600; each run defaults
+to 30 seconds (maximum 60), reduced to the remaining suite budget when necessary.
+Worker startup is included in those deadlines. Suite elapsed time includes runner
+overhead and summary computation, excludes initial provenance collection and file
+serialization; solver timing definitions remain in each raw result.
+
+On validation, dependency, timeout or execution failure the command exits with
+status 1 and publishes no report. It does not replace the frontend's recorded
+demo, change API contracts, contact IBM, or submit hardware jobs. These are local
+Aer measurements; query counts and simulator runtime remain separate comparisons.
