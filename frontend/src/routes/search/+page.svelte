@@ -16,6 +16,7 @@
   import { buildSearchExport, loadRecordedDemo } from '#lib/search/recorded.ts';
   import type { RecordingProvenance } from '#lib/search/recorded.ts';
   import { intervalLabel, samplingInterval } from '#lib/search/uncertainty.ts';
+  import { gateResources } from '#lib/search/resources.ts';
 
   type RunMode = 'single' | 'curve' | 'trials';
 
@@ -31,6 +32,7 @@
   let progress = $state('');
   let controller: AbortController | undefined;
   let selected = $derived(results[selectedIndex]);
+  let resources = $derived(selected ? gateResources(selected) : null);
   let summary = $derived(
     completedMode === 'trials' && results.length ? summarizeTrials(results) : null
   );
@@ -410,6 +412,14 @@
             >
             <tbody>
               <tr
+                ><th scope="row">Gates per transpiled circuit</th><td>Not applicable</td>
+                <td>{resources?.total ?? 'Not available'}</td></tr
+              >
+              <tr
+                ><th scope="row">Gate breakdown</th><td>Not applicable</td>
+                <td>{resources?.breakdown ?? 'Not available'}</td></tr
+              >
+              <tr
                 ><th scope="row">95% sampling interval (Wilson)</th><td>Not applicable</td>
                 <td>{intervalLabel(samplingInterval(selected))}</td></tr
               >
@@ -467,8 +477,10 @@
           The classical run stops at its first match. Quantum wall time includes the whole shot
           batch; the query count is per circuit execution. The most frequent quantum output may be
           unmarked. Total quantum oracle calls are iteration count times shots, not primitive gates
-          or measured simulator operations. These timings are not matched-success speedup
-          measurements.
+          or measured simulator operations. Gate counts describe one Aer-transpiled circuit,
+          excluding measurements, reset and barriers; retained composite gates count once. They are
+          not a native hardware gate count or a shot-batch total. These timings are not
+          matched-success speedup measurements.
         </p>
       </Panel>
       <Panel

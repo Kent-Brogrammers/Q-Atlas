@@ -42,6 +42,8 @@ def test_real_search_response_matches_shared_contract(client, payload):
         result.metrics.quantum_oracle_queries * result.metrics.shots
     )
     assert result.metadata.parameters.iterations is not None
+    assert result.metrics.circuit_gate_counts
+    assert "measure" not in result.metrics.circuit_gate_counts
 
 
 @pytest.mark.parametrize(

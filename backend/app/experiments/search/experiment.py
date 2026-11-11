@@ -9,6 +9,7 @@ from qiskit_aer import AerSimulator
 
 from app.experiments.search.circuits import build_grover_circuit
 from app.experiments.search.classical import run_classical_search
+from app.experiments.search.resources import circuit_gate_counts
 from app.experiments.search.settings import (
     request_diagnostics,
     suggested_iterations,
@@ -61,6 +62,7 @@ def run_experiment(request: SearchRequest) -> SearchResult:
     success = successful_shots / request.config.shots
     # Most frequent observed string, not a promise of success or a hidden postselection.
     most_frequent = min(counts, key=lambda state: (-counts[state], state))
+    gate_counts = circuit_gate_counts(compiled)
     quantum_ms = (perf_counter() - started) * 1000
     instance = f"{request.num_qubits}:" + ",".join(sorted(request.marked_states))
     return SearchResult(
@@ -91,6 +93,7 @@ def run_experiment(request: SearchRequest) -> SearchResult:
             ),
         ),
         metrics=SearchMetrics(
+            circuit_gate_counts=gate_counts,
             num_qubits=request.num_qubits,
             circuit_depth=compiled.depth(),
             shots=request.config.shots,
@@ -120,7 +123,10 @@ def run_experiment(request: SearchRequest) -> SearchResult:
                 "worst case is without replacement, stopping at first success. "
                 "Display order is qubit 0 first; Qiskit counts are reversed. "
                 "Quantum best_bitstring is the most frequent observation and may be unmarked. "
-                "Depth is after transpilation to Aer, not physical hardware. Solver timers "
+                "Depth and gate counts describe one Aer-transpiled circuit. Gate counts exclude "
+                "measurement, reset and barriers; retained composite gates count once. "
+                "They are not native hardware gates, internal simulator operations or shot-batch "
+                "totals. Solver timers "
                 "include each solver's preparation and extraction, exclude worker startup, "
                 "imports, result-envelope assembly, serialization and HTTP. Single ideal "
                 "simulator run; query complexity does not establish runtime speedup."

@@ -396,6 +396,25 @@ then probability curves/frontend integration. Review and approval precede each c
 
 ## Configurable repeated benchmarks
 
+### Circuit gate resources
+
+Live search results include `metrics.circuit_gate_counts`: a sorted histogram of
+gate names from the actual Aer-transpiled circuit used for execution. The selected
+result panel shows the sum as **Gates per transpiled circuit** and the histogram as
+**Gate breakdown**, alongside the existing transpiled depth. API and sweep JSON
+retain this histogram for each measured run.
+
+These counts cover one circuit, independent of shots. They count top-level Qiskit
+`Gate` instances, excluding measurement, reset, barriers and other non-gate
+instructions. A retained multi-controlled or composite gate counts once; no extra
+hardware-basis transpilation is performed to produce this metric. Counts depend on
+the simulator's supported operations, transpiler settings, seed and package versions.
+They do not represent native hardware costs, internal Aer execution operations, or
+the shot-batch query count. Older recorded demos lack this measurement and show
+“Not available”; they are not silently remeasured or assigned estimated counts.
+
+See [Qiskit circuit data and operations](https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.QuantumCircuit).
+
 ### Sampling intervals in the dashboard
 
 Single-run and curve results show pointwise **95% Wilson score intervals** from

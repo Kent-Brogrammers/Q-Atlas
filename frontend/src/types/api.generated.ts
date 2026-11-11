@@ -1154,6 +1154,13 @@ export interface components {
             circuit_depth?: number | null;
             /** Shots */
             shots?: number | null;
+            /**
+             * Circuit Gate Counts
+             * @description Gate-name histogram for one Aer-transpiled circuit, excluding non-gate instructions such as measurement and barriers. Composite gates count once; not a physical hardware basis or a shot-batch operation count.
+             */
+            circuit_gate_counts?: {
+                [key: string]: number;
+            } | null;
             /** Success Probability */
             success_probability?: number | null;
             /** Theoretical Success Probability */
