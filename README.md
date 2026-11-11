@@ -21,9 +21,13 @@ builder code work. Compiler benchmarking consumes the shared runner entrypoints,
 which now implement classical enumeration and local Aer QAOA. Compiler benchmark
 requests default to HTTP 501 until the server explicitly enables local execution
 with `QATLAS_ENABLE_COMPILER_AER=1`; the compiler UI still only converts and plans.
-The optimization route remains HTTP 501. Compiler execution tests stay mocked, and circuit previews
-are constructed without execution. Other developers' materials and classical work
-is preserved alongside the compiler.
+The optimization route at `POST /api/optimization/run` accepts a graph or canonical
+QUBO and returns an exact classical baseline and local Aer QAOA comparison. It records
+the sampled assignment, objective gap, circuit metrics, timing and provenance in
+the [shared result contract](docs/API_CONTRACTS.md). Compiler runner validation uses
+mocks and has a local Aer integration smoke test. Circuit previews are constructed
+without execution. Other developers' materials and classical work is preserved
+alongside the compiler.
 
 Search now runs a bounded local Grover/classical comparison at `POST /api/search/run`,
 with measured/theoretical success probabilities, query comparisons, and explicit
