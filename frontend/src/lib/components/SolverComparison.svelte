@@ -1,6 +1,11 @@
 <script lang="ts">
   import type { ExampleComparison } from '../types/examples.ts';
-  let { result, optimum }: { result: ExampleComparison | null; optimum: number } = $props();
+  import type { OptimizationResult } from '../../types/index.ts';
+  let {
+    result,
+    optimum
+  }: { result: ExampleComparison | OptimizationResult | null; optimum: number } = $props();
+  let example = $derived(result != null && 'kind' in result && result.kind === 'ui_example');
   let metric = $state<'quality' | 'time'>('quality');
   let rows = $derived([
     {
@@ -50,8 +55,9 @@
               ? metric === 'time'
                 ? 'Not measured'
                 : 'No result'
-              : row.value.toLocaleString()}{#if row.value != null}<small
-                >{metric === 'quality' ? 'edges cut' : 'ms'}</small
+              : row.value.toLocaleString(undefined, {
+                  maximumFractionDigits: 3
+                })}{#if row.value != null}<small>{metric === 'quality' ? 'edges cut' : 'ms'}</small
               >{/if}</strong
           >
         </div>
@@ -65,11 +71,13 @@
   </div>
   <div class="comparison-foot">
     <p>
-      {metric === 'time'
-        ? 'Timing is unavailable. No solver has been executed.'
+      {example
+        ? 'Illustrative UI example. Select Run comparison to collect measured results.'
         : result
-          ? 'Example cut sizes only; not measured solver output.'
-          : 'Load example data in Simulation settings to inspect solution quality displays.'}
+          ? metric === 'time'
+            ? 'Measured solver end-to-end times on the local simulator. Each path includes its own preparation and result extraction.'
+            : 'Cut sizes from the returned classical and sampled QAOA assignments.'
+          : 'Run a comparison to collect solver results.'}
     </p>
   </div>
 </div>

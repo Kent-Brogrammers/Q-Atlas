@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
   import { fade } from 'svelte/transition';
   import { prefersReducedMotion } from 'svelte/motion';
   import type { OptimizationRequest } from '#lib/types/contracts.ts';
@@ -9,15 +10,25 @@
   import GraphView from '#lib/components/GraphView.svelte';
   import LineChart from '#lib/components/LineChart.svelte';
   import Histogram from '#lib/components/Histogram.svelte';
-  import ExampleNotice from '#lib/components/ExampleNotice.svelte';
   import FeatureBanner from '#lib/components/FeatureBanner.svelte';
   import SolverComparison from '#lib/components/SolverComparison.svelte';
+  import { api, ApiError } from '../../api/client.ts';
+  import {
+    measureOptimization,
+    defaultSettings,
+    buildMeasuredExport,
+    milliseconds,
+    type OptimizationRun
+  } from '#lib/optimization/live.ts';
 
   let selectedId = $state('prism');
   let loadedId = $state('prism');
-  let layers = $state(2);
-  let shots = $state(1024);
-  let seed = $state<number | undefined>(42);
+  let settings = $state(defaultSettings());
+  let measured = $state<OptimizationRun | null>(null);
+  let loading = $state(false);
+  let error = $state('');
+  let controller: AbortController | undefined;
+  let partitionSource = $state<'quantum' | 'classical'>('quantum');
   const optimizer = 'COBYLA' as const;
   let run = $state(getExampleRun('prism'));
   let graph = $derived(graphs.find((item) => item.id === loadedId)!);
@@ -27,12 +38,72 @@
   let status = $state('Graph preset ready. No solver has run.');
   let revision = $state(0);
   let copyLabel = $state('Copy QUBO');
-  let gap = $derived(
-    (run.comparison.quantum?.objective ?? 0) - (run.comparison.classical?.objective ?? 0)
+  let comparison = $derived(measured?.result ?? (showExample ? run.comparison : null));
+  let qubo = $derived(measured?.result.metadata.qubo ?? graph.qubo);
+  let assignment = $derived(
+    (partitionSource === 'quantum'
+      ? measured?.result.quantum?.best_bitstring
+      : measured?.result.classical?.best_bitstring) ?? undefined
   );
+  let gap = $derived(measured?.result.metrics.optimality_gap ?? null);
+  onDestroy(() => {
+    controller?.abort();
+    controller = undefined;
+  });
 
-  function loadExample(event?: SubmitEvent) {
-    event?.preventDefault();
+  function clearResults() {
+    controller?.abort();
+    controller = undefined;
+    loading = false;
+    measured = null;
+    showExample = false;
+    error = '';
+    status = 'Configuration ready. Run a comparison to collect results.';
+    revision += 1;
+  }
+
+  async function runComparison(event: SubmitEvent) {
+    event.preventDefault();
+    if (loading) return;
+    clearResults();
+    const active = new AbortController();
+    controller = active;
+    loading = true;
+    status = 'Running the classical baseline and local Aer QAOA.';
+    try {
+      const completed = await measureOptimization(graph, settings, api.optimization, active.signal);
+      if (controller !== active) return;
+      measured = completed;
+      partitionSource = 'quantum';
+      status = 'Comparison complete. Measured local simulator results are displayed.';
+      revision += 1;
+    } catch (cause) {
+      if (controller !== active) return;
+      error =
+        cause instanceof ApiError
+          ? [
+              cause.message,
+              ...(cause.body.error.diagnostics ?? []).map((item) => item.message)
+            ].join(' ')
+          : cause instanceof Error
+            ? cause.message
+            : 'The optimization comparison failed.';
+      status = 'Comparison failed. Adjust the configuration or retry.';
+    } finally {
+      if (controller === active) {
+        loading = false;
+        controller = undefined;
+      }
+    }
+  }
+
+  function stopWaiting() {
+    clearResults();
+    status = 'Stopped waiting. The server run retains its configured solver deadlines.';
+  }
+
+  function loadExample() {
+    clearResults();
     run = getExampleRun(selectedId);
     loadedId = selectedId;
     showExample = true;
@@ -42,15 +113,14 @@
 
   function reset() {
     selectedId = 'prism';
-    layers = 2;
-    shots = 1024;
-    seed = 42;
+    settings = defaultSettings();
     graphTab = 'graph';
     chartTab = 'expected';
     selectGraph();
   }
 
   function selectGraph(id = selectedId) {
+    clearResults();
     selectedId = id;
     loadedId = selectedId;
     run = getExampleRun(selectedId);
@@ -62,38 +132,50 @@
 
   async function copyQubo() {
     try {
-      await navigator.clipboard.writeText(JSON.stringify(graph.qubo, null, 2));
+      await navigator.clipboard.writeText(JSON.stringify(qubo, null, 2));
       copyLabel = 'Copied';
     } catch {
       copyLabel = 'Copy unavailable';
     }
   }
 
-  function exportExample() {
-    const data = {
-      kind: 'ui_example',
-      example_comparison: run.comparison,
-      example_chart_data: {
-        expected: run.expected,
-        best_sampled: run.bestSampled,
-        histogram: run.histogram
-      },
-      request_preview: {
-        problem: { kind: 'qubo', qubo: graph.qubo },
-        config: { p: layers, shots, seed: seed ?? 42, optimizer }
-      } satisfies OptimizationRequest,
-      notice:
-        'Illustrative UI example. No experiment was executed. Controls do not change example values.'
-    };
+  function download() {
+    if (!measured && !showExample) return;
+    const data = measured
+      ? buildMeasuredExport(measured)
+      : {
+          kind: 'ui_example',
+          example_comparison: run.comparison,
+          example_chart_data: {
+            expected: run.expected,
+            best_sampled: run.bestSampled,
+            histogram: run.histogram
+          },
+          request_preview: {
+            problem: { kind: 'qubo', qubo: graph.qubo },
+            config: {
+              p: settings.layers,
+              shots: settings.shots,
+              seed: settings.seed ?? 42,
+              optimizer
+            }
+          } satisfies OptimizationRequest,
+          notice:
+            'Illustrative UI example. No experiment was executed. Controls do not change example values.'
+        };
     const url = URL.createObjectURL(
       new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
     );
     const link = document.createElement('a');
     link.href = url;
-    link.download = `q-atlas-ui-example-${loadedId}.json`;
+    link.download = measured
+      ? `q-atlas-optimization-${measured.result.problem_id}.json`
+      : `q-atlas-ui-example-${loadedId}.json`;
     link.click();
-    URL.revokeObjectURL(url);
-    status = 'Exported labeled example JSON. No measured results were included.';
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    status = measured
+      ? 'Exported the measured request and complete result.'
+      : 'Exported labeled UI example data.';
   }
 </script>
 
@@ -106,18 +188,29 @@
   </div>
   <div class="page-actions">
     <button class="button quiet small" onclick={reset}><Icon name="reset" size={14} />Reset</button
-    ><button class="button small" onclick={exportExample} disabled={!showExample}
-      >Export example<Icon name="download" size={14} /></button
+    ><button class="button small" onclick={download} disabled={!measured && !showExample}
+      >{showExample ? 'Export example' : 'Export results'}<Icon name="download" size={14} /></button
     >
   </div>
 </header>
-<ExampleNotice />
+<aside class="integration-note" aria-label="Data provenance">
+  <Icon name="info" size={15} />
+  <span
+    >{showExample
+      ? 'Illustrative UI example. Select Run comparison to collect measured results.'
+      : 'Local Qiskit Aer simulator · exact classical baseline · one seeded comparison'}</span
+  >
+</aside>
+{#if error}<div class="run-error" role="alert">
+    <strong>Comparison could not complete.</strong>
+    {error}
+  </div>{/if}
 
 <div class="optimization-intro">
   <div class="lab-introduction">
     <FeatureBanner
       title="Classical vs quantum optimization"
-      description="Max-Cut assigns vertices to two sets to maximize crossing edges. Its QUBO minimizes the negative cut size. QAOA and classical solver execution are not connected."
+      description="Max-Cut assigns vertices to two sets to maximize crossing edges. Compare local Aer QAOA against the exact classical optimum on the same graph."
     >
       <a href="#experiment-settings">Simulation settings<Icon name="arrow" size={15} /></a>
       <a href="#benchmark-results">Benchmark results<Icon name="arrow" size={15} /></a>
@@ -126,18 +219,20 @@
       <h2>QAOA workflow</h2>
       <p>
         QAOA alternates cost and mixing layers while a classical optimizer adjusts circuit angles.
-        Compare sampled solutions against the same QUBO's classical baseline. Load example data
-        below to inspect the result displays without executing a solver.
+        The backend returns the best assignment observed in its final shot batch. Objectives
+        minimize the negative cut size, and the gap compares against exhaustive enumeration.
       </p>
     </div>
   </div>
   <Panel
     title="Solver comparison"
-    subtitle={showExample
-      ? 'Example data · not measured results'
-      : 'No benchmark results available'}
+    subtitle={measured
+      ? 'Measured local simulator results'
+      : showExample
+        ? 'Illustrative UI example'
+        : 'No benchmark results available'}
   >
-    <SolverComparison result={showExample ? run.comparison : null} optimum={graph.optimumCut} />
+    <SolverComparison result={comparison} optimum={graph.optimumCut} />
   </Panel>
 </div>
 
@@ -164,72 +259,120 @@
     tone="cyan"
   /><Metric
     label="Best-sample gap"
-    value={showExample ? gap.toFixed(2) : 'Not run'}
-    note={showExample
-      ? 'Example QAOA objective − reference objective'
-      : 'No QAOA samples available'}
+    value={gap ??
+      (showExample
+        ? run.comparison.quantum.objective - run.comparison.classical.objective
+        : 'Not measured')}
+    note="QAOA objective − exact classical objective"
     tone="violet"
-  /><Metric label="Circuit depth" value="Not measured" note="Circuit generation is not connected" />
+  /><Metric
+    label="Circuit depth"
+    value={measured?.result.metrics.circuit_depth ?? 'Not measured'}
+    note="Transpiled circuit including measurements"
+  />
 </div>
 
 <div class="lab-grid" id="experiment-settings">
   <Panel title="Simulation settings" className="controls-panel">
-    <form class="controls-form" onsubmit={loadExample}>
-      <label for="graph-preset">Graph preset</label><select
-        id="graph-preset"
-        bind:value={selectedId}
-        onchange={(event) => selectGraph(event.currentTarget.value)}
-        >{#each graphs as item}<option value={item.id}
-            >{item.name} · {item.nodes.length} nodes</option
-          >{/each}</select
-      >
-      <div class="control-divider"></div>
-      <div class="range-heading">
-        <label for="layers">QAOA layers</label><output for="layers">p = {layers}</output>
-      </div>
-      <input id="layers" type="range" min="1" max="5" step="1" bind:value={layers} />
-      <div class="range-labels"><span>1</span><span>5</span></div>
-      <fieldset>
-        <legend>Measurement shots</legend>
-        <div class="shot-options">
-          {#each [512, 1024, 2048] as count}<label class:selected={shots === count}
-              ><input
-                type="radio"
-                name="shots"
-                value={count}
-                bind:group={shots}
-              />{count.toLocaleString()}</label
-            >{/each}
+    <form class="controls-form" novalidate onsubmit={runComparison} oninput={clearResults}>
+      <fieldset class="run-controls" disabled={loading}>
+        <label for="graph-preset">Graph preset</label><select
+          id="graph-preset"
+          bind:value={selectedId}
+          onchange={(event) => selectGraph(event.currentTarget.value)}
+          >{#each graphs as item}<option value={item.id}
+              >{item.name} · {item.nodes.length} nodes</option
+            >{/each}</select
+        >
+        <div class="control-divider"></div>
+        <div class="range-heading">
+          <label for="layers">QAOA layers</label><output for="layers">p = {settings.layers}</output>
         </div>
+        <input id="layers" type="range" min="1" max="8" step="1" bind:value={settings.layers} />
+        <div class="range-labels"><span>1</span><span>8</span></div>
+        <fieldset>
+          <legend>Measurement shots</legend>
+          <div class="shot-options">
+            {#each [512, 1024, 2048] as count}<label class:selected={settings.shots === count}
+                ><input
+                  type="radio"
+                  name="shots"
+                  value={count}
+                  bind:group={settings.shots}
+                />{count.toLocaleString()}</label
+              >{/each}
+          </div>
+        </fieldset>
+        <label for="optimizer">Classical optimizer</label><select id="optimizer" value={optimizer}
+          ><option>COBYLA</option></select
+        >
+        <label for="seed">Random seed</label><input
+          id="seed"
+          type="number"
+          min="0"
+          max="4294967295"
+          step="1"
+          required
+          bind:value={settings.seed}
+        />
+        <details class="advanced-controls">
+          <summary>Run budget</summary>
+          <label for="max-iterations">Optimizer evaluation budget</label><input
+            id="max-iterations"
+            type="number"
+            min="1"
+            max="1000"
+            step="1"
+            required
+            bind:value={settings.maxIterations}
+          />
+          <label for="solver-timeout">Each solver timeout (seconds)</label><input
+            id="solver-timeout"
+            type="number"
+            min="0.001"
+            max="60"
+            step="any"
+            required
+            bind:value={settings.timeout}
+          />
+        </details>
+        <div class="backend-preview">
+          <Icon name="terminal" size={16} />
+          <div><strong>Local simulator</strong><span>Qiskit Aer · CPU statevector</span></div>
+        </div>
+        <button type="submit" class="button primary load-button"
+          >{loading ? 'Running comparison…' : 'Run comparison'}<Icon
+            name="arrow"
+            size={16}
+          /></button
+        >
       </fieldset>
-      <label for="optimizer">Classical optimizer</label><select id="optimizer" value={optimizer}
-        ><option>COBYLA</option><option disabled>SPSA (not supported by the API)</option></select
-      >
-      <label for="seed">Random seed</label><input
-        id="seed"
-        type="number"
-        min="0"
-        max="4294967295"
-        step="1"
-        required
-        bind:value={seed}
-      />
-      <div class="backend-preview">
-        <Icon name="terminal" size={16} />
-        <div><strong>Planned simulator</strong><span>Qiskit Aer · integration pending</span></div>
-      </div>
-      <button type="submit" class="button primary load-button"
-        >Load example data<Icon name="arrow" size={16} /></button
-      >
+      {#if loading}<button class="button quiet load-button" type="button" onclick={stopWaiting}
+          >Stop waiting</button
+        >{:else}
+        <button class="button quiet load-button" type="button" onclick={loadExample}
+          >Load example data</button
+        >
+      {/if}
       <p class="control-note">
-        Settings preview a future backend request. Loading example data does not use these settings
-        or run a solver.
+        Solver timings include preparation and result extraction. Sampling and optimizer intervals
+        are reported separately and can overlap their containing total.
       </p>
     </form>
   </Panel>
 
   <Panel title="Graph and QUBO" className="problem-panel">
-    {#snippet toolbar()}<div class="segmented">
+    {#snippet toolbar()}
+      {#if measured}<select
+          class="assignment-picker"
+          aria-label="Graph assignment"
+          bind:value={partitionSource}
+        >
+          <option value="quantum">QAOA partition</option><option value="classical"
+            >Classical partition</option
+          >
+        </select>{/if}
+      <div class="segmented">
         <button
           class:selected={graphTab === 'graph'}
           aria-pressed={graphTab === 'graph'}
@@ -243,16 +386,22 @@
           }}>QUBO</button
         >
       </div>{/snippet}
-    {#if graphTab === 'graph'}{#key revision}<GraphView {graph} />{/key}{:else}<div
-        class="qubo-view"
-      >
+    {#if graphTab === 'graph'}{#key revision}<GraphView
+          {graph}
+          {assignment}
+          assignmentLabel={assignment
+            ? partitionSource === 'quantum'
+              ? 'Measured QAOA partition'
+              : 'Classical optimum partition'
+            : 'Reference partition'}
+        />{/key}{:else}<div class="qubo-view">
         <div class="qubo-toolbar">
           <span class="eyebrow">Canonical QUBO · JSON</span><button
             class="button small quiet"
             onclick={copyQubo}>{copyLabel}<Icon name="copy" size={13} /></button
           >
         </div>
-        <pre class="code-block">{JSON.stringify(graph.qubo, null, 2)}</pre>
+        <pre class="code-block">{JSON.stringify(qubo, null, 2)}</pre>
         <p>
           Assignment index i means x[i]. API bitstrings list x[0] first; Qiskit count strings must
           be converted at the sampler boundary.
@@ -267,7 +416,11 @@
 
   <Panel
     title="Benchmark results"
-    subtitle={showExample ? 'Example data · not measured results' : 'No solver has run'}
+    subtitle={measured
+      ? 'Measured local simulator results'
+      : showExample
+        ? 'Illustrative UI example'
+        : 'No solver has run'}
     className="solver-panel"
   >
     {#key revision}<div
@@ -281,143 +434,226 @@
           </div>
           <p class="solver-method">Brute force</p>
           <p class="solver-objective cyan-text">
-            {showExample ? run.comparison.classical?.objective?.toFixed(2) : '—'}<span
-              >{showExample ? 'example objective' : 'No result'}</span
+            {comparison?.classical?.objective?.toFixed(2) ?? '—'}<span
+              >{showExample ? 'example objective' : 'objective'}</span
             >
           </p>
-          <div class="solver-detail"><span>Execution time</span><strong>Not measured</strong></div>
+          <div class="solver-detail">
+            <span>End-to-end</span><strong
+              >{milliseconds(measured?.result.classical?.elapsed_ms)}</strong
+            >
+          </div>
+          <div class="solver-detail">
+            <span>x[0]-first</span><strong
+              >{measured?.result.classical?.best_bitstring ?? 'Unavailable'}</strong
+            >
+          </div>
         </div>
         <div class="solver-block quantum">
           <div class="solver-label">
             <span class="solver-dot qaoa"></span>
             <h3>QAOA</h3>
           </div>
-          <p class="solver-method">Quantum simulator integration pending</p>
+          <p class="solver-method">Qiskit Aer · COBYLA</p>
           <p class="solver-objective violet-text">
-            {showExample ? run.comparison.quantum?.objective?.toFixed(2) : '—'}<span
-              >{showExample ? 'example best sample' : 'No result'}</span
+            {comparison?.quantum?.objective?.toFixed(2) ?? '—'}<span
+              >{showExample ? 'example best sample' : 'best sampled objective'}</span
             >
           </p>
-          <div class="solver-detail"><span>Execution time</span><strong>Not measured</strong></div>
+          <div class="solver-detail">
+            <span>End-to-end</span><strong
+              >{milliseconds(measured?.result.quantum?.elapsed_ms)}</strong
+            >
+          </div>
+          <div class="solver-detail">
+            <span>x[0]-first</span><strong
+              >{measured?.result.quantum?.best_bitstring ?? 'Unavailable'}</strong
+            >
+          </div>
         </div>
         <div class="gap-note">
           <Icon name="info" size={14} />
           <p>
-            {showExample
-              ? 'Example objectives illustrate the display. They are not solver output.'
-              : 'Load example data to inspect these result displays.'}
+            {measured
+              ? 'Local simulator measurements. Solution quality and runtime describe this seeded run.'
+              : showExample
+                ? 'Illustrative UI example. Select Run comparison to collect measured results.'
+                : 'Run a comparison to collect measured results.'}
           </p>
         </div>
       </div>{/key}
   </Panel>
 </div>
 
-<p class="run-status" role="status"><Icon name="check" size={13} />{status}</p>
+<p class="run-status" role="status">
+  <Icon name={loading ? 'terminal' : error ? 'info' : 'check'} size={13} />{status}
+</p>
 
-<div class="charts-grid" id="benchmark-results">
-  <Panel
-    title="QAOA objective trace"
-    subtitle={showExample
-      ? 'Example data · 16 illustrative points, not optimizer evaluations'
-      : 'No optimizer trace available'}
-  >
-    {#snippet toolbar()}<div class="segmented">
-        <button
-          class:selected={chartTab === 'expected'}
-          aria-pressed={chartTab === 'expected'}
-          onclick={() => (chartTab = 'expected')}>Expected</button
-        ><button
-          class:selected={chartTab === 'sampled'}
-          aria-pressed={chartTab === 'sampled'}
-          onclick={() => (chartTab = 'sampled')}>Best sampled</button
-        >
-      </div>{/snippet}
-    {#if showExample}<LineChart
+{#if showExample}<div class="charts-grid">
+    <Panel title="QAOA objective trace" subtitle="Illustrative UI example · 16 points">
+      {#snippet toolbar()}<div class="segmented">
+          <button
+            class:selected={chartTab === 'expected'}
+            aria-pressed={chartTab === 'expected'}
+            onclick={() => (chartTab = 'expected')}>Expected</button
+          ><button
+            class:selected={chartTab === 'sampled'}
+            aria-pressed={chartTab === 'sampled'}
+            onclick={() => (chartTab = 'sampled')}>Best sampled</button
+          >
+        </div>{/snippet}
+      <LineChart
         values={chartTab === 'expected' ? run.expected : run.bestSampled}
         optimum={-graph.optimumCut}
-      />{:else}<div class="result-empty">
-        No optimization has been executed. Load example data to inspect the chart.
-      </div>{/if}
+      />
+    </Panel>
+    <Panel title="Cut-size distribution" subtitle="Illustrative UI example · count distribution"
+      ><Histogram bins={run.histogram} /></Panel
+    >
+  </div>{/if}
+
+<div id="benchmark-results">
+  <Panel title="Execution metrics" className="record-panel">
+    <div class="record-grid">
+      <div>
+        <span class="eyebrow">Optimizer evaluations</span><strong
+          class:unavailable={measured?.result.metrics.optimizer_evaluations == null}
+          >{measured?.result.metrics.optimizer_evaluations ?? 'Not measured'}</strong
+        >
+      </div>
+      <div>
+        <span class="eyebrow">Measurement shots</span><strong
+          class:unavailable={measured?.result.metrics.shots == null}
+          >{measured?.result.metrics.shots ?? 'Not collected'}</strong
+        >
+      </div>
+      <div>
+        <span class="eyebrow">Final shot sampling</span><strong class="source"
+          >{milliseconds(measured?.result.quantum?.timing.sampling_ms)}</strong
+        >
+      </div>
+      <div>
+        <span class="eyebrow">Data source</span><strong class="source"
+          >{measured
+            ? 'Measured local Aer simulator'
+            : showExample
+              ? 'Illustrative UI example'
+              : 'No results'}</strong
+        >
+      </div>
+    </div>
+    <details class="run-details">
+      <summary>Inspect timing and run data<Icon name="plus" size={15} /></summary>
+      <div class="details-content">
+        {#if measured}
+          <p>
+            Each solver's end-to-end time includes its own preparation and result extraction. Graph
+            conversion precedes both timers. QAOA components are contained in its total. The
+            optimizer interval includes repeated ideal expectation evaluations.
+          </p>
+          <div class="table-scroll">
+            <table>
+              <caption>Measured timing scopes</caption>
+              <thead><tr><th>Scope</th><th>Duration</th></tr></thead>
+              <tbody>
+                <tr
+                  ><td>Classical end-to-end</td><td
+                    >{milliseconds(measured.result.classical?.elapsed_ms)}</td
+                  ></tr
+                >
+                <tr
+                  ><td>QAOA end-to-end</td><td
+                    >{milliseconds(measured.result.quantum?.elapsed_ms)}</td
+                  ></tr
+                >
+                <tr
+                  ><td>QAOA angle optimization</td><td
+                    >{milliseconds(measured.result.quantum?.timing.optimizer_ms)}</td
+                  ></tr
+                >
+                <tr
+                  ><td>Final circuit transpilation</td><td
+                    >{milliseconds(measured.result.quantum?.timing.transpilation_ms)}</td
+                  ></tr
+                >
+                <tr
+                  ><td>Final shot sampling</td><td
+                    >{milliseconds(measured.result.quantum?.timing.sampling_ms)}</td
+                  ></tr
+                >
+              </tbody>
+            </table>
+          </div>
+          <p>
+            The API reports one best sampled assignment and aggregate metrics for this run.
+            Optimizer traces and shot histograms are available in the illustrative example display.
+          </p>
+          <pre class="code-block">{JSON.stringify(buildMeasuredExport(measured), null, 2)}</pre>
+        {:else}
+          <p>
+            Run a comparison to record the selected graph and solver settings. The optional example
+            display illustrates objective traces and count distributions.
+          </p>
+        {/if}
+        {#if showExample}<div class="table-scroll">
+            <table>
+              <caption>Underlying example trace and sample distribution</caption><thead
+                ><tr><th>Example point</th><th>Expected cost</th><th>Best sampled cost</th></tr
+                ></thead
+              ><tbody
+                >{#each run.expected as value, i}<tr
+                    ><td>{i + 1}</td><td>{value.toFixed(2)}</td><td
+                      >{run.bestSampled[i].toFixed(2)}</td
+                    ></tr
+                  >{/each}</tbody
+              >
+            </table>
+            <table>
+              <thead><tr><th>Cut size</th><th>Count</th></tr></thead><tbody
+                >{#each run.histogram as bin}<tr><td>{bin.cut}</td><td>{bin.count}</td></tr
+                  >{/each}</tbody
+              >
+            </table>
+          </div>{/if}
+      </div>
+    </details>
   </Panel>
-  <Panel
-    title="Cut-size distribution"
-    subtitle={showExample
-      ? 'Example data · illustrative counts, not measurements'
-      : 'No measurement samples available'}
-    >{#if showExample}<Histogram bins={run.histogram} />{:else}<div class="result-empty">
-        No measurement samples have been collected.
-      </div>{/if}</Panel
-  >
 </div>
 
-<Panel title="Execution metrics" className="record-panel">
-  <div class="record-grid">
-    <div>
-      <span class="eyebrow">Circuit depth</span><strong class="unavailable">Not measured</strong>
-    </div>
-    <div>
-      <span class="eyebrow">Measurement shots</span><strong class="unavailable"
-        >Not collected</strong
-      >
-    </div>
-    <div>
-      <span class="eyebrow">Simulator execution time</span><strong class="unavailable"
-        >Not measured</strong
-      >
-    </div>
-    <div>
-      <span class="eyebrow">Data source</span><strong class="source"
-        >{showExample ? 'Example data only' : 'No results'}</strong
-      >
-    </div>
-  </div>
-  <details class="run-details">
-    <summary>Inspect data & integration notes<Icon name="plus" size={15} /></summary>
-    <div class="details-content">
-      <p>
-        Optional example data demonstrates objectives, chart points, and count displays. Execution
-        time, circuit depth, and optimizer evaluation counts are not measured and remain
-        unavailable. Control values preview a request; they are not a run record.
-      </p>
-      <p>
-        The shared API contracts define request validation, structured errors, x[0]-first
-        bitstrings, and explicit timing scopes. Solver execution remains unimplemented; no timing
-        decomposition or speedup is inferred here.
-      </p>
-      {#if showExample}<div class="table-scroll">
-          <table>
-            <caption>Underlying example trace and sample distribution</caption><thead
-              ><tr><th>Example point</th><th>Expected cost</th><th>Best sampled cost</th></tr
-              ></thead
-            ><tbody
-              >{#each run.expected as value, i}<tr
-                  ><td>{i + 1}</td><td>{value.toFixed(2)}</td><td
-                    >{run.bestSampled[i].toFixed(2)}</td
-                  ></tr
-                >{/each}</tbody
-            >
-          </table>
-          <table>
-            <thead><tr><th>Cut size</th><th>Count</th></tr></thead><tbody
-              >{#each run.histogram as bin}<tr><td>{bin.cut}</td><td>{bin.count}</td></tr
-                >{/each}</tbody
-            >
-          </table>
-        </div>{/if}
-    </div>
-  </details>
-</Panel>
-
 <style>
-  .result-empty {
-    min-height: 195px;
-    display: grid;
-    align-content: center;
-    padding: 24px;
+  .integration-note,
+  .run-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    background: var(--surface);
     color: var(--muted);
-    font-size: 14px;
+    font-size: 12px;
     line-height: 1.6;
-    border-top: 1px solid var(--border);
+  }
+  .run-error {
+    margin-top: 12px;
+    border-left: 3px solid var(--accent);
+    display: block;
+  }
+  .run-controls {
+    min-width: 0;
+    margin: 0;
+  }
+  .advanced-controls summary {
+    padding: 0 0 14px;
+  }
+  .advanced-controls > label {
+    display: block;
+    color: var(--muted);
+    font-size: 12px;
+    margin-bottom: 9px;
+  }
+  .assignment-picker {
+    margin: 0;
+    width: auto;
   }
   #experiment-settings,
   #benchmark-results {
@@ -494,7 +730,7 @@
   .controls-form {
     padding: 0 21px 20px;
   }
-  .controls-form > label,
+  .run-controls > label,
   .range-heading > label,
   legend {
     display: flex;
@@ -954,6 +1190,7 @@
       order: 0;
     }
     .solver-results {
+      grid-template-columns: minmax(0, 1fr);
       padding-inline: 18px;
     }
     .solver-objective {
@@ -968,7 +1205,9 @@
       margin-left: 0;
     }
     .solver-block.quantum {
-      padding-left: 15px;
+      border-left: 0;
+      border-top: 1px solid var(--border);
+      padding: 20px 0;
     }
     .record-grid {
       padding-inline: 18px;
