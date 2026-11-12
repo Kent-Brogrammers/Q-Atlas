@@ -21,6 +21,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hardware/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Devices */
+        get: operations["devices_api_hardware_devices_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hardware/demo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Demo */
+        get: operations["demo_api_hardware_demo_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hardware/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Jobs */
+        get: operations["jobs_api_hardware_jobs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hardware/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit */
+        post: operations["submit_api_hardware_submit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hardware/jobs/{request_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status */
+        get: operations["status_api_hardware_jobs__request_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hardware/jobs/{request_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel */
+        post: operations["cancel_api_hardware_jobs__request_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/compiler/hardware/devices": {
         parameters: {
             query?: never;
@@ -543,6 +645,15 @@ export interface components {
              */
             max_execution_seconds?: number;
         };
+        /** CompilerTask */
+        CompilerTask: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "compiler";
+            parameters: components["schemas"]["CompilerBenchmarkRequest"];
+        };
         /** Diagnostic */
         Diagnostic: {
             /** Code */
@@ -641,6 +752,137 @@ export interface components {
             num_vertices: number;
             /** Edges */
             edges: components["schemas"]["GraphEdge"][];
+        };
+        /** HardwareJob */
+        HardwareJob: {
+            /** Request Id */
+            request_id: string;
+            /** Task */
+            task: components["schemas"]["CompilerTask"] | components["schemas"]["OptimizationTask"] | components["schemas"]["SearchTask"] | components["schemas"]["MaterialsTask"] | components["schemas"]["NeutrinosTask"] | components["schemas"]["SuiteTask"];
+            /** Problem Id */
+            problem_id: string;
+            /** Created At Utc */
+            created_at_utc: string;
+            /** Updated At Utc */
+            updated_at_utc: string;
+            /** Status */
+            status: string;
+            /** Backend Name */
+            backend_name?: string | null;
+            /** Job Id */
+            job_id?: string | null;
+            /**
+             * Simulated
+             * @default false
+             * @constant
+             */
+            simulated?: false;
+            /** Shots */
+            shots: number;
+            /** Max Execution Seconds */
+            max_execution_seconds: number;
+            /** Circuit Depths */
+            circuit_depths?: number[];
+            /** Num Qubits */
+            num_qubits?: number | null;
+            /** Counts */
+            counts?: {
+                [key: string]: number;
+            }[];
+            /** Classical Reference */
+            classical_reference?: {
+                [key: string]: unknown;
+            };
+            /** Metrics */
+            metrics?: components["schemas"]["HardwareMetric"][];
+            timings?: components["schemas"]["HardwareTimings"];
+            shared_job_timings?: components["schemas"]["HardwareTimings"] | null;
+            /** Children */
+            children?: components["schemas"]["HardwareJob"][];
+            /** Versions */
+            versions?: {
+                [key: string]: string;
+            };
+            /**
+             * Message
+             * @default
+             */
+            message?: string;
+            /**
+             * Measurement Complete
+             * @default false
+             */
+            measurement_complete?: boolean;
+            /**
+             * Timing Note
+             * @default Classical and hardware timers describe different intervals. Provider usage is not end-to-end runtime. Observed wall time includes polling delay. Queue and execution use provider timestamps where available. No speedup is inferred.
+             */
+            timing_note?: string;
+        };
+        /** HardwareMetric */
+        HardwareMetric: {
+            /** Name */
+            name: string;
+            /** Coordinate */
+            coordinate?: number | null;
+            /** Classical */
+            classical: number;
+            /** Quantum */
+            quantum: number;
+            /** Absolute Error */
+            absolute_error: number;
+            /** Unit */
+            unit: string;
+        };
+        /** HardwareRequest */
+        HardwareRequest: {
+            /** Task */
+            task: components["schemas"]["CompilerTask"] | components["schemas"]["OptimizationTask"] | components["schemas"]["SearchTask"] | components["schemas"]["MaterialsTask"] | components["schemas"]["NeutrinosTask"] | components["schemas"]["SuiteTask"];
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /**
+             * Confirmed
+             * @constant
+             */
+            confirmed: true;
+            /** Backend Name */
+            backend_name?: string | null;
+            /**
+             * Shots
+             * @default 128
+             */
+            shots?: number;
+            /**
+             * Max Execution Seconds
+             * @default 10
+             */
+            max_execution_seconds?: number;
+        };
+        /** HardwareTimings */
+        HardwareTimings: {
+            /** Classical Ms */
+            classical_ms?: number | null;
+            /** Local Training Ms */
+            local_training_ms?: number | null;
+            /** Preparation Ms */
+            preparation_ms?: number | null;
+            /** Transpilation Ms */
+            transpilation_ms?: number | null;
+            /** Submission Ms */
+            submission_ms?: number | null;
+            /** Retrieval Ms */
+            retrieval_ms?: number | null;
+            /** Observed Wall Ms */
+            observed_wall_ms?: number | null;
+            /** Quantum Seconds */
+            quantum_seconds?: number | null;
+            /** Provider Queue Ms */
+            provider_queue_ms?: number | null;
+            /** Provider Execution Ms */
+            provider_execution_ms?: number | null;
         };
         /** HealthResponse */
         HealthResponse: {
@@ -893,6 +1135,15 @@ export interface components {
              */
             timeout_seconds?: number;
         };
+        /** MaterialsTask */
+        MaterialsTask: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "materials";
+            parameters: components["schemas"]["MaterialsRequest"];
+        };
         /** MaterialsTimePoint */
         MaterialsTimePoint: {
             /** Time */
@@ -1069,6 +1320,15 @@ export interface components {
             /** Ideal Execution */
             ideal_execution: number;
         };
+        /** NeutrinosTask */
+        NeutrinosTask: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "neutrinos";
+            parameters: components["schemas"]["NeutrinoRequest"];
+        };
         /** OptimizationMetadata */
         OptimizationMetadata: {
             /** Seed */
@@ -1147,6 +1407,15 @@ export interface components {
             quantum: components["schemas"]["QAOAResult"] | null;
             metrics: components["schemas"]["OptimizationMetrics"];
             metadata: components["schemas"]["OptimizationMetadata"];
+        };
+        /** OptimizationTask */
+        OptimizationTask: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "optimization";
+            parameters: components["schemas"]["OptimizationRequest"];
         };
         /** Parameters */
         Parameters: {
@@ -1409,6 +1678,15 @@ export interface components {
             metrics: components["schemas"]["SearchMetrics"];
             metadata: components["schemas"]["SearchMetadata"];
         };
+        /** SearchTask */
+        SearchTask: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "search";
+            parameters: components["schemas"]["SearchRequest"];
+        };
         /** SolverResult */
         SolverResult: {
             /** Algorithm */
@@ -1420,6 +1698,16 @@ export interface components {
             /** Best Bitstring */
             best_bitstring?: string | null;
             timing: components["schemas"]["TimingBreakdown"];
+        };
+        /** SuiteTask */
+        SuiteTask: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "suite";
+            /** Parameters */
+            parameters: (components["schemas"]["CompilerTask"] | components["schemas"]["OptimizationTask"] | components["schemas"]["SearchTask"] | components["schemas"]["MaterialsTask"] | components["schemas"]["NeutrinosTask"])[];
         };
         /**
          * TimingBreakdown
@@ -1468,6 +1756,406 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+            /** @description Route not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method not allowed */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Feature not implemented */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    devices_api_hardware_devices_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompilerHardwareDevices"];
+                };
+            };
+            /** @description Route not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method not allowed */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Feature not implemented */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    demo_api_hardware_demo_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HardwareRequest"];
+                };
+            };
+            /** @description Route not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method not allowed */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Feature not implemented */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    jobs_api_hardware_jobs_get: {
+        parameters: {
+            query?: {
+                experiment?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HardwareJob"][];
+                };
+            };
+            /** @description Route not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method not allowed */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Feature not implemented */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    submit_api_hardware_submit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HardwareRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HardwareJob"];
+                };
+            };
+            /** @description Route not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method not allowed */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Feature not implemented */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    status_api_hardware_jobs__request_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HardwareJob"];
+                };
+            };
+            /** @description Route not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method not allowed */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Feature not implemented */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    cancel_api_hardware_jobs__request_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HardwareJob"];
                 };
             };
             /** @description Route not found */

@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
   import Panel from '#lib/components/Panel.svelte';
+  import StudyPanel from '#lib/components/StudyPanel.svelte';
+  import HardwarePanel from '#lib/components/HardwarePanel.svelte';
   import SearchProbabilityChart from '#lib/search/SearchProbabilityChart.svelte';
   import {
     buildRequest,
@@ -26,6 +28,14 @@
   let results = $state<SearchResult[]>([]);
   let selectedIndex = $state(0);
   let loading = $state(false);
+  let studying = $state(false);
+  let studyRequest = $derived.by(() => {
+    try {
+      return buildRequest(settings);
+    } catch {
+      return null;
+    }
+  });
   let error = $state('');
   let progress = $state('');
   let controller: AbortController | undefined;
@@ -46,7 +56,7 @@
   }
 
   function loadRecording(mode: 'curve' | 'trials') {
-    if (loading) return;
+    if (loading || studying) return;
     clearResults();
     try {
       const saved = loadRecordedDemo(mode);
@@ -73,7 +83,7 @@
   }
 
   async function run(mode: RunMode) {
-    if (loading) return;
+    if (loading || studying) return;
     clearResults();
     loading = true;
     controller = new AbortController();
@@ -163,6 +173,8 @@
     </p>
   </div>{/if}
 
+<HardwarePanel experiment="search" request={studyRequest} />
+
 <div class="search-layout">
   <aside aria-label="Search configuration">
     <Panel title="Configure search" subtitle="Bitstrings put qubit 0 on the left">
@@ -174,7 +186,7 @@
         }}
         oninput={clearResults}
       >
-        <fieldset disabled={loading}>
+        <fieldset disabled={loading || studying}>
           <label for="qubits">Qubits</label><input
             id="qubits"
             type="number"
@@ -287,11 +299,15 @@
           Explicit offline fallback with recorded settings and timings. These buttons make no live
           requests.
         </p>
-        <button class="button small" disabled={loading} onclick={() => loadRecording('curve')}
-          >Load recorded curve</button
+        <button
+          class="button small"
+          disabled={loading || studying}
+          onclick={() => loadRecording('curve')}>Load recorded curve</button
         >
-        <button class="button small" disabled={loading} onclick={() => loadRecording('trials')}
-          >Load recorded trials</button
+        <button
+          class="button small"
+          disabled={loading || studying}
+          onclick={() => loadRecording('trials')}>Load recorded trials</button
         >
       </div>
     </Panel>
@@ -534,6 +550,8 @@
     {/if}
   </div>
 </div>
+
+<StudyPanel experiment="search" request={studyRequest} disabled={loading} bind:running={studying} />
 
 <style>
   .heading {

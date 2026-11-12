@@ -8,10 +8,15 @@
   <header class="introduction">
     <h1>Q-Atlas</h1>
     <p>
-      Convert marked Python objectives into circuit code, or explore the Neutrino Lab. Each
-      workspace shows its validation and execution status.
+      Explore five reproducible quantum experiments. Compare scientific predictions, solution
+      quality and measured local runtime, then vary parameters and export the evidence.
     </p>
     <div class="workspace-actions">
+      <a class="button primary workspace-action-button" href="/hardware/"
+        ><span class="button-text">Physical QPU Analytics</span><span class="button-icon"
+          ><Icon name="arrow" size={30} /></span
+        ></a
+      >
       <a class="button primary workspace-action-button" href="/compiler/">
         <span class="button-text">Open Python Compiler</span>
         <span class="button-icon"><Icon name="arrow" size={30} /></span>
@@ -24,6 +29,16 @@
         <span class="button-text">Explore Grover Search</span>
         <span class="button-icon"><Icon name="arrow" size={30} /></span>
       </a>
+      <a class="button primary workspace-action-button" href="/optimization/"
+        ><span class="button-text">Run Optimization</span><span class="button-icon"
+          ><Icon name="arrow" size={30} /></span
+        ></a
+      >
+      <a class="button primary workspace-action-button" href="/materials/"
+        ><span class="button-text">Explore Materials</span><span class="button-icon"
+          ><Icon name="arrow" size={30} /></span
+        ></a
+      >
     </div>
   </header>
 
@@ -35,7 +50,9 @@
       in place. No circuit code is required.
     </p>
     <p>
-      Source conversion and comparison planning are available. Quantum execution stays disabled.
+      Source conversion, physical IBM sampling, local Aer comparisons and parameter studies are
+      available. The development launcher enables local execution; optional IBM sampling requires an
+      explicit submission.
     </p>
   </section>
 

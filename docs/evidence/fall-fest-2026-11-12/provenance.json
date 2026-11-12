@@ -1,0 +1,33 @@
+{
+  "recorded_at_utc": "2026-11-12T17:35:53.633196Z",
+  "manifest_created_at_utc": "2026-11-12T17:36:23.646416+00:00",
+  "revision": "5786fd16913ae2a8d7089fb4abd581a4169790d9",
+  "working_tree_dirty": true,
+  "scope": "Local Aer neutrino correctness/sampling study; no hardware jobs. Timings were not isolated from a concurrent pytest readiness check and are descriptive only. No explicit warmup.",
+  "source_sha256": {
+    "backend/app/benchmarks/__init__.py": "279b5acd7625150f8d38c6237c9e24eb179e05d849094926659e56791a2b2c83",
+    "backend/app/benchmarks/__main__.py": "a766db0c658c78e5933015b3ba75dd74d0ce24f66ce3e8b8359555a7a68603ee",
+    "backend/app/benchmarks/artifacts.py": "9565cc0c5773d7de40cd69812cec6a1037afd0d68e3ffc40e25d42995e29ce27",
+    "backend/app/benchmarks/neutrinos.py": "e663858469ead112843e348d55966afc778751351ef927f694eb6d9f63f40201",
+    "backend/app/benchmarks/review.py": "c3e7d216fc2f5218520ffe45c71c98e38b2c40863419d8f362119bad8423ad14",
+    "backend/app/experiments/neutrinos/__init__.py": "cfa99ad51c2c2572f860f245038780b70690fb62a804b9a0c718345c2071fe5f",
+    "backend/app/experiments/neutrinos/__main__.py": "55070869b2051345c156c5343238629a3edc4c8a3d376694d16bb9946661e6ce",
+    "backend/app/experiments/neutrinos/circuit.py": "fbec58fb51ffa49699bbdd3fd23af949c63af69224abcd395a196c2ab62f3ecc",
+    "backend/app/experiments/neutrinos/experiment.py": "0f2c23add600a5fd35bb4ce49c88fa19b16f15285020f5ad1194cef349936848",
+    "backend/app/experiments/neutrinos/model.py": "a5be473e5c8697430e67f8c0f181989d3f6b2e3ee93a7a7255eea45e89e4cff7",
+    "backend/app/experiments/neutrinos/physics.py": "2f54b328ad4e113157e1c549939c51e78d6b4d545807b2b9a07d1d497ddbd679",
+    "backend/app/experiments/neutrinos/runner.py": "ae5b22e7e550be35a7597260ed8c78eb5ae7619206cd8dbe8a4a7e9c3f9147b2",
+    "backend/app/experiments/neutrinos/web.py": "892f843932846dc3874160ae72f18d5ec24a92d88c4495b2b966f9ffcbe8c4f2",
+    "backend/app/schemas/contracts.py": "95b4ba4bdc7ca5f4e43abe1b8ab27e13d798f2df0e3f2f5626f470925730e879",
+    "backend/app/schemas/neutrinos.py": "4f271c2b26c752eea3b1934162caf7d84d76c394568c4e7d70aa7afd6a0a45a9",
+    "backend/uv.lock": "895036911e87f6773746cff4995588d22dfec3c190f8a62262fd1caec30b823b",
+    "examples/neutrinos/matter-resonance.json": "71953c1e5de0a7df2fdba7ae9dcaea4b5276de494a09ecbee945dfad22563952"
+  },
+  "artifact_sha256": {
+    "neutrino-resonance.json": "8fc83650469ed8ae6822f58060c3712074db8f0b687fc89f64ab70962952e2b1",
+    "neutrino-resonance-review.md": "ee2477de448aea00dd33887a807b0e121fea4080aa51989965c18ef4de1ef5c5",
+    "plot_neutrino_evidence.py": "8b2cd14382d0e79b4bdd1abb85f98bc18835ec947b272b0bb447205a950ef94a",
+    "neutrino-resonance.png": "27bd18293a41815db6125cf9e6e2bb697869e3720d1d44265273455fda2949f0",
+    "neutrino-resonance.svg": "8c6bf31f0b9f23a56c14a83f6800107937c4d8362bb8c65287dc16db6ef7fedd"
+  }
+}

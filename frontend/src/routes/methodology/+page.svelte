@@ -1,5 +1,11 @@
 <script lang="ts">
   import Icon from '#lib/components/Icon.svelte';
+  import qpuEvidence from '../../../../docs/evidence/ibm-qpu-2026-11-12/five-experiments.json?url';
+  import qpuReport from '../../../../docs/evidence/ibm-qpu-2026-11-12/RESULTS.md?url';
+  import scienceAnswers from '../../../../docs/SCIENCE_CHALLENGE_ANSWERS.md?url';
+  import evidenceFigure from '../../../../docs/evidence/fall-fest-2026-11-12/neutrino-resonance.png?url';
+  import evidenceRaw from '../../../../docs/evidence/fall-fest-2026-11-12/neutrino-resonance.json?url';
+  import evidenceProvenance from '../../../../docs/evidence/fall-fest-2026-11-12/provenance.json?url';
 </script>
 
 <svelte:head><title>Methodology · Q-Atlas</title></svelte:head>
@@ -12,6 +18,59 @@
 </header>
 
 <article class="methodology">
+  <section>
+    <h2>All five experiments executed on IBM hardware</h2>
+    <p>
+      Physical IBM device: ibm_marrakesh. Completed job: dbr0sthabdes73fp2v60. Eight circuits
+      covered Compiler, Optimization, Grover Search, Materials and Neutrinos, with 128 shots per
+      circuit. Provider usage was 2.0 seconds for the entire shared job.
+    </p>
+    <p>
+      Compiler and Optimization sampled their exact optima. Search succeeded in 109 of 128 shots;
+      neutrino conversion at the resonant point was 126 of 128. The app compares each measurement
+      with its independent classical reference. Per-experiment QPU runtime is unavailable because
+      the experiments shared a job.
+    </p>
+    <p>
+      <a href="/hardware/">Open physical QPU analytics</a> ·
+      <a href={qpuEvidence} download="q-atlas-five-physical-qpu.json"
+        >Download raw hardware evidence</a
+      >
+      · <a href={qpuReport} download="Q-Atlas-physical-results.md">Download results report</a>
+    </p>
+  </section>
+  <section>
+    <h2>Our scientific question</h2>
+    <p>
+      How does matter change neutrino flavor conversion, and how accurately does a one-qubit circuit
+      reproduce an independent prediction with finite measurements?
+    </p>
+    <p>
+      We compare the same model and input on both paths. Observable error or solution quality
+      accompanies runtime. Grover demonstrates theoretical oracle-query improvement; local simulator
+      runtime and physical QPU usage are different measurements. No practical quantum speedup has
+      been established by this project.
+    </p>
+    <p>
+      <a class="text-link" href={scienceAnswers} download="Q-Atlas-science-challenge-answers.md"
+        >Download the science challenge answers</a
+      >
+    </p>
+    <figure>
+      <img
+        src={evidenceFigure}
+        alt="Previously measured local Aer neutrino conversion curve and sampling errors across shot counts"
+      />
+      <figcaption>
+        Previously measured local Aer results · November 12, 2026 · 81 point records. Ranges are
+        observed min–max across three seeds, not confidence intervals.
+      </figcaption>
+    </figure>
+    <p>
+      <a href={evidenceRaw} download="neutrino-resonance.json">Download raw evidence</a> ·
+      <a href={evidenceProvenance} download="provenance.json">Source provenance</a>
+    </p>
+  </section>
   <section>
     <h2>Physical model</h2>
     <p>
@@ -71,6 +130,18 @@
 </article>
 
 <style>
+  figure {
+    margin: 20px 0;
+  }
+  img {
+    width: 100%;
+    height: auto;
+  }
+  figcaption {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
   .methodology {
     max-width: 820px;
   }

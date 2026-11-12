@@ -1,14 +1,11 @@
 """Launcher checks with fake servers and credentials; no SDK or network calls."""
 
-import errno
 import json
 import os
 import pty
-import select
 import shutil
 import subprocess
 import sys
-import time
 from pathlib import Path
 
 import pytest
@@ -35,7 +32,9 @@ kind = 'backend' if '-m' in sys.argv else 'frontend'
 root = Path(os.environ['TEST_LAUNCH_ROOT'])
 token = os.environ.get('QUANTUM-KEY') or os.environ.get('QATLAS_QUANTUM_KEY')
 record = {'has_token': bool(token), 'token_matches': token == os.environ.get('TEST_EXPECTED_TOKEN'),
-          'has_instance': bool(os.environ.get('QATLAS_IBM_INSTANCE'))}
+          'has_instance': bool(os.environ.get('QATLAS_IBM_INSTANCE')
+                               or os.environ.get('QUANTUM-CDN')),
+          'compiler_aer': os.environ.get('QATLAS_ENABLE_COMPILER_AER')}
 (root / (kind + '.json')).write_text(json.dumps(record))
 deadline = time.monotonic() + 5
 while time.monotonic() < deadline:
@@ -50,9 +49,11 @@ while time.monotonic() < deadline:
     env = os.environ.copy()
     for key in (
         "QUANTUM-KEY",
+        "QUANTUM-CDN",
         "QATLAS_QUANTUM_KEY",
         "QATLAS_IBM_INSTANCE",
         "QATLAS_SKIP_QUANTUM_PROMPT",
+        "QATLAS_ENABLE_COMPILER_AER",
     ):
         env.pop(key, None)
     env.update(PATH=f"{tools}:{env['PATH']}", TEST_LAUNCH_ROOT=str(tmp_path))
@@ -60,46 +61,30 @@ while time.monotonic() < deadline:
 
 
 @pytest.mark.parametrize("provide_token", [True, False])
-def test_interactive_prompt_is_hidden_and_backend_only(launcher, provide_token):
+def test_interactive_start_never_prompts_and_keeps_credentials_backend_only(
+    launcher, provide_token
+):
     root, env = launcher
     token = "fake-$(touch NEVER_EXECUTED)-key"
+    if provide_token:
+        env.update({"QUANTUM-KEY": token, "QUANTUM-CDN": "fake-instance"})
     env["TEST_EXPECTED_TOKEN"] = token
     master, slave = pty.openpty()
-    process = subprocess.Popen(
-        ["bash", "-x", str(root / "dev.sh")], stdin=slave, stdout=slave, stderr=slave, env=env
-    )
-    os.close(slave)
-    captured = b""
-    sent_token = sent_instance = False
-    deadline = time.monotonic() + 10
     try:
-        while time.monotonic() < deadline:
-            if select.select([master], [], [], 0.1)[0]:
-                try:
-                    chunk = os.read(master, 65536)
-                except OSError as error:
-                    if error.errno == errno.EIO:
-                        break
-                    raise
-                if not chunk:
-                    break
-                captured += chunk
-            if not sent_token and b"IBM Quantum API token" in captured:
-                os.write(master, (token + "\n" if provide_token else "\n").encode())
-                sent_token = True
-            if provide_token and not sent_instance and b"IBM instance name or CRN" in captured:
-                os.write(master, b"fake-instance\n")
-                sent_instance = True
-            if process.poll() is not None:
-                break
-        assert process.wait(timeout=2) == 0
+        result = subprocess.run(
+            ["bash", "-x", str(root / "dev.sh")],
+            stdin=slave,
+            capture_output=True,
+            text=True,
+            env=env,
+            timeout=10,
+        )
     finally:
-        if process.poll() is None:
-            process.terminate()
-            process.wait(timeout=3)
         os.close(master)
-    assert sent_token
-    assert token.encode() not in captured
+        os.close(slave)
+    assert result.returncode == 0
+    assert token not in result.stdout + result.stderr
+    assert "IBM Quantum API token" not in result.stdout + result.stderr
     assert not (root / "NEVER_EXECUTED").exists()
     backend = json.loads((root / "backend.json").read_text())
     frontend = json.loads((root / "frontend.json").read_text())
@@ -127,3 +112,20 @@ def test_noninteractive_start_reuses_environment_without_frontend_leak(launcher,
     assert json.loads((root / "backend.json").read_text())["has_token"]
     frontend = json.loads((root / "frontend.json").read_text())
     assert frontend["has_token"] is frontend["has_instance"] is False
+
+
+@pytest.mark.parametrize("setting,expected", [(None, "1"), ("0", "0")])
+def test_local_compiler_execution_defaults_on_with_explicit_opt_out(launcher, setting, expected):
+    root, env = launcher
+    if setting is not None:
+        env["QATLAS_ENABLE_COMPILER_AER"] = setting
+    result = subprocess.run(
+        ["bash", str(root / "dev.sh")],
+        stdin=subprocess.DEVNULL,
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=10,
+    )
+    assert result.returncode == 0
+    assert json.loads((root / "backend.json").read_text())["compiler_aer"] == expected

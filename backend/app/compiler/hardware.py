@@ -30,6 +30,22 @@ STORE = Path(__file__).resolve().parents[2] / ".cache" / "compiler-qpu"
 _sdk_lock = threading.Lock()
 
 
+class HardwareRequestError(ValueError):
+    """Operator-actionable local rejection, with deliberately public text only."""
+
+    def __init__(self, code: str, message: str):
+        super().__init__(message)
+        self.code = code
+
+
+class HardwareOperationError(RuntimeError):
+    """Sanitized provider/local-storage failure; never include SDK exception text."""
+
+    def __init__(self, code: str, message: str):
+        super().__init__(message)
+        self.code = code
+
+
 @contextlib.contextmanager
 def _quiet_sdk():
     # Do not leak credential-bearing SDK error strings or diagnostic output.
@@ -48,12 +64,23 @@ def _quiet_sdk():
 
 def _settings():
     token = os.environ.get("QUANTUM-KEY") or os.environ.get("QATLAS_QUANTUM_KEY")
-    instance = os.environ.get("QATLAS_IBM_INSTANCE")
-    if not token or not instance:
-        raise ValueError("Restart dev.sh and provide the IBM token and instance.")
+    instance = os.environ.get("QATLAS_IBM_INSTANCE") or os.environ.get("QUANTUM-CDN")
+    if not token or not token.strip() or not instance or not instance.strip():
+        raise HardwareRequestError(
+            "HARDWARE_CONFIGURATION_REQUIRED",
+            "Configure QUANTUM-KEY and QUANTUM-CDN in .env, then restart the backend. "
+            "Local simulation remains available without these settings.",
+        )
     folder = STORE / hashlib.sha256(instance.encode()).hexdigest()
     folder.mkdir(parents=True, exist_ok=True, mode=0o700)
-    budget = min(600, max(1, int(os.environ.get("QATLAS_COMPILER_QPU_BUDGET_SECONDS", "60"))))
+    try:
+        budget = min(600, max(1, int(os.environ.get("QATLAS_COMPILER_QPU_BUDGET_SECONDS", "60"))))
+    except ValueError:
+        raise HardwareRequestError(
+            "HARDWARE_BUDGET_INVALID",
+            "QATLAS_COMPILER_QPU_BUDGET_SECONDS must be an integer. "
+            "Correct the backend setting and restart the launcher.",
+        ) from None
     return token, instance, folder, budget
 
 
@@ -72,23 +99,61 @@ def _write(path, record):
 
 
 def _read(path):
-    return CompilerHardwareJob.model_validate_json(path.read_text())
+    try:
+        return CompilerHardwareJob.model_validate_json(path.read_text())
+    except (ValueError, OSError):
+        raise HardwareOperationError(
+            "HARDWARE_RECORD_UNREADABLE",
+            "A saved compiler hardware record cannot be read or validated. "
+            "Preserve the records and check the backend instance and cache compatibility; "
+            "reservation accounting cannot be verified. No new job was submitted.",
+        ) from None
 
 
 def _reserved(folder):
     records = (_read(path) for path in folder.glob("*.json"))
-    return sum(r.max_execution_seconds for r in records if r.status != "FAILED_BEFORE_SUBMISSION")
+    total = sum(r.max_execution_seconds for r in records if r.status != "FAILED_BEFORE_SUBMISSION")
+    from app.schemas.hardware import HardwareJob
+
+    for path in (folder / "experiments").glob("*.json"):
+        try:
+            record = HardwareJob.model_validate_json(path.read_text())
+        except (OSError, ValueError):
+            raise HardwareOperationError(
+                "HARDWARE_RECORD_UNREADABLE",
+                (
+                    "Shared QPU reservation records cannot be validated. Preserve the "
+                    "records before submitting another job."
+                ),
+            ) from None
+        if record.status != "FAILED_BEFORE_SUBMISSION":
+            total += record.max_execution_seconds
+    return total
 
 
 def devices():
     token, instance, folder, budget = _settings()
-    with _quiet_sdk():
-        names = sorted(
-            b.name for b in _service(token, instance).backends(operational=True, simulator=False)
-        )
-    return CompilerHardwareDevices(
-        backends=names, reserved_seconds=_reserved(folder), budget_seconds=budget
-    )
+    reserved = _reserved(folder)
+    try:
+        with _quiet_sdk():
+            names = sorted(
+                b.name
+                for b in _service(token, instance).backends(operational=True, simulator=False)
+            )
+    except ImportError:
+        raise HardwareOperationError(
+            "HARDWARE_SDK_MISSING",
+            "IBM Runtime dependencies are missing from the backend environment. "
+            "Install the locked hardware extra and restart the launcher.",
+        ) from None
+    except Exception:
+        raise HardwareOperationError(
+            "HARDWARE_DEVICE_LOOKUP_FAILED",
+            "IBM authentication or device lookup failed. Verify the token and instance "
+            "in the backend launcher, account access, and network connection. "
+            "Device loading submits no quantum job.",
+        ) from None
+    return CompilerHardwareDevices(backends=names, reserved_seconds=reserved, budget_seconds=budget)
 
 
 def _prepare_circuit(qubo, config, backend):
@@ -144,11 +209,19 @@ def submit(request: CompilerHardwareRequest):
                 or existing.shots != request.shots
                 or existing.max_execution_seconds != request.max_execution_seconds
             ):
-                raise ValueError("This request ID already belongs to another hardware test.")
+                raise HardwareRequestError(
+                    "HARDWARE_REQUEST_CONFLICT",
+                    "This saved request ID belongs to a different objective or hardware test. "
+                    "Use Check hardware job to recover it, then Start a new hardware test "
+                    "after it finishes. No new job was submitted.",
+                )
             return existing
         if _reserved(folder) + request.max_execution_seconds > budget:
-            raise ValueError(
-                "Compiler QPU reservation cap reached. Check existing jobs and provider usage."
+            raise HardwareRequestError(
+                "HARDWARE_RESERVATION_LIMIT",
+                "Compiler QPU reservation cap reached. Check existing jobs and provider usage. "
+                "This is the local compiler cap, not IBM's remaining allowance. "
+                "No new job was submitted.",
             )
         record = CompilerHardwareJob(
             request_id=str(request.request_id),
@@ -193,7 +266,13 @@ def refresh(request_id, *, cancel=False):
     token, instance, folder, _ = _settings()
     path = folder / f"{request_id}.json"
     if not path.exists():
-        raise ValueError("No recorded hardware request with this ID.")
+        raise HardwareRequestError(
+            "HARDWARE_REQUEST_NOT_FOUND",
+            "No record for this request exists under the current backend instance. "
+            "Check that this is the original backend and IBM instance. If the record "
+            "cannot be recovered, check IBM workloads for the request tag before "
+            "clearing the missing browser reference.",
+        )
     record = _read(path)
     if not record.job_id or record.measurement is not None:
         return record

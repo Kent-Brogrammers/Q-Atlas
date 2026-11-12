@@ -1,0 +1,30 @@
+{
+  "revision": "5786fd16913ae2a8d7089fb4abd581a4169790d9",
+  "working_tree_dirty": true,
+  "job_id": "dbr0sthabdes73fp2v60",
+  "backend": "ibm_marrakesh",
+  "simulated": false,
+  "source_sha256": {
+    "backend/app/quantum/hardware_experiments.py": "fb52073447d69d7305b30f5030d15daedc58d5acd7e8d1c91194e336f187c71d",
+    "backend/app/quantum/hardware.py": "1ad7a3bd5a48aa813fdb6a531b4178491b08e6916404731383497b8249de9f29",
+    "backend/app/quantum/hardware_demo.py": "579f08514ae70c1b4c3628bedc3411e842126c7e1d3adcce5afa7d44a2be8128",
+    "backend/app/compiler/hardware.py": "96f0145b76dd0ec378342a6caf60d1ef26e26d364e13a67a3e59cfe290f79d44",
+    "backend/app/configuration.py": "3a161942ac9b8bd878ba5b4d4abc7de07ae563b2f51b75d3a0b961b646b332b7",
+    "backend/app/schemas/hardware.py": "945765b4a15d909b50212536fa62585b35906b3359a584381d8f9917af544115",
+    "backend/app/api/hardware.py": "470c0729f46b388f34f7dc8783525942ae90411e30987192a5c23393bb4ac7bc",
+    "backend/uv.lock": "895036911e87f6773746cff4995588d22dfec3c190f8a62262fd1caec30b823b"
+  },
+  "evidence_sha256": "aa85684301f1251a091c455f40b5bf3e370de92a515aafe2744a36bcc0a22cad",
+  "timing_scope": "One physical job shared across five experiments; provider usage must not be assigned to any child individually.",
+  "post_measurement_change_note": "Submission/status serialization was hardened after recording; source_sha256 identifies the measured working tree, while final_control_source_sha256 identifies the release implementation.",
+  "final_control_source_sha256": {
+    "backend/app/quantum/hardware_experiments.py": "fb52073447d69d7305b30f5030d15daedc58d5acd7e8d1c91194e336f187c71d",
+    "backend/app/quantum/hardware.py": "884c0b190159e3aa030b931d7d1ecd669e3c63e088433096005c53da5c20739a",
+    "backend/app/quantum/hardware_demo.py": "579f08514ae70c1b4c3628bedc3411e842126c7e1d3adcce5afa7d44a2be8128",
+    "backend/app/compiler/hardware.py": "96f0145b76dd0ec378342a6caf60d1ef26e26d364e13a67a3e59cfe290f79d44",
+    "backend/app/configuration.py": "3a161942ac9b8bd878ba5b4d4abc7de07ae563b2f51b75d3a0b961b646b332b7",
+    "backend/app/schemas/hardware.py": "945765b4a15d909b50212536fa62585b35906b3359a584381d8f9917af544115",
+    "backend/app/api/hardware.py": "470c0729f46b388f34f7dc8783525942ae90411e30987192a5c23393bb4ac7bc",
+    "backend/uv.lock": "895036911e87f6773746cff4995588d22dfec3c190f8a62262fd1caec30b823b"
+  }
+}

@@ -3,13 +3,23 @@
   import Icon from '#lib/components/Icon.svelte';
   import Panel from '#lib/components/Panel.svelte';
   import Metric from '#lib/components/Metric.svelte';
+  import OptimizationWorkspace from '#lib/components/OptimizationWorkspace.svelte';
+  import ComparisonResult from '#lib/components/ComparisonResult.svelte';
   import CompilerRuntimeChart from '#lib/components/CompilerRuntimeChart.svelte';
   import { runtimeMeasurements } from '../../compiler/runtimes.ts';
-  import { api, ApiError } from '../../api/client.ts';
+  import { api } from '../../api/client.ts';
+  import { compilerErrorMessage } from '../../compiler/errors.ts';
+  import {
+    HARDWARE_REQUEST_STORAGE_KEY,
+    clearMissingHardwareReference,
+    isMissingHardwareRequest
+  } from '../../compiler/hardware-recovery.ts';
   import type {
     CompilerAnalyzeResult,
     GeneratedPythonArtifact,
     CompilerBenchmarkPlan,
+    CompilerBenchmarkResult,
+    OptimizationResult,
     CompilerHardwareJob,
     CompilerHardwareDevices
   } from '../../types/index.ts';
@@ -27,7 +37,7 @@
   const steps = [
     { id: 'input', label: 'Python input', title: 'Start with your Python' },
     { id: 'compiled', label: 'Compiled code', title: 'Review your compiled code' },
-    { id: 'test', label: 'Test', title: 'Prepare your comparison' },
+    { id: 'test', label: 'Test', title: 'Run your comparison' },
     { id: 'results', label: 'Results & analytics', title: 'Review your results and analytics' }
   ] as const;
   type Step = (typeof steps)[number]['id'];
@@ -41,12 +51,15 @@
   let analysis = $state<CompilerAnalyzeResult>();
   let artifact = $state<GeneratedPythonArtifact>();
   let plan = $state<CompilerBenchmarkPlan>();
+  let localResult = $state<CompilerBenchmarkResult | OptimizationResult | null>(null);
   let hardwareDevices = $state<CompilerHardwareDevices>();
   let hardwareBackend = $state('');
   let hardwareConfirmed = $state(false);
   let hardwareBusy = $state(false);
   let hardwareJob = $state<CompilerHardwareJob>();
   let hardwareRequestId = $state('');
+  let hardwareRecoveryError = $state<unknown>();
+  const hardwareRequestMissing = $derived(isMissingHardwareRequest(hardwareRecoveryError));
   let hardwareUrl = $state('');
   let error = $state('');
   let loading = $state<'generate' | 'plan' | null>(null);
@@ -62,8 +75,10 @@
   const currentHardwareJob = $derived(
     !plan || hardwareJob?.problem_id === plan.problem_id ? hardwareJob : undefined
   );
-  const resultQubo = $derived(plan?.qubo ?? hardwareJob?.qubo);
-  const resultConfig = $derived(plan?.config ?? hardwareJob?.local_training_config);
+  const resultQubo = $derived(localResult?.metadata.qubo ?? plan?.qubo ?? hardwareJob?.qubo);
+  const resultConfig = $derived(
+    localResult?.metadata.config ?? plan?.config ?? hardwareJob?.local_training_config
+  );
   const measuredRuntimes = $derived(
     runtimeMeasurements(
       currentHardwareJob?.classical?.elapsed_ms,
@@ -72,7 +87,7 @@
   );
   onMount(() => {
     try {
-      hardwareRequestId = localStorage.getItem('qatlas-compiler-qpu-request') ?? '';
+      hardwareRequestId = localStorage.getItem(HARDWARE_REQUEST_STORAGE_KEY) ?? '';
     } catch {
       /* Storage may be unavailable. */
     }
@@ -90,7 +105,11 @@
     if (busy) return;
     if (
       action === 'submit' &&
-      (!hardwareConfirmed || !hardwareBackend || layers !== 1 || !artifact)
+      (!hardwareConfirmed ||
+        !hardwareBackend ||
+        layers !== 1 ||
+        !artifact ||
+        hardwareRequestMissing)
     )
       return;
     hardwareBusy = true;
@@ -110,7 +129,7 @@
         plan = prepared;
         if (!hardwareRequestId) {
           const requestId = crypto.randomUUID();
-          localStorage.setItem('qatlas-compiler-qpu-request', requestId);
+          localStorage.setItem(HARDWARE_REQUEST_STORAGE_KEY, requestId);
           hardwareRequestId = requestId;
         }
         const job = await api.submitCompilerHardware({
@@ -123,11 +142,13 @@
         });
         if (active) {
           hardwareJob = job;
+          hardwareRecoveryError = undefined;
           hardwareConfirmed = false;
           await goToStep('results');
         }
       } else {
         if (!hardwareRequestId) return;
+        hardwareRecoveryError = undefined;
         const job =
           action === 'cancel'
             ? await api.cancelCompilerHardwareJob(hardwareRequestId)
@@ -138,11 +159,12 @@
         }
       }
     } catch (caught) {
+      if (active && (action === 'refresh' || action === 'cancel')) hardwareRecoveryError = caught;
       if (active)
-        error =
-          caught instanceof Error
-            ? caught.message
-            : 'Hardware request failed. Recover the recorded request before submitting again.';
+        error = compilerErrorMessage(
+          caught,
+          'Hardware request failed. Recover the recorded request before submitting again.'
+        );
     } finally {
       if (active) hardwareBusy = false;
     }
@@ -154,15 +176,35 @@
       !['DONE', 'CANCELLED', 'ERROR', 'FAILED_BEFORE_SUBMISSION'].includes(hardwareJob.status)
     )
       return;
-    localStorage.removeItem('qatlas-compiler-qpu-request');
+    localStorage.removeItem(HARDWARE_REQUEST_STORAGE_KEY);
     hardwareRequestId = '';
     hardwareJob = undefined;
+    hardwareRecoveryError = undefined;
     hardwareConfirmed = false;
     void goToStep('input');
   }
 
+  function clearMissingRequest() {
+    if (busy || !hardwareRequestMissing) return;
+    const requestId = hardwareRequestId;
+    try {
+      clearMissingHardwareReference(localStorage, requestId, hardwareRecoveryError);
+    } catch (caught) {
+      error = compilerErrorMessage(caught, 'Could not clear the saved browser reference.');
+      return;
+    }
+    hardwareRequestId = '';
+    hardwareJob = undefined;
+    hardwareRecoveryError = undefined;
+    hardwareConfirmed = false;
+    error = `Cleared browser reference for ${requestId}. No job was submitted or cancelled.`;
+  }
+
   function canVisit(target: Step) {
-    return target === 'input' || (target === 'results' ? !!plan || !!hardwareJob : !!artifact);
+    return (
+      target === 'input' ||
+      (target === 'results' ? !!localResult || !!plan || !!hardwareJob : !!artifact)
+    );
   }
   async function goToStep(target: Step) {
     if (!canVisit(target)) return;
@@ -205,6 +247,7 @@
     analysis = undefined;
     artifact = undefined;
     plan = undefined;
+    localResult = null;
     error = '';
   }
   function replaceSource(text: string, name: string) {
@@ -259,15 +302,7 @@
       }
     } catch (caught) {
       if (active && revision === currentRevision) {
-        error =
-          caught instanceof ApiError
-            ? [
-                caught.message,
-                ...(caught.body.error.diagnostics ?? []).map((item) => item.message)
-              ].join('\n')
-            : caught instanceof Error
-              ? caught.message
-              : 'Could not reach the API.';
+        error = compilerErrorMessage(caught, 'Could not reach the API.');
       }
     } finally {
       if (active) loading = null;
@@ -318,6 +353,12 @@
           Submission acknowledgement was lost. Do not create another job. Recover the tagged request
           in IBM's dashboard.
         </p>{/if}
+      {#if hardwareRequestMissing}<p role="alert">
+          This request has no local record under the current backend instance. Check the original
+          backend and IBM instance, and look in IBM workloads for tag
+          <code>qatlas-{hardwareRequestId}</code>. Retain any provider job ID before clearing this
+          browser reference; a missing local record does not establish whether IBM accepted a job.
+        </p>{/if}
       {#if hardwareJob?.measurement}
         <p role="status">
           Physical QPU result received · simulated: false. Bitstring {hardwareJob.measurement
@@ -337,6 +378,11 @@
         </p>
       {/if}
       <div class="comparison-actions">
+        {#if hardwareRequestMissing}<button
+            class="button"
+            disabled={busy}
+            onclick={clearMissingRequest}>Clear missing browser reference</button
+          >{/if}
         <button class="button" disabled={busy} onclick={() => hardwareAction('refresh')}
           >Check hardware job</button
         >
@@ -445,8 +491,8 @@
                 }}>Load example<Icon name="reset" size={15} /></button
               >
               <p class="field-note">
-                Choose energy projects with the highest combined impact. Each example uses one
-                binary choice per qubit, with three to six qubits and a fixed selection target.
+                Explore energy portfolios, dense weighted cuts, balanced workloads, or conflicting
+                tasks. Each example uses one binary choice per qubit, with three to six qubits.
               </p>
             </fieldset>
             <div class="marker-guide">
@@ -599,74 +645,28 @@
       >
     </div>
   {:else if step === 'test' && artifact}
-    <Panel title="Test preparation" subtitle="Compare solvers on the same verified objective">
+    <OptimizationWorkspace
+      {source}
+      onResult={(result) => {
+        localResult = result;
+      }}
+    />
+    {#if localResult}<div class="step-actions">
+        <button class="button primary" onclick={() => goToStep('results')}
+          >View local results & analytics</button
+        >
+      </div>{/if}
+    <Panel
+      title="Hardware results and comparison plans"
+      subtitle="One shared physical-job workflow across the app"
+    >
       <div class="output-body">
         <p>
-          Prepare a comparison for your marked objective. Your surrounding Python application is not
-          run or timed.
+          The IBM QPU controls above submit the verified objective using the backend's .env
+          credentials. Physical measurements include job IDs, raw counts, quality and timing
+          analytics. Existing compiler jobs remain recoverable in the tracker above. Preparing a
+          plan below submits no job.
         </p>
-        <dl class="test-summary">
-          <div>
-            <dt>Source</dt>
-            <dd>{fileName}</dd>
-          </div>
-          <div>
-            <dt>Comparison</dt>
-            <dd>Exact classical optimum and QPU samples</dd>
-          </div>
-          <div>
-            <dt>Circuit layers</dt>
-            <dd>{layers}</dd>
-          </div>
-          <div>
-            <dt>Execution</dt>
-            <dd>IBM QPU · confirmed submission only</dd>
-          </div>
-        </dl>
-      </div>
-      <div class="output-placeholder">
-        <Icon name="info" size={24} />
-        <div>
-          <h3>Submit one physical quantum job</h3>
-          <p>
-            Angles are trained locally, then one bound circuit is sampled on your selected IBM QPU.
-            Tests allow up to six inputs, one layer, 128 shots and a 10-second QPU cap. Check your
-            actual remaining IBM allowance before submitting.
-          </p>
-          <div class="comparison-actions">
-            <button class="button" disabled={busy} onclick={() => hardwareAction('devices')}
-              >Load IBM devices</button
-            >
-          </div>
-          {#if hardwareDevices}
-            <p class="field-note">
-              Compiler reservation: {hardwareDevices.reserved_seconds} / {hardwareDevices.budget_seconds}
-              seconds. This is not provider remaining quota.
-            </p>
-            <label for="hardware-backend">IBM device</label>
-            <select id="hardware-backend" bind:value={hardwareBackend} disabled={busy}>
-              <option value="">Choose a device</option
-              >{#each hardwareDevices.backends as name}<option value={name}>{name}</option>{/each}
-            </select>
-            <label class="hardware-confirm"
-              ><input type="checkbox" bind:checked={hardwareConfirmed} disabled={busy} />I checked
-              IBM's remaining allowance and authorize one job with a 10-second QPU cap.</label
-            >
-            <button
-              class="button primary"
-              disabled={busy ||
-                !hardwareConfirmed ||
-                !hardwareBackend ||
-                layers !== 1 ||
-                (analysis?.qubo?.num_variables ?? 99) > 6}
-              onclick={() => hardwareAction('submit')}
-              >{hardwareBusy ? 'Working…' : 'Submit one IBM QPU job'}</button
-            >
-            {#if layers !== 1 || (analysis?.qubo?.num_variables ?? 99) > 6}<p class="field-note">
-                Use one layer and at most six binary inputs for a hardware test.
-              </p>{/if}
-          {/if}
-        </div>
       </div>
     </Panel>
     <div class="step-actions">
@@ -687,11 +687,18 @@
     </div>
   {:else if step === 'results' && resultQubo && resultConfig}
     <div class="analytics-workspace">
+      {#if localResult}<Panel
+          title="Local simulator comparison"
+          subtitle="Exact classical reference and measured Aer QAOA"
+          ><div class="output-body"><ComparisonResult result={localResult} /></div></Panel
+        >{/if}
       <Panel
         title="Test status"
         subtitle={currentHardwareJob
           ? `IBM QPU · ${currentHardwareJob.status}`
-          : 'Comparison prepared · not executed'}
+          : localResult
+            ? 'Local Aer comparison completed'
+            : 'Comparison prepared · not executed'}
       >
         {#snippet toolbar()}
           {#if planUrl}<a class="button" href={planUrl} download="q_atlas_benchmark_plan.json"
@@ -705,6 +712,9 @@
                 ? 'Hardware results received.'
                 : 'The hardware request is recorded. Use Check hardware job to retrieve results.'}
               Your surrounding Python application is not executed.
+            {:else if localResult}
+              Local results are displayed above. The same verified objective was solved by exact
+              enumeration and the shared QAOA runner.
             {:else}
               Your comparison plan is ready. No script or solver has been executed, so measured
               performance results are not available yet.
@@ -717,7 +727,7 @@
         </div>
       </Panel>
       <section aria-labelledby="performance-title">
-        <h3 id="performance-title">Measured runtimes</h3>
+        <h3 id="performance-title">Hardware test timings</h3>
         {#if measuredRuntimes.length}
           <div class="analytics-grid">
             {#each measuredRuntimes as reading (reading.kind)}
@@ -732,8 +742,8 @@
           </div>
         {:else}
           <p class="timing-note">
-            No runtimes yet. Preparing a plan does not execute a solver. Submit a hardware test to
-            collect measurements.
+            No hardware runtimes yet. Use the Test step for a local Aer comparison, or explicitly
+            submit an IBM hardware test.
           </p>
         {/if}
         {#if currentHardwareJob?.measurement}
@@ -1046,13 +1056,6 @@
     margin-bottom: 7px;
     color: var(--muted);
   }
-  .hardware-confirm {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    line-height: 1.6;
-    margin: 14px 0;
-  }
   .output-body p {
     overflow-wrap: anywhere;
   }
@@ -1199,12 +1202,10 @@
   .error-notice :global(svg) {
     color: var(--accent, var(--blue));
   }
-  .output-body,
-  .output-placeholder {
+  .output-body {
     padding: 0 24px 20px;
   }
   .output-body > p,
-  .output-placeholder p,
   .detail-section p {
     color: var(--muted);
     font-size: 13px;
@@ -1214,20 +1215,6 @@
   .output-body > .field-note {
     font-size: 12px;
     margin-bottom: 0;
-  }
-  .output-placeholder {
-    border-top: 1px solid var(--border);
-    padding-top: 24px;
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
-  }
-  .output-placeholder > :global(svg) {
-    color: var(--subtle);
-  }
-  .output-placeholder p {
-    max-width: 520px;
-    margin: 0;
   }
   .result-disclosure {
     border-top: 1px solid var(--border);
@@ -1352,7 +1339,6 @@
     .configuration,
     .source-editor,
     .output-body,
-    .output-placeholder,
     .preview-body,
     .detail-section,
     .result-disclosure > summary,

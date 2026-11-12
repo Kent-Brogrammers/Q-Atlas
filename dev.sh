@@ -22,27 +22,7 @@ if [[ ! -x "$PROJECT_ROOT/frontend/node_modules/.bin/vite" ]]; then
     exit 1
 fi
 
-# Prompt only in a terminal. Empty input skips credentials; CI/piped startup never waits.
-# Token text is read as data, is never evaluated, and is exported only in the backend child.
-qatlas_prompt_token=''
-qatlas_prompt_instance=''
-if [[ -t 0 && "${QATLAS_SKIP_QUANTUM_PROMPT:-0}" != 1 ]]; then
-    printf 'Quantum setup is optional. Startup never connects or submits jobs.\n'
-    qatlas_has_key=0
-    if "$PROJECT_ROOT/backend/.venv/bin/python" -c 'import os, sys; sys.exit(not bool((os.environ.get("QUANTUM-KEY") or os.environ.get("QATLAS_QUANTUM_KEY") or "").strip()))'; then
-        qatlas_has_key=1
-        printf 'Quantum token already provided by your environment.\n'
-    else
-        IFS= read -r -s -p 'IBM Quantum API token (hidden; Enter to skip): ' qatlas_prompt_token
-        printf '\n'
-    fi
-    if [[ "$qatlas_has_key" == 1 || -n "$qatlas_prompt_token" ]]; then
-        if [[ -z "${QATLAS_IBM_INSTANCE:-}" ]]; then
-            IFS= read -r -p 'IBM instance name or CRN (Enter to leave unconfigured): ' qatlas_prompt_instance
-        fi
-        printf 'Quantum settings will be available to the backend only; nothing is saved.\n'
-    fi
-fi
+# The backend loads optional .env quantum settings itself. Missing credentials never prompt.
 
 server_pids=()
 cleanup() {
@@ -63,19 +43,15 @@ printf 'Starting Q-Atlas. Ctrl+C stops both servers.\n'
 printf 'Frontend: http://127.0.0.1:5173/compiler\nBackend docs: http://127.0.0.1:8000/docs\n'
 (
     cd "$PROJECT_ROOT/backend"
-    if [[ -n "$qatlas_prompt_token" ]]; then
-        export QATLAS_QUANTUM_KEY="$qatlas_prompt_token"
-    fi
-    if [[ -n "$qatlas_prompt_instance" ]]; then
-        export QATLAS_IBM_INSTANCE="$qatlas_prompt_instance"
-    fi
+    # Local simulator execution is enabled for the development app; operators can set 0.
+    export QATLAS_ENABLE_COMPILER_AER="${QATLAS_ENABLE_COMPILER_AER:-1}"
     exec .venv/bin/python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ) </dev/null &
 server_pids+=("$!")
 (
     cd "$PROJECT_ROOT/frontend"
-    unset QATLAS_QUANTUM_KEY QATLAS_IBM_INSTANCE qatlas_prompt_token qatlas_prompt_instance
-    exec env -u QUANTUM-KEY npm run dev -- --clearScreen false
+    unset QATLAS_QUANTUM_KEY QATLAS_IBM_INSTANCE
+    exec env -u QUANTUM-KEY -u QUANTUM-CDN npm run dev -- --clearScreen false
 ) </dev/null &
 server_pids+=("$!")
 

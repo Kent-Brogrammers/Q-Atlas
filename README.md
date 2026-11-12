@@ -1,5 +1,17 @@
 # Q-Atlas
 
+**All five experiments now support physical IBM QPUs and classical/QPU analytics.**
+Open **Physical QPU Analytics** (`/hardware/`) for completed measurements from
+`ibm_marrakesh`, job `dbr0sthabdes73fp2v60`. See the
+[hardware guide](docs/IBM_HARDWARE_ALL_EXPERIMENTS.md) and
+[actual results](docs/evidence/ibm-qpu-2026-11-12/RESULTS.md).
+
+For the final presentation push, see the [Fall Fest roadmap](docs/FALL_FEST_ROADMAP.md)
+and [science challenge answers](docs/SCIENCE_CHALLENGE_ANSWERS.md), including the
+November 12 local neutrino measurements, figure, and remaining integration work.
+The [release and demo guide](docs/APP_RELEASE_STATUS.md) records the implemented
+workspaces, study limits, and rehearsal commands.
+
 For the limited quantum-testing allowance, use the
 [Qiskit connection setup guide](docs/QUANTUM_CONNECTION_SETUP.md). SDK installation
 and the default readiness check submit no jobs; provider authentication/device listing
@@ -17,17 +29,18 @@ Read the [whole-project scientific report](docs/PROJECT_SCIENTIFIC_REPORT.md) fo
 research question, Qiskit approaches, models, classical comparisons, evidence status,
 reproduction inputs, citations and limitations across all five experiences.
 
-**Current state: compiler analysis and Python script generation.** Health, safe
-Python-to-QUBO analysis, symbolic QAOA circuit previews, and downloadable Qiskit
-builder code work. Compiler benchmarking consumes the shared runner entrypoints,
-which now implement classical enumeration and local Aer QAOA. Compiler benchmark
-requests default to HTTP 501 until the server explicitly enables local execution
-with `QATLAS_ENABLE_COMPILER_AER=1`. The compiler UI separately supports an explicit
-IBM device selection and one bounded physical sampling job; that flow does not
-require the local Aer endpoint flag.
-The optimization route remains HTTP 501. Compiler execution tests stay mocked, and circuit previews
-are constructed without execution. Other developers' materials and classical work
-is preserved alongside the compiler.
+**Current state: five live local experiment workspaces.** The compiler safely analyzes
+supported Python and runs exact classical/shared Aer QAOA comparisons. Optimization
+runs the same shared solvers on graph presets and configurable cycle graphs.
+Materials, Search, and Neutrinos expose their existing live models and references.
+All five workspaces offer bounded sequential parameter studies with distinct seeds,
+quality/error and timing statistics, cancellation, and full raw JSON export.
+
+Start with `./dev.sh`; it enables local compiler comparisons by default. Set
+`QATLAS_ENABLE_COMPILER_AER=0` to keep conversion-only deployments. A separately
+started backend still requires `QATLAS_ENABLE_COMPILER_AER=1` for compiler execution.
+Optional IBM hardware sampling retains its explicit confirmation and quota limits.
+No account or physical hardware is needed for any local demonstration.
 
 Search now runs a bounded local Grover/classical comparison at `POST /api/search/run`,
 with measured/theoretical success probabilities, query comparisons, and explicit
@@ -40,7 +53,7 @@ An explicit, dated previously measured fallback and a repeatable API rehearsal c
 are documented in the search guide for demo preparation.
 
 See [the compiler guide](docs/COMPILER.md) for supported syntax, diagnostics, limits,
-and the mocked QUBO-to-QAOA handoff. The
+and the shared QUBO-to-QAOA handoff. The
 [Developer 2 next steps](docs/DEVELOPER_2_NEXT_STEPS.md) cover the remaining integration
 work and owner handoffs under the current mocks-only constraint.
 The [Developer 3 handoff](docs/DEVELOPER_3_HANDOFF.md) records the selected circuit and
@@ -62,9 +75,7 @@ The page offers [energy-project examples at three through six qubits](examples/c
 defaulting to a six-project selection problem, alongside
 three [generated output scripts](examples/compiler/programs/README.md#generated-output-files),
 and advanced conversion details plus nonexecuting comparison planning.
-Measured results focus on classical solving time and IBM QPU usage, with a runtime
-chart and expandable supporting timings. The two readings have distinct scopes;
-they are not an end-to-end speedup measurement.
+Local measured results include exact and sampled objectives, objective gap, solver timings, depth and optimizer evaluations. Physical QPU usage has a separate scope from local training and end-to-end execution.
 Local numeric weight vectors are supported inside objectives. Test planning remains
 nonexecuting; the separate [hardware action](docs/COMPILER_IBM_HARDWARE.md) submits
 one confirmed IBM job. User-submitted Python itself is never executed.
@@ -151,13 +162,10 @@ terminal (Bash 4.3+):
 ./dev.sh
 ```
 
-In an interactive terminal the launcher prompts for your IBM Quantum API token
-(hidden while you paste) and instance name/CRN. Press Enter at the token prompt to
-skip. Values are kept only for this launch and passed to the backend, never the
-frontend or a saved file. Existing environment credentials are reused. Startup
-does not authenticate, run simulations, or submit quantum jobs.
-Use `QATLAS_SKIP_QUANTUM_PROMPT=1 ./dev.sh` to skip prompts; non-interactive startup
-also skips them automatically.
+The backend automatically reads optional `QUANTUM-KEY` and `QUANTUM-CDN` from
+`.env` without prompts. `QUANTUM-CDN` is the IBM instance name/CRN. Existing
+environment values take precedence, and missing settings leave the local app usable.
+Settings stay in the backend; startup does not authenticate or submit quantum jobs.
 
 The launcher works from any current directory when invoked by its path. Both servers
 share the terminal output; **Ctrl+C stops both**, including their worker processes.
@@ -167,19 +175,21 @@ environment and frontend dependencies without installing packages or running exp
 Open <http://127.0.0.1:5173>. Backend docs are at <http://127.0.0.1:8000/docs>;
 health is <http://127.0.0.1:8000/api/health>. Start either server independently.
 The frontend serves `/`, `/compiler`, `/neutrinos`, `/materials`, `/optimization`, and
-`/search`. The Svelte compiler sends static generation/planning requests; conversion
+`/search`. The Svelte compiler sends generation, planning, and explicit local execution requests; conversion
 does not execute user code or run a benchmark. Its Test step can explicitly submit
 and retrieve a bounded IBM QPU sample after device selection and authorization.
 The Neutrino Lab runs vacuum, matter,
 layered propagation, and density sweeps through its own API using normalized inputs;
 see [the experiment guide](docs/NEUTRINOS.md). With the quantum extra installed, the
 Materials page submits configurable requests and displays returned simulation results,
-metrics, and time-series plots. Search runs live comparisons; optimization benchmarks
-remain unavailable. React health/request panels remain runnable from
+metrics, and time-series plots. Search and Optimization run live comparisons and parameter studies. React health/request panels remain runnable from
 `frontend/react-scaffold/` on port 5174. See [frontend setup](frontend/README.md) for
 both applications.
 
-No environment file or credentials are required. Optional overrides:
+No environment file or credentials are required. The backend automatically reads optional
+`QUANTUM-KEY` and `QUANTUM-CDN` (IBM instance name/CRN) from the repository `.env`,
+then `backend/.env` as a fallback. Existing environment settings take precedence.
+Missing values never prompt or prevent local startup. Optional overrides:
 
 - Backend: `QATLAS_CORS_ORIGINS`, a comma-separated list, defaulting to
   `http://localhost:5173,http://127.0.0.1:5173`. Set in the backend shell.

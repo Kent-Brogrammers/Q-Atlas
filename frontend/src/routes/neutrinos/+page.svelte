@@ -1,6 +1,9 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
   import Panel from '#lib/components/Panel.svelte';
+  import StudyPanel from '#lib/components/StudyPanel.svelte';
+  import HardwarePanel from '#lib/components/HardwarePanel.svelte';
+  import { downloadJson } from '#lib/studies/model.ts';
   import NeutrinoProbabilityChart from '#lib/components/NeutrinoProbabilityChart.svelte';
   import { api, ApiError } from '../../api/client.ts';
   import type { NeutrinoResponse } from '../../types/index.ts';
@@ -10,6 +13,14 @@
   let settings = $state(defaultSettings());
   let result = $state<NeutrinoResponse | null>(null);
   let loading = $state(false);
+  let studying = $state(false);
+  let studyRequest = $derived.by(() => {
+    try {
+      return buildRequest(settings);
+    } catch {
+      return null;
+    }
+  });
   let error = $state('');
   let selectedIndex = $state(0);
   let controller: AbortController | undefined;
@@ -35,13 +46,15 @@
   }
   async function runExperiment(event: SubmitEvent) {
     event.preventDefault();
-    if (loading) return;
+    if (loading || studying) return;
     clearResult();
     try {
       const request = buildRequest(settings);
       loading = true;
       controller = new AbortController();
-      result = await api.neutrinos(request, controller.signal);
+      const measured = await api.neutrinos(request, controller.signal);
+      controller.signal.throwIfAborted();
+      result = measured;
       selectedIndex =
         result.axis === 'potential'
           ? Math.floor(result.results.length / 2)
@@ -80,22 +93,28 @@
 </p>
 <div class="presets" aria-label="Example configurations">
   <span>Load example:</span>
-  <button class="button" disabled={loading} onclick={() => preset('vacuum')}>Vacuum</button>
-  <button class="button" disabled={loading} onclick={() => preset('resonance')}
+  <button class="button" disabled={loading || studying} onclick={() => preset('vacuum')}
+    >Vacuum</button
+  >
+  <button class="button" disabled={loading || studying} onclick={() => preset('resonance')}
     >MSW resonance</button
   >
-  <button class="button" disabled={loading} onclick={() => preset('layers')}>Two layers</button>
+  <button class="button" disabled={loading || studying} onclick={() => preset('layers')}
+    >Two layers</button
+  >
 </div>
 {#if error}<div class="error" role="alert">
     <strong>Experiment could not run.</strong>
     {error}
     <p>Check that the Q-Atlas backend is running at http://127.0.0.1:8000.</p>
   </div>{/if}
+<HardwarePanel experiment="neutrinos" request={studyRequest} />
+
 <div class="lab-layout">
   <aside aria-label="Experiment configuration">
     <Panel title="Configuration" subtitle="Effective two-flavor propagation">
       <form onsubmit={runExperiment} oninput={clearResult}>
-        <fieldset disabled={loading}>
+        <fieldset disabled={loading || studying}>
           <legend>Propagation</legend>
           <label for="environment">Environment</label>
           <select id="environment" bind:value={settings.environment}>
@@ -218,6 +237,8 @@
           >
         </fieldset>
       </form>
+      {#if loading}<button class="button" onclick={() => controller?.abort()}>Stop waiting</button
+        >{/if}
     </Panel>
   </aside>
   <div class="results" aria-busy={loading}>
@@ -321,7 +342,49 @@
   </div>
 </div>
 
+<StudyPanel
+  experiment="neutrinos"
+  request={studyRequest}
+  disabled={loading}
+  bind:running={studying}
+/>
+{#if result}<button
+    class="button"
+    onclick={() =>
+      downloadJson(
+        { source: 'live_neutrinos_api', request: studyRequest, result },
+        'q-atlas-neutrinos.json'
+      )}>Download full curve JSON</button
+  >{/if}
+<Panel title="Scientific question" subtitle="Why does matter change flavor conversion?">
+  <div class="science-explanation">
+    <p>
+      A one-qubit state encodes electron and other effective flavor. Each constant matter layer has
+      generator G = xX + zZ. A Y rotation aligns this axis with Z, a Z rotation applies the
+      propagation phase, and a final Y rotation returns to the flavor basis. There are no entangling
+      gates or variational parameters in this model.
+    </p>
+    <p>
+      Resonance occurs when the matter term cancels the diagonal vacuum term (z = 0). Full
+      conversion additionally requires the correct propagation distance. Use MSW resonance above to
+      test both effects. The independent 2×2 SciPy reference checks ideal Aer; measured-minus-ideal
+      error isolates finite-shot variation.
+    </p>
+    <p>
+      This two-flavor, normalized model is classically easy. It validates the physics-to-circuit
+      mapping and measurement uncertainty. More layers extend a prescribed profile; they do not
+      introduce interacting many-body neutrinos.
+    </p>
+  </div>
+</Panel>
+
 <style>
+  .science-explanation {
+    padding: 0 22px 22px;
+    font-size: 13px;
+    line-height: 1.8;
+  }
+
   .notice,
   .hint,
   .status {

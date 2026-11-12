@@ -28,6 +28,30 @@ The one-layer hardware path supports all four, with the same 128 shots and
 10-second requested QPU cap; larger circuits can still be rejected by the provider
 if the cap is insufficient. Loading or converting never submits a job.
 
+## Stress examples (also in the UI picker)
+
+| Input | What it stresses | Exact canonical minimum | One optimal API bitstring |
+| --- | --- | ---: | --- |
+| [stress_maxcut_6.py](stress_maxcut_6.py) | 15 weighted interactions, competing triangle edges | -57 | `000111` |
+| [stress_partition_6.py](stress_partition_6.py) | Load balancing, count constraint, 15 interactions and a broad penalty scale | 4 | `010110` |
+| [stress_conflicts_6.py](stress_conflicts_6.py) | Task rewards versus nine conflicts, including two triangles | -10 | `010100` |
+
+These exact values come from independent arithmetic over all 64 assignments,
+verified against compilation in tests. They are not sampled quantum results.
+For partitioning, the total load is 90, but no allowed selection reaches load 45;
+the optimum selects three tasks with load 43 or 47. For task selection, the best
+conflict-free reward is 10. API bitstrings put `x[0]` first.
+
+All three use the current six-qubit compiler ceiling. They stress connectivity,
+penalties, and solution quality; they cannot make 64-candidate classical enumeration
+computationally difficult. More layers or larger penalty coefficients alone do not
+establish a harder classical problem or a quantum speedup. Hardware submission
+still requires its existing explicit confirmation and quota limits.
+
+For **8-, 12-, and 16-qubit local examples** and exact/heuristic/QAOA comparisons,
+see [the scaling guide](../../../docs/STRESS_EXAMPLES.md). Those use the existing
+shared runner directly; the compiler's width limit is unchanged.
+
 ## Additional syntax and rejection fixtures
 
 | Input | Expected result | Reason/reference |

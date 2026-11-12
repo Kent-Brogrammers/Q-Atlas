@@ -11,6 +11,8 @@ import logging
 import os
 from importlib.metadata import PackageNotFoundError, version
 
+from app.configuration import load_quantum_env
+
 
 def _service_factory(**kwargs):
     from qiskit_ibm_runtime import QiskitRuntimeService
@@ -22,10 +24,12 @@ def main(argv=None, *, environ=None, service_factory=None, output=None):
     parser = argparse.ArgumentParser(description="Check Qiskit setup without submitting jobs.")
     parser.add_argument("--connect", action="store_true", help="Authenticate and list devices only")
     args = parser.parse_args(argv)
+    if environ is None:
+        load_quantum_env()
     env = os.environ if environ is None else environ
     # The hyphenated name works in os.environ, but is not a normal shell identifier.
     token = env.get("QUANTUM-KEY") or env.get("QATLAS_QUANTUM_KEY")
-    instance = env.get("QATLAS_IBM_INSTANCE")
+    instance = env.get("QATLAS_IBM_INSTANCE") or env.get("QUANTUM-CDN")
     versions = {}
     for package in ("qiskit", "qiskit-ibm-runtime"):
         try:

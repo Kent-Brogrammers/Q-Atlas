@@ -1,5 +1,8 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
+  import StudyPanel from './StudyPanel.svelte';
+  import HardwarePanel from './HardwarePanel.svelte';
+  import { downloadJson } from '../studies/model.ts';
   import { api, ApiError } from '../../api/client.ts';
   import type { MaterialsRequest, MaterialsResult } from '../../types/index.ts';
   import Icon from './Icon.svelte';
@@ -18,6 +21,7 @@
   let seed = $state(42);
   let timeoutSeconds = $state(30);
   let running = $state(false);
+  let studying = $state(false);
   let result = $state<MaterialsResult | null>(null);
   let errorMessage = $state('');
   let requestController: AbortController | null = null;
@@ -87,10 +91,9 @@
     return error instanceof Error ? error.message : 'The materials request failed.';
   }
 
-  async function runSimulation() {
-    if (running || requestIssue) return;
-
-    const request: MaterialsRequest = {
+  let currentRequest = $derived.by(() => {
+    if (requestIssue) return null;
+    return {
       model: 'ising',
       num_spins: spins,
       coupling,
@@ -106,7 +109,19 @@
         seed,
         timeout_seconds: timeoutSeconds
       }
-    };
+    } satisfies MaterialsRequest;
+  });
+  $effect(() => {
+    currentRequest;
+    result = null;
+    errorMessage = '';
+  });
+
+  async function runSimulation() {
+    if (running || studying || requestIssue) return;
+
+    const request = currentRequest;
+    if (!request) return;
 
     result = null;
     errorMessage = '';
@@ -155,6 +170,8 @@
   >
 </div>
 
+<HardwarePanel experiment="materials" request={currentRequest} />
+
 <div class="materials-grid">
   <Panel
     title="Model and run settings"
@@ -167,7 +184,7 @@
         void runSimulation();
       }}
     >
-      <fieldset disabled={running}>
+      <fieldset disabled={running || studying}>
         <div class="control-grid">
           <label for="spin-count">Spins</label>
           <select id="spin-count" bind:value={spins}>
@@ -409,6 +426,21 @@
     {/if}
   </Panel>
 </div>
+
+<StudyPanel
+  experiment="materials"
+  request={currentRequest}
+  disabled={running}
+  bind:running={studying}
+/>
+{#if result}<button
+    class="button"
+    onclick={() =>
+      downloadJson(
+        { source: 'live_materials_api', request: currentRequest, result },
+        'q-atlas-materials.json'
+      )}>Download materials JSON</button
+  >{/if}
 
 <style>
   .page-heading {
