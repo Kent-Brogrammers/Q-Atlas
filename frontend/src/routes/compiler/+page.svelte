@@ -151,7 +151,10 @@
 <header class="page-heading">
   <div>
     <h1>Python Compiler</h1>
-    <p>Choose your Python. Run a comparison. See what happened.</p>
+    <p>
+      Convert supported Python optimization objectives to QUBO and Qiskit circuits, then compare
+      classical and QAOA solvers.
+    </p>
   </div>
 </header>
 <nav class="workflow-nav" aria-label="Compiler workflow">

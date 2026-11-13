@@ -87,16 +87,13 @@ function displayFixture(): ProposedNeutrinoResult {
   };
 }
 
-test('primary navigation exposes the compiler and neutrino lab while retaining the experiment catalog', () => {
+test('presentation navigation focuses on neutrinos and the compiler while retaining the experiment catalog', () => {
   assert.deepEqual(
     primaryNavigation.map(({ href, title }) => [href, title]),
     [
       ['/', 'Overview'],
-      ['/compiler/', 'Python Compiler'],
       ['/neutrinos/', 'Neutrino Lab'],
-      ['/optimization/', 'Optimization'],
-      ['/materials/', 'Materials'],
-      ['/search/', 'Grover Search'],
+      ['/compiler/', 'Python Compiler'],
       ['/hardware/', 'Physical QPU Analytics'],
       ['/methodology/', 'Methodology']
     ]
