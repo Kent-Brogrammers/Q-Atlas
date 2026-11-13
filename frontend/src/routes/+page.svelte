@@ -8,10 +8,24 @@
   <header class="introduction">
     <h1>Q-Atlas</h1>
     <p>
-      Convert marked Python objectives into circuit code, or explore the Neutrino Lab. Each
-      workspace shows its validation and execution status.
+      Explore five reproducible quantum experiments. Compare scientific predictions, solution
+      quality and measured local runtime, then vary parameters and export the evidence.
     </p>
+    <div class="start-here">
+      <strong>Start with a live experiment</strong>
+      <p>
+        Open the Neutrino Lab, choose MSW resonance, then select Run experiment. Local runs need no
+        IBM account. For the completed hardware measurements, open Physical QPU Analytics and select
+        Load recorded physical demo.
+      </p>
+      <a class="text-link" href="/methodology/">Science report &amp; presentation downloads →</a>
+    </div>
     <div class="workspace-actions">
+      <a class="button primary workspace-action-button" href="/hardware/"
+        ><span class="button-text">Physical QPU Analytics</span><span class="button-icon"
+          ><Icon name="arrow" size={30} /></span
+        ></a
+      >
       <a class="button primary workspace-action-button" href="/compiler/">
         <span class="button-text">Open Python Compiler</span>
         <span class="button-icon"><Icon name="arrow" size={30} /></span>
@@ -24,6 +38,16 @@
         <span class="button-text">Explore Grover Search</span>
         <span class="button-icon"><Icon name="arrow" size={30} /></span>
       </a>
+      <a class="button primary workspace-action-button" href="/optimization/"
+        ><span class="button-text">Run Optimization</span><span class="button-icon"
+          ><Icon name="arrow" size={30} /></span
+        ></a
+      >
+      <a class="button primary workspace-action-button" href="/materials/"
+        ><span class="button-text">Explore Materials</span><span class="button-icon"
+          ><Icon name="arrow" size={30} /></span
+        ></a
+      >
     </div>
   </header>
 
@@ -35,7 +59,9 @@
       in place. No circuit code is required.
     </p>
     <p>
-      Source conversion and comparison planning are available. Quantum execution stays disabled.
+      Source conversion, physical IBM sampling, local Aer comparisons and parameter studies are
+      available. The development launcher enables local execution; optional IBM sampling requires an
+      explicit submission.
     </p>
   </section>
 
@@ -69,13 +95,24 @@
         <dd>SciPy reference, ideal Aer, and finite-shot measurements</dd>
       </div>
     </dl>
-    <p>
-      Choose an experiment in the Neutrino Lab to explore its flavor probabilities.
-    </p>
+    <p>Choose an experiment in the Neutrino Lab to explore its flavor probabilities.</p>
   </section>
 </div>
 
 <style>
+  .start-here {
+    margin: 0 0 24px;
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--blue);
+    border-radius: 4px;
+    background: var(--surface);
+  }
+  .introduction .start-here p {
+    font-size: 14px;
+    line-height: 1.7;
+    margin: 8px 0 12px;
+  }
   .overview {
     max-width: 980px;
   }

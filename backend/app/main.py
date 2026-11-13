@@ -5,9 +5,12 @@ import os
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import compiler, materials, neutrinos, optimization, search
+from app.api import compiler, hardware, materials, neutrinos, optimization, search
 from app.api.errors import register_error_handlers
+from app.configuration import load_quantum_env
 from app.schemas.contracts import ErrorResponse, HealthResponse
+
+load_quantum_env()
 
 app = FastAPI(
     title="Q-Atlas API",
@@ -45,6 +48,7 @@ def health() -> HealthResponse:
 
 
 for router in (
+    hardware.router,
     compiler.router,
     materials.router,
     neutrinos.router,

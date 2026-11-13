@@ -1,0 +1,41 @@
+{
+  "scope": "Post-hoc ideal local statevector reference, computed from the original logical circuit after physical data collection. Not a new hardware run or timing benchmark.",
+  "job_id": "dbr0sthabdes73fp2v60",
+  "parameters": {
+    "model": "ising",
+    "num_spins": 2,
+    "coupling": 1.0,
+    "field": 0.7,
+    "boundary": "open",
+    "observable": "magnetization",
+    "config": {
+      "backend": "aer_simulator",
+      "shots": 128,
+      "seed": 42,
+      "timeout_seconds": 30.0
+    },
+    "evolution_time": 1.0,
+    "trotter_steps": 4,
+    "time_samples": 1
+  },
+  "ideal_observables": {
+    "per_spin_z": [
+      0.39352173009684577,
+      0.39352173009684577
+    ],
+    "per_spin_x": [
+      0.45568517802645536,
+      0.45568517802645536
+    ],
+    "magnetization_z": 0.39352173009684577,
+    "zz_correlations": [
+      0.32766607635245265
+    ],
+    "energy": -0.9656253255894902,
+    "state_norm": 0.9999999999999993
+  },
+  "source_sha256": {
+    "backend/app/experiments/materials/circuits.py": "02417c3d3055d72b388374c509bd13bf19d616014f6e5c32fc7b6896fec1f1d8",
+    "backend/app/experiments/materials/physics.py": "0fc87eaf8b47641ecf496050a8ea0728480a4561b478e9b29cdba1284f3c7e2b"
+  }
+}

@@ -61,6 +61,23 @@ def test_missing_instance_prevents_connection(monkeypatch):
     factory.assert_not_called()
 
 
+def test_cdn_alias_provides_explicit_instance(monkeypatch):
+    monkeypatch.setattr(check, "version", lambda _: "test-version")
+    factory, output = Mock(side_effect=AssertionError), io.StringIO()
+    assert (
+        check.main(
+            [],
+            environ={"QUANTUM-KEY": "fake-token", "QUANTUM-CDN": "fake-instance"},
+            service_factory=factory,
+            output=output,
+        )
+        == 0
+    )
+    assert json.loads(output.getvalue())["instance_present"] is True
+    assert "fake-token" not in output.getvalue()
+    factory.assert_not_called()
+
+
 def test_sdk_failure_is_sanitized(monkeypatch):
     monkeypatch.setattr(check, "version", lambda _: "test-version")
     output = io.StringIO()

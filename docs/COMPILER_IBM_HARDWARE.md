@@ -1,5 +1,10 @@
 # Compiler: an operator-submitted IBM QPU test
 
+The app now uses the [shared all-experiment hardware workflow](IBM_HARDWARE_ALL_EXPERIMENTS.md)
+for new submissions and analytics. The legacy compiler API and saved-request tracker
+below remain available for recovering earlier compiler jobs. Both workflows share
+the same conservative reservation cap.
+
 The compiler can submit **one physical IBM QPU sampling job per confirmed request**.
 Conversion and planning still execute no submitted Python. Opening the page or
 starting `dev.sh` does not authenticate or submit work. Hardware tests are separate
@@ -120,6 +125,41 @@ dependencies, credentials/instance, selected device and local training setup,
 then start a new hardware test. SDK exception text is suppressed to avoid
 exposing credential-bearing diagnostics. Missing or invalid counts are not
 reported as measurements, and results below the exact optimum are rejected.
+
+## If submission returns HTTP 422
+
+The access log records the status only. The app now displays the specific public
+error and field diagnostics from the response. Conversion and planning succeeding
+do not imply that a hardware request ID or local reservation is valid.
+
+- `HARDWARE_REQUEST_CONFLICT`: the saved UUID belongs to another objective, device,
+  shot count, or execution cap. Use **Check hardware job**, retain its record, then
+  **Start a new hardware test** after completion before choosing another example.
+  Keep unresolved requests available for recovery.
+- `HARDWARE_RESERVATION_LIMIT`: the local reservation cap was reached. Check recorded
+  jobs and provider usage before changing the configured allocation. Failed or
+  ambiguous submissions can still hold reservations; do not delete the cache.
+- `HARDWARE_CONFIGURATION_REQUIRED`: restart the launcher with the required IBM
+  connection settings. The error never includes their values.
+- Request validation errors include field names such as `body.request_id` or
+  `body.confirmed`. Follow the displayed field diagnostic.
+
+If **Check hardware job** reports `HARDWARE_REQUEST_NOT_FOUND`, there is no record
+under the current backend/instance. Verify the original instance and check IBM
+workloads for tag `qatlas-<request UUID>`. After retaining any provider job ID,
+**Clear missing browser reference** removes the stale browser pointer. It does not
+delete server records, free reservations, cancel work, or submit a replacement job.
+
+Device loading reports `HARDWARE_DEVICE_LOOKUP_FAILED` (HTTP 503) for IBM
+authentication/device-list failures, `HARDWARE_SDK_MISSING` for missing dependencies,
+`HARDWARE_RECORD_UNREADABLE` for incompatible/unreadable local records, or
+`HARDWARE_BUDGET_INVALID` for an invalid budget setting. These messages and log codes
+omit provider exception text and credential values. Preserve unreadable records;
+the app cannot safely replace unknown reservations with zero.
+
+Request conflicts and reservation-limit rejections occur before new provider work.
+The three six-qubit stress examples are covered by mocked submission/count-decoding
+tests; this verification consumes no hardware quota.
 
 ## API and verification
 

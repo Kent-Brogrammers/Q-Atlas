@@ -1,0 +1,57 @@
+{
+  "recorded_at_utc": "2026-11-12T18:02:39.417623+00:00",
+  "revision": "5786fd16913ae2a8d7089fb4abd581a4169790d9",
+  "working_tree_dirty": true,
+  "scope": "Local production-build browser verification. Main flows use real local API calculations. Recovery checks inject connection failures, a 503 response and a delayed cancelled request. No physical hardware submissions. Not a performance benchmark.",
+  "checks": {
+    "live_flows": {
+      "status": "passed",
+      "checks": [
+        "optimization: live exact/QAOA comparison",
+        "optimization: 2-point live study and raw export",
+        "compiler: convert, review, Test, live exact/QAOA comparison",
+        "compiler: 2-point live study and raw export",
+        "compiler: local results persist into Results & analytics",
+        "materials: live exact/ideal/shot time series",
+        "materials: 2-point live study and raw export",
+        "neutrinos: live resonance curve",
+        "neutrinos: 2-point live study and raw export",
+        "search: 2-point live study and raw export",
+        "methodology: science answer download and archived evidence figure"
+      ]
+    },
+    "recovery": {
+      "status": "passed",
+      "checks": [
+        "Editing settings clears live results",
+        "Backend unavailable: clear error, no synthetic fallback",
+        "Custom JSON syntax and backend index errors are surfaced",
+        "Duplicate study values rejected before launch",
+        "Study stop returns cancelled evidence and prevents further scheduling",
+        "Partial failure preserves the real first run and excludes failed points from summaries",
+        "Explicit previously measured Search fallback loads",
+        "Mobile Optimization layout fits a 390px viewport"
+      ]
+    }
+  },
+  "source_sha256": {
+    "frontend/src/lib/studies/model.ts": "fa1e569331f0777cdd71e7a3e1e79e945664c69b8c13f4d598e220c1bcdf4b3f",
+    "frontend/src/lib/studies/runner.ts": "5ba1b351a5b526b0f18fd78bd48aa5cdcf60dddb25c0bfa083c77de5179ddce8",
+    "frontend/src/lib/components/OptimizationWorkspace.svelte": "a1b0e6334ca0f955cbb3d6d0a34b85f6f5785491ce24a8360dbf747f994a84b1",
+    "frontend/src/lib/components/ComparisonResult.svelte": "3e35384d65e769fcbf391f07d6d1731d537bb7c120592b0507643b4a9ec1006a",
+    "frontend/src/lib/components/StudyChart.svelte": "0f86604ffad9ac04a5ec80cfb717cfae1a1f323591c54a06b52d8f27a8108b18",
+    "frontend/src/lib/components/StudyPanel.svelte": "a88076ad558d6cb077e6937187b53ded010fc1b75dc4206a92398aea84b0ac06",
+    "frontend/src/routes/compiler/+page.svelte": "d2b5bb71426ffad357f078fc8e639c4cebbc5e830cbdbe921a6ff3aaf78728fa",
+    "frontend/src/routes/optimization/+page.svelte": "02de1d821bffe0484f6a05e0fc59cba1f5823a004d5e77f6b35cc71c0d9dbab8",
+    "frontend/src/routes/search/+page.svelte": "822b8206cb69818395520483126be1ca3103982e4c6aad9c5fb6a23de6f126d4",
+    "frontend/src/routes/materials/+page.svelte": "63a12c8525b0779f43845304aaab49804fcfd816c58d627334bda4ddecd2e0ae",
+    "frontend/src/routes/neutrinos/+page.svelte": "2e737fb554553335689097fea17d6a1d9bd63d987a2e2eb2d9a36f742ef9b69a",
+    "frontend/src/routes/methodology/+page.svelte": "0b9405c39ec2fa1307505e47f97af876c56ad0d0ebdd696db29f905bd18863eb",
+    "dev.sh": "878c1937bc1b003bd4c727829da760f6c6c87c73d98da960655caf52af057b80",
+    "frontend/src/api/client.ts": "adc5bd3246ecc4e70365ddaef81ba4140a023015c11f8e684e906c28ad4f64a2"
+  },
+  "test_results": {
+    "backend": "1048 passed, 68 dependency deprecation warnings",
+    "frontend": "11 test files and 7 compiler tests passed; Svelte/TypeScript, generated types and production build passed"
+  }
+}

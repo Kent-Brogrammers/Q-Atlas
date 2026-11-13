@@ -1,1 +1,1 @@
-"""HTTP boundary; experiment owners replace only their route's 501 stub."""
+"""Typed HTTP boundaries for local experiments and explicit physical-QPU execution."""

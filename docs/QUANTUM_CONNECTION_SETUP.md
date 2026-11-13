@@ -21,21 +21,29 @@ uv sync --locked --extra quantum --extra hardware
 
 ## Credential configuration
 
-The easiest local startup is now `./dev.sh` from the repository root. In a terminal,
-it asks for a hidden API token and then the IBM instance name/CRN. Enter skips setup;
-already configured environment values are reused. Credentials go only to the backend
-child process and are not persisted, echoed, or sent to Vite. It does not connect or
-submit jobs. Set `QATLAS_SKIP_QUANTUM_PROMPT=1` to suppress prompts.
+Start with `./dev.sh` from the repository root. The backend automatically reads
+optional `QUANTUM-KEY` and `QUANTUM-CDN` from the repository's ignored `.env` file,
+with `backend/.env` as a fallback. `QUANTUM-CDN` supplies the IBM instance name/CRN.
+Existing environment values (`QUANTUM-KEY`/`QATLAS_QUANTUM_KEY` and
+`QUANTUM-CDN`/`QATLAS_IBM_INSTANCE`) take precedence over files.
 
-Prompted credentials belong to that running backend, not your parent terminal.
-To run the separate connection checker in another terminal, configure that terminal
-using the manual instructions below. The launcher never silently authenticates.
+Missing, empty or malformed settings are skipped; the app starts without prompts
+and local simulation remains available. Values stay in the backend process, are
+never shell-executed or interpolated, and are excluded from the frontend environment.
+Startup does not authenticate or submit jobs. Restart the backend after changing `.env`.
+The connection checker uses the same optional file configuration and remains offline
+unless explicitly invoked with `--connect`.
 
-`QUANTUM-KEY` is treated as an environment-variable name, **not a literal token**.
-It is supported if your launcher already provides that variable. Hyphens are not
-valid in ordinary Bash variable names, so use `QATLAS_QUANTUM_KEY` for Bash.
-Never put a token into a tracked file, command-line argument, frontend setting or chat.
-The checker does not load local environment files or save SDK accounts automatically.
+Example format, using placeholders only:
+
+```dotenv
+QUANTUM-KEY="your-IBM-token"
+QUANTUM-CDN="your-IBM-instance-name-or-CRN"
+```
+
+Do not commit or share `.env`. Hyphenated names work in dotenv files and `os.environ`;
+use the `QATLAS_` aliases for ordinary Bash environment assignments. Never put a real
+token in a command-line argument, frontend setting or chat.
 
 If the credential is not already provided by your environment, enter it yourself in
 a local Bash terminal (the token is hidden and is not placed in shell history):
