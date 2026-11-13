@@ -92,3 +92,9 @@ confirmed [IBM hardware action](../../../docs/COMPILER_IBM_HARDWARE.md) samples
 the extracted objective without executing the surrounding application. See
 [benchmark planning](../../../docs/COMPILER_BENCHMARK_PLAN.md) and
 [script generation](../../../docs/COMPILER_SCRIPT_GENERATION.md).
+
+The compiler also includes [neutrino_simulation.py](neutrino_simulation.py), a
+`@qatlas.neutrino` scientific declaration. It generates the Neutrino Lab's exact
+propagation circuits and compares them with an independent classical reference.
+It is separate from binary QUBO examples; see
+[the compiler walkthrough](../../../docs/COMPILER_NEUTRINO_EXAMPLE.md).

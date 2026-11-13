@@ -1,0 +1,1339 @@
+{
+  "recorded_at_utc": "2026-11-13T15:15:56.962329+00:00",
+  "base_revision": "30d684e",
+  "working_tree_dirty": true,
+  "scope": "New local compiler example measurement; simulated, not physical QPU. Single run, no speedup claim. Standalone script and API have distinct timing scopes.",
+  "source_sha256": {
+    "examples/compiler/programs/neutrino_simulation.py": "84ce7ef6c85e449fc18e95fefb2379fe515e9633680816508d115a129055d603",
+    "backend/app/compiler/neutrinos.py": "7eab1e01e26c3571704866aafd11e4a4c36ea5773d28cfd28b0702a82edc0513",
+    "backend/app/experiments/neutrinos/web.py": "a6191ae30bff28a2a419e6037d0de4a58f2027cda300413b9a910333a80cd5f7",
+    "backend/app/experiments/neutrinos/circuit.py": "fbec58fb51ffa49699bbdd3fd23af949c63af69224abcd395a196c2ab62f3ecc",
+    "backend/app/experiments/neutrinos/experiment.py": "0d5130261fc8e9513b9f0c808a2a56e9f1a036cc56a218aad9cda63ec36695ff",
+    "frontend/src/lib/components/CompilerNeutrinoResult.svelte": "a8e5c7fa01abfb6ed0c9b1e0de02155a4929764021ab17a85a837db2d8b1c7aa"
+  },
+  "generated_script_sha256": "bd3156b708a9d32acbeb4bec7a07e02b913264a2bbbe755670e1416e8702b8eb",
+  "api": {
+    "source": "\"\"\"Electron-neutrino conversion through matter, in the Neutrino Lab's normalized units.\n\nA safe scientific declaration: the compiler reads these literals without executing\nPython, generates exact layer-rotation circuits and a standalone SciPy/Aer script.\nRun compares the same flavor probabilities at all nine matter potentials.\nAt potential cos(0.4) \u2248 0.921061 and this distance, conversion should peak.\n\"\"\"\n\n\n@qatlas.neutrino\ndef neutrino_simulation():\n    return {\n        \"experiment\": {\n            \"parameters\": {\n                \"theta\": 0.2,\n                \"delta_m2\": 1.0,\n                \"energy\": 1.0,\n                \"particle\": \"neutrino\",\n            },\n            \"layers\": [{\"distance\": 4.0336988686318564, \"potential\": 0.0}],\n            \"shots\": 1024,\n            \"seed\": 42,\n        },\n        \"axis\": \"potential\",\n        \"samples\": 9,\n        \"max_potential\": 1.8421219880057702,\n        \"timeout_seconds\": 30,\n    }\n",
+    "request": {
+      "experiment": {
+        "parameters": {
+          "theta": 0.2,
+          "delta_m2": 1,
+          "energy": 1,
+          "particle": "neutrino"
+        },
+        "layers": [
+          {
+            "distance": 4.0336988686318564,
+            "potential": 0
+          }
+        ],
+        "shots": 1024,
+        "seed": 42
+      },
+      "axis": "potential",
+      "samples": 9,
+      "max_potential": 1.8421219880057702,
+      "timeout_seconds": 30
+    },
+    "result": {
+      "model": "effective_two_flavor",
+      "units": "normalized",
+      "axis": "potential",
+      "resonance_potential": 0.9210609940028851,
+      "coordinates": [
+        0,
+        0.23026524850072128,
+        0.46053049700144255,
+        0.6907957455021638,
+        0.9210609940028851,
+        1.1513262425036064,
+        1.3815914910043277,
+        1.611856739505049,
+        1.8421219880057702
+      ],
+      "results": [
+        {
+          "experiment": "q_neutrino",
+          "status": "completed",
+          "backend": "aer_simulator",
+          "simulated": true,
+          "configuration": {
+            "parameters": {
+              "theta": 0.2,
+              "delta_m2": 1,
+              "energy": 1,
+              "particle": "neutrino"
+            },
+            "layers": [
+              {
+                "distance": 4.0336988686318564,
+                "potential": 0
+              }
+            ],
+            "shots": 1024,
+            "seed": 42
+          },
+          "analytical": {
+            "electron": 0.9081173179450384,
+            "other": 0.09188268205496158,
+            "mixing_strength": 0.1516466453264173,
+            "theta_m": 0.2,
+            "frequency": 1
+          },
+          "numerical": {
+            "electron": 0.9081173179450382,
+            "other": 0.09188268205496158
+          },
+          "ideal": {
+            "electron": 0.9081173179450382,
+            "other": 0.09188268205496158
+          },
+          "measured": {
+            "electron": 0.919921875,
+            "other": 0.080078125
+          },
+          "absolute_errors": {
+            "ideal_vs_numerical": {
+              "electron": 0,
+              "other": 0
+            },
+            "sampling": {
+              "electron": 0.01180455705496175,
+              "other": 0.011804557054961584
+            },
+            "total": {
+              "electron": 0.01180455705496175,
+              "other": 0.011804557054961584
+            },
+            "analytical_vs_numerical": {
+              "electron": 1.1102230246251565e-16,
+              "other": 0
+            }
+          },
+          "numerics": {
+            "reference_norm": 0.9999999999999999,
+            "ideal_norm": 1,
+            "state_error_l2": 4.002966042486721e-16,
+            "subdivision_check": {
+              "subdivisions_per_layer": 2,
+              "state_change_l2": 2.2887833992611187e-16,
+              "scope": "constant-layer numerical stability, not smooth-profile convergence"
+            },
+            "approximation": "exact constant-layer propagators; floating-point error only"
+          },
+          "num_qubits": 1,
+          "circuit_depth": 4,
+          "shots": 1024,
+          "counts": {
+            "0": 942,
+            "1": 82
+          },
+          "circuit_diagram": "        \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510 \u2591 \u250c\u2500\u2510\n     q: \u2524 Ry(-2.7416) \u251c\u2524 Rz(8.0674) \u251c\u2524 Ry(2.7416) \u251c\u2500\u2591\u2500\u2524M\u251c\n        \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518 \u2591 \u2514\u2565\u2518\nmeas: 1/\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2569\u2550\n                                                       0 ",
+          "rotations": [
+            {
+              "gate": "ry",
+              "angle": -2.741592653589793
+            },
+            {
+              "gate": "rz",
+              "angle": 8.067397737263713
+            },
+            {
+              "gate": "ry",
+              "angle": 2.741592653589793
+            }
+          ],
+          "statevector": [
+            [
+              -0.6277739515003989,
+              -0.7169499171926956
+            ],
+            [
+              0,
+              0.30312156316395833
+            ]
+          ],
+          "basis_gates": [
+            "ry",
+            "rz"
+          ],
+          "timing_ms": {
+            "classical": 0.45684099995924043,
+            "convergence_check": 0.05802999999104941,
+            "circuit_end_to_end": 536.0448010000027,
+            "ideal_execution": 1.9872870000199327
+          },
+          "quantum_timing": {
+            "includes_queue": false,
+            "includes_transpilation": true,
+            "includes_optimizer": false,
+            "includes_sampling": true,
+            "queue_ms": null,
+            "transpilation_ms": 531.2880120000045,
+            "optimizer_ms": null,
+            "sampling_ms": 1.6640970000025845
+          },
+          "versions": {
+            "numpy": "2.5.4",
+            "scipy": "1.18.1",
+            "qiskit": "2.6.2",
+            "qiskit-aer": "0.18.2"
+          }
+        },
+        {
+          "experiment": "q_neutrino",
+          "status": "completed",
+          "backend": "aer_simulator",
+          "simulated": true,
+          "configuration": {
+            "parameters": {
+              "theta": 0.2,
+              "delta_m2": 1,
+              "energy": 1,
+              "particle": "neutrino"
+            },
+            "layers": [
+              {
+                "distance": 4.0336988686318564,
+                "potential": 0.23026524850072128
+              }
+            ],
+            "shots": 1024,
+            "seed": 43
+          },
+          "analytical": {
+            "electron": 0.9992140147727591,
+            "other": 0.0007859852272409541,
+            "mixing_strength": 0.2411509149287041,
+            "theta_m": 0.25665949973469276,
+            "frequency": 0.7929977347573621
+          },
+          "numerical": {
+            "electron": 0.9992140147727588,
+            "other": 0.0007859852272409557
+          },
+          "ideal": {
+            "electron": 0.9992140147727588,
+            "other": 0.0007859852272409542
+          },
+          "measured": {
+            "electron": 1,
+            "other": 0
+          },
+          "absolute_errors": {
+            "ideal_vs_numerical": {
+              "electron": 0,
+              "other": 1.4094628242311558e-18
+            },
+            "sampling": {
+              "electron": 0.0007859852272411594,
+              "other": 0.0007859852272409542
+            },
+            "total": {
+              "electron": 0.0007859852272411594,
+              "other": 0.0007859852272409557
+            },
+            "analytical_vs_numerical": {
+              "electron": 2.220446049250313e-16,
+              "other": 1.5178830414797062e-18
+            }
+          },
+          "numerics": {
+            "reference_norm": 0.9999999999999999,
+            "ideal_norm": 0.9999999999999999,
+            "state_error_l2": 4.615798956820346e-17,
+            "subdivision_check": {
+              "subdivisions_per_layer": 2,
+              "state_change_l2": 4.050941474817242e-16,
+              "scope": "constant-layer numerical stability, not smooth-profile convergence"
+            },
+            "approximation": "exact constant-layer propagators; floating-point error only"
+          },
+          "num_qubits": 1,
+          "circuit_depth": 4,
+          "shots": 1024,
+          "counts": {
+            "0": 1024
+          },
+          "circuit_diagram": "        \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510 \u2591 \u250c\u2500\u2510\n     q: \u2524 Ry(-2.6283) \u251c\u2524 Rz(6.3974) \u251c\u2524 Ry(2.6283) \u251c\u2500\u2591\u2500\u2524M\u251c\n        \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518 \u2591 \u2514\u2565\u2518\nmeas: 1/\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2569\u2550\n                                                       0 ",
+          "rotations": [
+            {
+              "gate": "ry",
+              "angle": -2.6282736541204077
+            },
+            {
+              "gate": "rz",
+              "angle": 6.3974281310367935
+            },
+            {
+              "gate": "ry",
+              "angle": 2.6282736541204077
+            }
+          ],
+          "statevector": [
+            [
+              -0.9983690156942033,
+              -0.049732517275385565
+            ],
+            [
+              2.7755575615628914e-17,
+              0.028035428073082
+            ]
+          ],
+          "basis_gates": [
+            "ry",
+            "rz"
+          ],
+          "timing_ms": {
+            "classical": 0.16188500001135253,
+            "convergence_check": 0.04386199998407392,
+            "circuit_end_to_end": 5.363213000009637,
+            "ideal_execution": 1.0313750000250366
+          },
+          "quantum_timing": {
+            "includes_queue": false,
+            "includes_transpilation": true,
+            "includes_optimizer": false,
+            "includes_sampling": true,
+            "queue_ms": null,
+            "transpilation_ms": 2.4078299999246155,
+            "optimizer_ms": null,
+            "sampling_ms": 1.4890469999500056
+          },
+          "versions": {
+            "numpy": "2.5.4",
+            "scipy": "1.18.1",
+            "qiskit": "2.6.2",
+            "qiskit-aer": "0.18.2"
+          }
+        },
+        {
+          "experiment": "q_neutrino",
+          "status": "completed",
+          "backend": "aer_simulator",
+          "simulated": true,
+          "configuration": {
+            "parameters": {
+              "theta": 0.2,
+              "delta_m2": 1,
+              "energy": 1,
+              "particle": "neutrino"
+            },
+            "layers": [
+              {
+                "distance": 4.0336988686318564,
+                "potential": 0.46053049700144255
+              }
+            ],
+            "shots": 1024,
+            "seed": 44
+          },
+          "analytical": {
+            "electron": 0.8233315985839094,
+            "other": 0.17666840141609058,
+            "mixing_strength": 0.4169152047485757,
+            "theta_m": 0.3509630883402512,
+            "frequency": 0.6031044552934532
+          },
+          "numerical": {
+            "electron": 0.8233315985839097,
+            "other": 0.1766684014160903
+          },
+          "ideal": {
+            "electron": 0.8233315985839091,
+            "other": 0.1766684014160906
+          },
+          "measured": {
+            "electron": 0.8310546875,
+            "other": 0.1689453125
+          },
+          "absolute_errors": {
+            "ideal_vs_numerical": {
+              "electron": 5.551115123125783e-16,
+              "other": 3.0531133177191805e-16
+            },
+            "sampling": {
+              "electron": 0.007723088916090859,
+              "other": 0.007723088916090609
+            },
+            "total": {
+              "electron": 0.007723088916090304,
+              "other": 0.007723088916090304
+            },
+            "analytical_vs_numerical": {
+              "electron": 3.3306690738754696e-16,
+              "other": 2.7755575615628914e-16
+            }
+          },
+          "numerics": {
+            "reference_norm": 1,
+            "ideal_norm": 0.9999999999999999,
+            "state_error_l2": 7.55543271769643e-16,
+            "subdivision_check": {
+              "subdivisions_per_layer": 2,
+              "state_change_l2": 4.996003610813204e-16,
+              "scope": "constant-layer numerical stability, not smooth-profile convergence"
+            },
+            "approximation": "exact constant-layer propagators; floating-point error only"
+          },
+          "num_qubits": 1,
+          "circuit_depth": 4,
+          "shots": 1024,
+          "counts": {
+            "0": 851,
+            "1": 173
+          },
+          "circuit_diagram": "        \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510 \u2591 \u250c\u2500\u2510\n     q: \u2524 Ry(-2.4397) \u251c\u2524 Rz(4.8655) \u251c\u2524 Ry(2.4397) \u251c\u2500\u2591\u2500\u2524M\u251c\n        \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518 \u2591 \u2514\u2565\u2518\nmeas: 1/\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2569\u2550\n                                                       0 ",
+          "rotations": [
+            {
+              "gate": "ry",
+              "angle": -2.4396664769092906
+            },
+            {
+              "gate": "rz",
+              "angle": 4.865483517968069
+            },
+            {
+              "gate": "ry",
+              "angle": 2.4396664769092906
+            }
+          ],
+          "statevector": [
+            [
+              -0.7591104008412577,
+              0.49707443901143644
+            ],
+            [
+              2.7755575615628914e-17,
+              -0.4203194040442228
+            ]
+          ],
+          "basis_gates": [
+            "ry",
+            "rz"
+          ],
+          "timing_ms": {
+            "classical": 0.11047799989682971,
+            "convergence_check": 0.040527000010115444,
+            "circuit_end_to_end": 5.308509999963462,
+            "ideal_execution": 1.0074790000089706
+          },
+          "quantum_timing": {
+            "includes_queue": false,
+            "includes_transpilation": true,
+            "includes_optimizer": false,
+            "includes_sampling": true,
+            "queue_ms": null,
+            "transpilation_ms": 2.2583979999808435,
+            "optimizer_ms": null,
+            "sampling_ms": 1.6012900000532682
+          },
+          "versions": {
+            "numpy": "2.5.4",
+            "scipy": "1.18.1",
+            "qiskit": "2.6.2",
+            "qiskit-aer": "0.18.2"
+          }
+        },
+        {
+          "experiment": "q_neutrino",
+          "status": "completed",
+          "backend": "aer_simulator",
+          "simulated": true,
+          "configuration": {
+            "parameters": {
+              "theta": 0.2,
+              "delta_m2": 1,
+              "energy": 1,
+              "particle": "neutrino"
+            },
+            "layers": [
+              {
+                "distance": 4.0336988686318564,
+                "potential": 0.6907957455021638
+              }
+            ],
+            "shots": 1024,
+            "seed": 45
+          },
+          "analytical": {
+            "electron": 0.3058684912799359,
+            "other": 0.6941315087200641,
+            "mixing_strength": 0.7409370514549116,
+            "theta_m": 0.5183971460644037,
+            "frequency": 0.4524032824742944
+          },
+          "numerical": {
+            "electron": 0.30586849127993626,
+            "other": 0.6941315087200639
+          },
+          "ideal": {
+            "electron": 0.305868491279936,
+            "other": 0.6941315087200641
+          },
+          "measured": {
+            "electron": 0.3046875,
+            "other": 0.6953125
+          },
+          "absolute_errors": {
+            "ideal_vs_numerical": {
+              "electron": 2.7755575615628914e-16,
+              "other": 2.220446049250313e-16
+            },
+            "sampling": {
+              "electron": 0.0011809912799359834,
+              "other": 0.0011809912799358724
+            },
+            "total": {
+              "electron": 0.001180991279936261,
+              "other": 0.0011809912799360944
+            },
+            "analytical_vs_numerical": {
+              "electron": 3.885780586188048e-16,
+              "other": 2.220446049250313e-16
+            }
+          },
+          "numerics": {
+            "reference_norm": 1,
+            "ideal_norm": 1,
+            "state_error_l2": 3.188872858294072e-16,
+            "subdivision_check": {
+              "subdivisions_per_layer": 2,
+              "state_change_l2": 2.482534153247273e-16,
+              "scope": "constant-layer numerical stability, not smooth-profile convergence"
+            },
+            "approximation": "exact constant-layer propagators; floating-point error only"
+          },
+          "num_qubits": 1,
+          "circuit_depth": 4,
+          "shots": 1024,
+          "counts": {
+            "0": 312,
+            "1": 712
+          },
+          "circuit_diagram": "        \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510 \u2591 \u250c\u2500\u2510\n     q: \u2524 Ry(-2.1048) \u251c\u2524 Rz(3.6497) \u251c\u2524 Ry(2.1048) \u251c\u2500\u2591\u2500\u2524M\u251c\n        \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518 \u2591 \u2514\u2565\u2518\nmeas: 1/\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2569\u2550\n                                                       0 ",
+          "rotations": [
+            {
+              "gate": "ry",
+              "angle": -2.1047983614609858
+            },
+            {
+              "gate": "rz",
+              "angle": 3.649717217363799
+            },
+            {
+              "gate": "ry",
+              "angle": 2.1047983614609858
+            }
+          ],
+          "statevector": [
+            [
+              -0.25133790246609905,
+              0.4926436339423028
+            ],
+            [
+              0,
+              -0.833145550741324
+            ]
+          ],
+          "basis_gates": [
+            "ry",
+            "rz"
+          ],
+          "timing_ms": {
+            "classical": 0.08822600000257808,
+            "convergence_check": 0.03841299997020542,
+            "circuit_end_to_end": 5.028070999969714,
+            "ideal_execution": 1.0309739999456724
+          },
+          "quantum_timing": {
+            "includes_queue": false,
+            "includes_transpilation": true,
+            "includes_optimizer": false,
+            "includes_sampling": true,
+            "queue_ms": null,
+            "transpilation_ms": 2.1728770000208897,
+            "optimizer_ms": null,
+            "sampling_ms": 1.4295960000936248
+          },
+          "versions": {
+            "numpy": "2.5.4",
+            "scipy": "1.18.1",
+            "qiskit": "2.6.2",
+            "qiskit-aer": "0.18.2"
+          }
+        },
+        {
+          "experiment": "q_neutrino",
+          "status": "completed",
+          "backend": "aer_simulator",
+          "simulated": true,
+          "configuration": {
+            "parameters": {
+              "theta": 0.2,
+              "delta_m2": 1,
+              "energy": 1,
+              "particle": "neutrino"
+            },
+            "layers": [
+              {
+                "distance": 4.0336988686318564,
+                "potential": 0.9210609940028851
+              }
+            ],
+            "shots": 1024,
+            "seed": 46
+          },
+          "analytical": {
+            "electron": 0,
+            "other": 1,
+            "mixing_strength": 1,
+            "theta_m": 0.7853981633974483,
+            "frequency": 0.3894183423086505
+          },
+          "numerical": {
+            "electron": 0,
+            "other": 1
+          },
+          "ideal": {
+            "electron": 5.30532060329679e-32,
+            "other": 1
+          },
+          "measured": {
+            "electron": 0,
+            "other": 1
+          },
+          "absolute_errors": {
+            "ideal_vs_numerical": {
+              "electron": 5.30532060329679e-32,
+              "other": 0
+            },
+            "sampling": {
+              "electron": 5.30532060329679e-32,
+              "other": 0
+            },
+            "total": {
+              "electron": 0,
+              "other": 0
+            },
+            "analytical_vs_numerical": {
+              "electron": 0,
+              "other": 0
+            }
+          },
+          "numerics": {
+            "reference_norm": 1,
+            "ideal_norm": 1,
+            "state_error_l2": 2.303328157969851e-16,
+            "subdivision_check": {
+              "subdivisions_per_layer": 2,
+              "state_change_l2": 2.220446049250313e-16,
+              "scope": "constant-layer numerical stability, not smooth-profile convergence"
+            },
+            "approximation": "exact constant-layer propagators; floating-point error only"
+          },
+          "num_qubits": 1,
+          "circuit_depth": 4,
+          "shots": 1024,
+          "counts": {
+            "1": 1024
+          },
+          "circuit_diagram": "        \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510 \u2591 \u250c\u2500\u2510\n     q: \u2524 Ry(-\u03c0/2) \u251c\u2524 Rz(\u03c0) \u251c\u2524 Ry(\u03c0/2) \u251c\u2500\u2591\u2500\u2524M\u251c\n        \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518 \u2591 \u2514\u2565\u2518\nmeas: 1/\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2569\u2550\n                                            0 ",
+          "rotations": [
+            {
+              "gate": "ry",
+              "angle": -1.5707963267948966
+            },
+            {
+              "gate": "rz",
+              "angle": 3.141592653589793
+            },
+            {
+              "gate": "ry",
+              "angle": 1.5707963267948966
+            }
+          ],
+          "statevector": [
+            [
+              6.123233995736766e-17,
+              -2.220446049250313e-16
+            ],
+            [
+              0,
+              -1
+            ]
+          ],
+          "basis_gates": [
+            "ry",
+            "rz"
+          ],
+          "timing_ms": {
+            "classical": 0.09056099997906131,
+            "convergence_check": 0.03900400008660654,
+            "circuit_end_to_end": 5.25523900000735,
+            "ideal_execution": 0.9244730000546042
+          },
+          "quantum_timing": {
+            "includes_queue": false,
+            "includes_transpilation": true,
+            "includes_optimizer": false,
+            "includes_sampling": true,
+            "queue_ms": null,
+            "transpilation_ms": 2.3446510000439957,
+            "optimizer_ms": null,
+            "sampling_ms": 1.5963700000156678
+          },
+          "versions": {
+            "numpy": "2.5.4",
+            "scipy": "1.18.1",
+            "qiskit": "2.6.2",
+            "qiskit-aer": "0.18.2"
+          }
+        },
+        {
+          "experiment": "q_neutrino",
+          "status": "completed",
+          "backend": "aer_simulator",
+          "simulated": true,
+          "configuration": {
+            "parameters": {
+              "theta": 0.2,
+              "delta_m2": 1,
+              "energy": 1,
+              "particle": "neutrino"
+            },
+            "layers": [
+              {
+                "distance": 4.0336988686318564,
+                "potential": 1.1513262425036064
+              }
+            ],
+            "shots": 1024,
+            "seed": 47
+          },
+          "analytical": {
+            "electron": 0.3058684912799359,
+            "other": 0.6941315087200641,
+            "mixing_strength": 0.7409370514549116,
+            "theta_m": 1.0523991807304929,
+            "frequency": 0.4524032824742944
+          },
+          "numerical": {
+            "electron": 0.30586849127993626,
+            "other": 0.6941315087200639
+          },
+          "ideal": {
+            "electron": 0.3058684912799361,
+            "other": 0.6941315087200639
+          },
+          "measured": {
+            "electron": 0.3115234375,
+            "other": 0.6884765625
+          },
+          "absolute_errors": {
+            "ideal_vs_numerical": {
+              "electron": 1.6653345369377348e-16,
+              "other": 0
+            },
+            "sampling": {
+              "electron": 0.005654946220063906,
+              "other": 0.005654946220063906
+            },
+            "total": {
+              "electron": 0.005654946220063739,
+              "other": 0.005654946220063906
+            },
+            "analytical_vs_numerical": {
+              "electron": 3.885780586188048e-16,
+              "other": 2.220446049250313e-16
+            }
+          },
+          "numerics": {
+            "reference_norm": 1,
+            "ideal_norm": 1,
+            "state_error_l2": 2.830524433501838e-16,
+            "subdivision_check": {
+              "subdivisions_per_layer": 2,
+              "state_change_l2": 2.482534153247273e-16,
+              "scope": "constant-layer numerical stability, not smooth-profile convergence"
+            },
+            "approximation": "exact constant-layer propagators; floating-point error only"
+          },
+          "num_qubits": 1,
+          "circuit_depth": 4,
+          "shots": 1024,
+          "counts": {
+            "0": 319,
+            "1": 705
+          },
+          "circuit_diagram": "        \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510 \u2591 \u250c\u2500\u2510\n     q: \u2524 Ry(-1.0368) \u251c\u2524 Rz(3.6497) \u251c\u2524 Ry(1.0368) \u251c\u2500\u2591\u2500\u2524M\u251c\n        \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518 \u2591 \u2514\u2565\u2518\nmeas: 1/\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2569\u2550\n                                                       0 ",
+          "rotations": [
+            {
+              "gate": "ry",
+              "angle": -1.0367942921288074
+            },
+            {
+              "gate": "rz",
+              "angle": 3.649717217363799
+            },
+            {
+              "gate": "ry",
+              "angle": 1.0367942921288074
+            }
+          ],
+          "statevector": [
+            [
+              -0.25133790246609905,
+              -0.49264363394230287
+            ],
+            [
+              0,
+              -0.8331455507413239
+            ]
+          ],
+          "basis_gates": [
+            "ry",
+            "rz"
+          ],
+          "timing_ms": {
+            "classical": 0.09128199997121555,
+            "convergence_check": 0.0418790000367153,
+            "circuit_end_to_end": 4.799920000095881,
+            "ideal_execution": 0.8916609999687353
+          },
+          "quantum_timing": {
+            "includes_queue": false,
+            "includes_transpilation": true,
+            "includes_optimizer": false,
+            "includes_sampling": true,
+            "queue_ms": null,
+            "transpilation_ms": 2.0103699999935998,
+            "optimizer_ms": null,
+            "sampling_ms": 1.5305559999205798
+          },
+          "versions": {
+            "numpy": "2.5.4",
+            "scipy": "1.18.1",
+            "qiskit": "2.6.2",
+            "qiskit-aer": "0.18.2"
+          }
+        },
+        {
+          "experiment": "q_neutrino",
+          "status": "completed",
+          "backend": "aer_simulator",
+          "simulated": true,
+          "configuration": {
+            "parameters": {
+              "theta": 0.2,
+              "delta_m2": 1,
+              "energy": 1,
+              "particle": "neutrino"
+            },
+            "layers": [
+              {
+                "distance": 4.0336988686318564,
+                "potential": 1.3815914910043277
+              }
+            ],
+            "shots": 1024,
+            "seed": 48
+          },
+          "analytical": {
+            "electron": 0.8233315985839094,
+            "other": 0.17666840141609058,
+            "mixing_strength": 0.4169152047485757,
+            "theta_m": 1.2198332384546453,
+            "frequency": 0.6031044552934532
+          },
+          "numerical": {
+            "electron": 0.8233315985839097,
+            "other": 0.1766684014160903
+          },
+          "ideal": {
+            "electron": 0.8233315985839095,
+            "other": 0.17666840141609058
+          },
+          "measured": {
+            "electron": 0.8271484375,
+            "other": 0.1728515625
+          },
+          "absolute_errors": {
+            "ideal_vs_numerical": {
+              "electron": 2.220446049250313e-16,
+              "other": 2.7755575615628914e-16
+            },
+            "sampling": {
+              "electron": 0.003816838916090526,
+              "other": 0.0038168389160905813
+            },
+            "total": {
+              "electron": 0.003816838916090304,
+              "other": 0.003816838916090304
+            },
+            "analytical_vs_numerical": {
+              "electron": 3.3306690738754696e-16,
+              "other": 2.7755575615628914e-16
+            }
+          },
+          "numerics": {
+            "reference_norm": 1,
+            "ideal_norm": 1.0000000000000002,
+            "state_error_l2": 6.010860650248393e-16,
+            "subdivision_check": {
+              "subdivisions_per_layer": 2,
+              "state_change_l2": 4.996003610813204e-16,
+              "scope": "constant-layer numerical stability, not smooth-profile convergence"
+            },
+            "approximation": "exact constant-layer propagators; floating-point error only"
+          },
+          "num_qubits": 1,
+          "circuit_depth": 4,
+          "shots": 1024,
+          "counts": {
+            "0": 847,
+            "1": 177
+          },
+          "circuit_diagram": "        \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510 \u2591 \u250c\u2500\u2510\n     q: \u2524 Ry(-0.70193) \u251c\u2524 Rz(4.8655) \u251c\u2524 Ry(0.70193) \u251c\u2500\u2591\u2500\u2524M\u251c\n        \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518 \u2591 \u2514\u2565\u2518\nmeas: 1/\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2569\u2550\n                                                         0 ",
+          "rotations": [
+            {
+              "gate": "ry",
+              "angle": -0.7019261766805024
+            },
+            {
+              "gate": "rz",
+              "angle": 4.865483517968069
+            },
+            {
+              "gate": "ry",
+              "angle": 0.7019261766805024
+            }
+          ],
+          "statevector": [
+            [
+              -0.7591104008412579,
+              -0.4970744390114366
+            ],
+            [
+              2.7755575615628914e-17,
+              -0.42031940404422274
+            ]
+          ],
+          "basis_gates": [
+            "ry",
+            "rz"
+          ],
+          "timing_ms": {
+            "classical": 0.07767599993258045,
+            "convergence_check": 0.03859299999930954,
+            "circuit_end_to_end": 4.971795000074053,
+            "ideal_execution": 0.9568440000293776
+          },
+          "quantum_timing": {
+            "includes_queue": false,
+            "includes_transpilation": true,
+            "includes_optimizer": false,
+            "includes_sampling": true,
+            "queue_ms": null,
+            "transpilation_ms": 2.0995590000438824,
+            "optimizer_ms": null,
+            "sampling_ms": 1.4892780000081984
+          },
+          "versions": {
+            "numpy": "2.5.4",
+            "scipy": "1.18.1",
+            "qiskit": "2.6.2",
+            "qiskit-aer": "0.18.2"
+          }
+        },
+        {
+          "experiment": "q_neutrino",
+          "status": "completed",
+          "backend": "aer_simulator",
+          "simulated": true,
+          "configuration": {
+            "parameters": {
+              "theta": 0.2,
+              "delta_m2": 1,
+              "energy": 1,
+              "particle": "neutrino"
+            },
+            "layers": [
+              {
+                "distance": 4.0336988686318564,
+                "potential": 1.611856739505049
+              }
+            ],
+            "shots": 1024,
+            "seed": 49
+          },
+          "analytical": {
+            "electron": 0.9992140147727591,
+            "other": 0.0007859852272409541,
+            "mixing_strength": 0.2411509149287041,
+            "theta_m": 1.3141368270602038,
+            "frequency": 0.7929977347573621
+          },
+          "numerical": {
+            "electron": 0.9992140147727588,
+            "other": 0.0007859852272409557
+          },
+          "ideal": {
+            "electron": 0.9992140147727588,
+            "other": 0.0007859852272409542
+          },
+          "measured": {
+            "electron": 1,
+            "other": 0
+          },
+          "absolute_errors": {
+            "ideal_vs_numerical": {
+              "electron": 0,
+              "other": 1.4094628242311558e-18
+            },
+            "sampling": {
+              "electron": 0.0007859852272411594,
+              "other": 0.0007859852272409542
+            },
+            "total": {
+              "electron": 0.0007859852272411594,
+              "other": 0.0007859852272409557
+            },
+            "analytical_vs_numerical": {
+              "electron": 2.220446049250313e-16,
+              "other": 1.5178830414797062e-18
+            }
+          },
+          "numerics": {
+            "reference_norm": 0.9999999999999999,
+            "ideal_norm": 0.9999999999999999,
+            "state_error_l2": 4.615798956820346e-17,
+            "subdivision_check": {
+              "subdivisions_per_layer": 2,
+              "state_change_l2": 4.050941474817242e-16,
+              "scope": "constant-layer numerical stability, not smooth-profile convergence"
+            },
+            "approximation": "exact constant-layer propagators; floating-point error only"
+          },
+          "num_qubits": 1,
+          "circuit_depth": 4,
+          "shots": 1024,
+          "counts": {
+            "0": 1024
+          },
+          "circuit_diagram": "        \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510 \u2591 \u250c\u2500\u2510\n     q: \u2524 Ry(-0.51332) \u251c\u2524 Rz(6.3974) \u251c\u2524 Ry(0.51332) \u251c\u2500\u2591\u2500\u2524M\u251c\n        \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518 \u2591 \u2514\u2565\u2518\nmeas: 1/\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2569\u2550\n                                                         0 ",
+          "rotations": [
+            {
+              "gate": "ry",
+              "angle": -0.5133189994693855
+            },
+            {
+              "gate": "rz",
+              "angle": 6.3974281310367935
+            },
+            {
+              "gate": "ry",
+              "angle": 0.5133189994693855
+            }
+          ],
+          "statevector": [
+            [
+              -0.9983690156942033,
+              0.049732517275385565
+            ],
+            [
+              -2.7755575615628914e-17,
+              0.028035428073082
+            ]
+          ],
+          "basis_gates": [
+            "ry",
+            "rz"
+          ],
+          "timing_ms": {
+            "classical": 0.08546100002604362,
+            "convergence_check": 0.04044700006033963,
+            "circuit_end_to_end": 4.848632999937763,
+            "ideal_execution": 0.898514000027717
+          },
+          "quantum_timing": {
+            "includes_queue": false,
+            "includes_transpilation": true,
+            "includes_optimizer": false,
+            "includes_sampling": true,
+            "queue_ms": null,
+            "transpilation_ms": 2.055414999972527,
+            "optimizer_ms": null,
+            "sampling_ms": 1.5005099999143567
+          },
+          "versions": {
+            "numpy": "2.5.4",
+            "scipy": "1.18.1",
+            "qiskit": "2.6.2",
+            "qiskit-aer": "0.18.2"
+          }
+        },
+        {
+          "experiment": "q_neutrino",
+          "status": "completed",
+          "backend": "aer_simulator",
+          "simulated": true,
+          "configuration": {
+            "parameters": {
+              "theta": 0.2,
+              "delta_m2": 1,
+              "energy": 1,
+              "particle": "neutrino"
+            },
+            "layers": [
+              {
+                "distance": 4.0336988686318564,
+                "potential": 1.8421219880057702
+              }
+            ],
+            "shots": 1024,
+            "seed": 50
+          },
+          "analytical": {
+            "electron": 0.9081173179450384,
+            "other": 0.09188268205496158,
+            "mixing_strength": 0.1516466453264173,
+            "theta_m": 1.3707963267948966,
+            "frequency": 1
+          },
+          "numerical": {
+            "electron": 0.9081173179450382,
+            "other": 0.09188268205496158
+          },
+          "ideal": {
+            "electron": 0.9081173179450386,
+            "other": 0.09188268205496158
+          },
+          "measured": {
+            "electron": 0.900390625,
+            "other": 0.099609375
+          },
+          "absolute_errors": {
+            "ideal_vs_numerical": {
+              "electron": 3.3306690738754696e-16,
+              "other": 0
+            },
+            "sampling": {
+              "electron": 0.007726692945038582,
+              "other": 0.007726692945038416
+            },
+            "total": {
+              "electron": 0.007726692945038249,
+              "other": 0.007726692945038416
+            },
+            "analytical_vs_numerical": {
+              "electron": 1.1102230246251565e-16,
+              "other": 0
+            }
+          },
+          "numerics": {
+            "reference_norm": 0.9999999999999999,
+            "ideal_norm": 1,
+            "state_error_l2": 3.510833468576701e-16,
+            "subdivision_check": {
+              "subdivisions_per_layer": 2,
+              "state_change_l2": 2.2887833992611187e-16,
+              "scope": "constant-layer numerical stability, not smooth-profile convergence"
+            },
+            "approximation": "exact constant-layer propagators; floating-point error only"
+          },
+          "num_qubits": 1,
+          "circuit_depth": 4,
+          "shots": 1024,
+          "counts": {
+            "0": 922,
+            "1": 102
+          },
+          "circuit_diagram": "        \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510 \u2591 \u250c\u2500\u2510\n     q: \u2524 Ry(-0.4) \u251c\u2524 Rz(8.0674) \u251c\u2524 Ry(0.4) \u251c\u2500\u2591\u2500\u2524M\u251c\n        \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518 \u2591 \u2514\u2565\u2518\nmeas: 1/\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2569\u2550\n                                                 0 ",
+          "rotations": [
+            {
+              "gate": "ry",
+              "angle": -0.4
+            },
+            {
+              "gate": "rz",
+              "angle": 8.067397737263713
+            },
+            {
+              "gate": "ry",
+              "angle": 0.4
+            }
+          ],
+          "statevector": [
+            [
+              -0.6277739515003989,
+              0.7169499171926957
+            ],
+            [
+              0,
+              0.30312156316395833
+            ]
+          ],
+          "basis_gates": [
+            "ry",
+            "rz"
+          ],
+          "timing_ms": {
+            "classical": 0.07843800005957746,
+            "convergence_check": 0.0404360000629822,
+            "circuit_end_to_end": 4.613718999962657,
+            "ideal_execution": 0.9707300000627583
+          },
+          "quantum_timing": {
+            "includes_queue": false,
+            "includes_transpilation": true,
+            "includes_optimizer": false,
+            "includes_sampling": true,
+            "queue_ms": null,
+            "transpilation_ms": 2.0236159999740266,
+            "optimizer_ms": null,
+            "sampling_ms": 1.2552570000252672
+          },
+          "versions": {
+            "numpy": "2.5.4",
+            "scipy": "1.18.1",
+            "qiskit": "2.6.2",
+            "qiskit-aer": "0.18.2"
+          }
+        }
+      ]
+    }
+  },
+  "standalone": [
+    {
+      "coordinate": 0.0,
+      "classical_probability": 0.09188268205496158,
+      "ideal_probability": 0.09188268205496158,
+      "measured_probability": 0.080078125,
+      "classical_ms": 0.7955199999969409,
+      "circuit_end_to_end_ms": 734.766307999962,
+      "counts": {
+        "1": 82,
+        "0": 942
+      },
+      "simulated": true
+    },
+    {
+      "coordinate": 0.23026524850072128,
+      "classical_probability": 0.0007859852272409557,
+      "ideal_probability": 0.0007859852272409542,
+      "measured_probability": 0.0,
+      "classical_ms": 0.24460099996304052,
+      "circuit_end_to_end_ms": 6.105763000050501,
+      "counts": {
+        "0": 1024
+      },
+      "simulated": true
+    },
+    {
+      "coordinate": 0.46053049700144255,
+      "classical_probability": 0.1766684014160903,
+      "ideal_probability": 0.1766684014160906,
+      "measured_probability": 0.1689453125,
+      "classical_ms": 0.12663900008647033,
+      "circuit_end_to_end_ms": 5.0403740000319885,
+      "counts": {
+        "1": 173,
+        "0": 851
+      },
+      "simulated": true
+    },
+    {
+      "coordinate": 0.6907957455021638,
+      "classical_probability": 0.6941315087200639,
+      "ideal_probability": 0.6941315087200641,
+      "measured_probability": 0.6953125,
+      "classical_ms": 0.09988800002247444,
+      "circuit_end_to_end_ms": 4.7062039999445915,
+      "counts": {
+        "0": 312,
+        "1": 712
+      },
+      "simulated": true
+    },
+    {
+      "coordinate": 0.9210609940028851,
+      "classical_probability": 1.0,
+      "ideal_probability": 1.0,
+      "measured_probability": 1.0,
+      "classical_ms": 0.10503799990146945,
+      "circuit_end_to_end_ms": 4.807325000001583,
+      "counts": {
+        "1": 1024
+      },
+      "simulated": true
+    },
+    {
+      "coordinate": 1.1513262425036064,
+      "classical_probability": 0.6941315087200639,
+      "ideal_probability": 0.6941315087200639,
+      "measured_probability": 0.6884765625,
+      "classical_ms": 0.08427900002061506,
+      "circuit_end_to_end_ms": 4.786094999985835,
+      "counts": {
+        "1": 705,
+        "0": 319
+      },
+      "simulated": true
+    },
+    {
+      "coordinate": 1.3815914910043277,
+      "classical_probability": 0.1766684014160903,
+      "ideal_probability": 0.17666840141609058,
+      "measured_probability": 0.1728515625,
+      "classical_ms": 0.09340600001905841,
+      "circuit_end_to_end_ms": 4.802125000082924,
+      "counts": {
+        "1": 177,
+        "0": 847
+      },
+      "simulated": true
+    },
+    {
+      "coordinate": 1.611856739505049,
+      "classical_probability": 0.0007859852272409557,
+      "ideal_probability": 0.0007859852272409542,
+      "measured_probability": 0.0,
+      "classical_ms": 0.10836400008429337,
+      "circuit_end_to_end_ms": 5.265377999990051,
+      "counts": {
+        "0": 1024
+      },
+      "simulated": true
+    },
+    {
+      "coordinate": 1.8421219880057702,
+      "classical_probability": 0.09188268205496158,
+      "ideal_probability": 0.09188268205496158,
+      "measured_probability": 0.099609375,
+      "classical_ms": 0.08867700000791956,
+      "circuit_end_to_end_ms": 4.665105999947627,
+      "counts": {
+        "1": 102,
+        "0": 922
+      },
+      "simulated": true
+    }
+  ],
+  "browser_verification": {
+    "status": "passed",
+    "checks": [
+      "Neutrino example appears in compiler and loads as source text",
+      "Science conversion opens the dedicated neutrino workflow",
+      "Compiled standalone SciPy/Qiskit script downloads without uploaded executable code",
+      "Live classical/Aer run opens Results with nine matched points, resonance and real timings",
+      "Results, chart and table fit a phone viewport",
+      "Physical option uses the neutrino adapter and preserves scientific inputs; no submission",
+      "Executable declarations are rejected and editing removes old Results",
+      "Existing binary objective compilation still works"
+    ],
+    "page_errors": [],
+    "hardware_submissions": 0
+  }
+}

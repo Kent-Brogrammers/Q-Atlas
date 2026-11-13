@@ -2,6 +2,8 @@ import type { components } from './api.generated';
 
 // Generated from the backend OpenAPI document; never hand-edit api.generated.ts.
 type Schemas = components['schemas'];
+export type CompiledNeutrino = Schemas['CompiledNeutrino'];
+export type NeutrinoSource = Schemas['NeutrinoSource'];
 export type HardwareRequest = Schemas['HardwareRequest'];
 export type HardwareJob = Schemas['HardwareJob'];
 export type HardwareMetric = Schemas['HardwareMetric'];

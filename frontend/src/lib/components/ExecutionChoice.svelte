@@ -7,12 +7,14 @@
     experiment,
     request,
     children,
-    onJob
+    onJob,
+    automatic = experiment === 'neutrinos'
   }: {
     experiment: Experiment;
     request: Requests[Experiment] | null;
     children: Snippet;
     onJob?: (job: HardwareJob | null) => void;
+    automatic?: boolean;
   } = $props();
   let mode = $state('local');
   let saved = $state<HardwareJob | null>(null);
@@ -32,7 +34,7 @@
   </label>
   <p>
     {mode === 'local'
-      ? experiment === 'neutrinos'
+      ? automatic
         ? 'The curve updates automatically when you change a setting. No Run button is needed.'
         : 'Ready to go. Run the example below, then read the result.'
       : 'Uses your IBM account. Results appear here when the job finishes.'}
