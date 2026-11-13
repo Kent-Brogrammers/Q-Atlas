@@ -2,6 +2,7 @@
 
 import json
 import multiprocessing as mp
+import os
 import subprocess
 import sys
 from copy import deepcopy
@@ -10,11 +11,12 @@ from hashlib import sha256
 from pathlib import Path
 from time import perf_counter, sleep
 from unittest.mock import Mock
+from zipfile import ZipFile
 
 import pytest
 from pydantic import ValidationError
 
-from app.benchmarks import neutrinos, review
+from app.benchmarks import demo, neutrinos, review
 from app.experiments.neutrinos import runner
 from app.experiments.neutrinos.model import Experiment, Layer
 from app.schemas.neutrinos import NeutrinoRequest, NeutrinoResponse
@@ -677,3 +679,167 @@ def test_intermediate_layers_must_traverse_complete_earlier_layers(plan, monkeyp
     monkeypatch.setattr(neutrinos, "run_neutrinos", response)
     with pytest.raises(ValueError, match="ordered input profile"):
         neutrinos.run_neutrino_benchmark(plan)
+
+
+@pytest.fixture
+def demo_requests(plan, tmp_path):
+    directory = tmp_path / "requests"
+    directory.mkdir()
+    for case in demo.CASES:
+        (directory / f"{case}.json").write_text(plan.request.model_dump_json())
+    return directory
+
+
+@pytest.fixture
+def demo_source(monkeypatch):
+    source = {
+        "source_revision": "a" * 40,
+        "working_tree_dirty": True,
+        "source_sha256": {"backend/app/benchmarks/demo.py": "b" * 64},
+    }
+    probe = Mock(side_effect=lambda _: deepcopy(source))
+    monkeypatch.setattr(demo, "_source_provenance", probe)
+    return source, probe
+
+
+def test_demo_archive_preserves_requests_evidence_review_and_checksums(
+    demo_requests, demo_source, fake_runner, tmp_path
+):
+    destination = tmp_path / "evidence.zip"
+    originals = {path.name: path.read_bytes() for path in demo_requests.iterdir()}
+    demo.record_neutrino_demo(demo_requests, destination)
+    assert fake_runner.call_count == 27
+    assert not list(tmp_path.glob(".q-atlas-neutrino-demo-*"))
+    with ZipFile(destination) as archive:
+        assert archive.testzip() is None
+        assert len(archive.namelist()) == len(set(archive.namelist())) == 12
+        provenance = json.loads(archive.read("provenance.json"))
+        for key, value in demo_source[0].items():
+            assert provenance[key] == value
+        assert provenance["source"] == "previously_measured_neutrino_demo"
+        manifest = archive.read("SHA256SUMS").decode().splitlines()
+        assert len(manifest) == 11
+        assert {line.split("  ")[1] for line in manifest} == set(archive.namelist()) - {
+            "SHA256SUMS"
+        }
+        for line in manifest:
+            digest, name = line.split("  ")
+            assert sha256(archive.read(name)).hexdigest() == digest
+        for case in demo.CASES:
+            assert archive.read(f"{case}.json") == originals[f"{case}.json"]
+            raw = archive.read(f"{case}-evidence.json")
+            report = review.validate_neutrino_report(
+                neutrinos.NeutrinoBenchmarkReport.model_validate_json(raw)
+            )
+            assert report.plan.shot_counts == [256, 1024, 4096]
+            assert report.plan.seeds == [42, 142, 242]
+            assert report.plan.request.model_dump_json().encode() == originals[f"{case}.json"]
+            assert sha256(raw).hexdigest() in archive.read(f"{case}-review.md").decode()
+        assert "Previously measured local Qiskit Aer" in archive.read("README.md").decode()
+    assert {path.name: path.read_bytes() for path in demo_requests.iterdir()} == originals
+
+
+@pytest.mark.parametrize("kind", ["file", "symlink", "dangling_symlink"])
+def test_demo_existing_destinations_are_preserved_before_measurement(
+    demo_requests, fake_runner, tmp_path, kind
+):
+    destination = tmp_path / "evidence.zip"
+    original = tmp_path / "original.zip"
+    if kind == "file":
+        destination.write_bytes(b"earlier recording")
+    else:
+        if kind == "symlink":
+            original.write_bytes(b"earlier recording")
+        try:
+            destination.symlink_to(original)
+        except (NotImplementedError, OSError) as error:
+            pytest.skip(f"symlink creation unavailable: {error}")
+    assert demo.main(["--requests", str(demo_requests), "--output", str(destination)]) == 1
+    assert os.path.lexists(destination)
+    if kind != "dangling_symlink":
+        assert destination.read_bytes() == b"earlier recording"
+    fake_runner.assert_not_called()
+
+
+@pytest.mark.parametrize("kind", ["missing", "invalid", "over_budget"])
+def test_demo_validates_all_case_inputs_before_starting(demo_requests, fake_runner, tmp_path, kind):
+    last = demo_requests / f"{demo.CASES[-1]}.json"
+    if kind == "missing":
+        last.unlink()
+    elif kind == "invalid":
+        last.write_text("{invalid json")
+    else:
+        payload = json.loads(last.read_text())
+        payload["samples"] = 41
+        payload["experiment"]["shots"] = 100000
+        last.write_text(json.dumps(payload))
+    destination = tmp_path / "evidence.zip"
+    assert demo.main(["--requests", str(demo_requests), "--output", str(destination)]) == 1
+    assert not destination.exists()
+    fake_runner.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "error", [TimeoutError("expired"), RuntimeError("failed"), KeyboardInterrupt()]
+)
+def test_demo_failure_in_final_case_cleans_staging_and_publishes_nothing(
+    demo_requests, demo_source, fake_runner, tmp_path, error
+):
+    def fail_in_last_case(request):
+        if fake_runner.call_count > 18:
+            raise error
+        return synthetic_response(request)
+
+    fake_runner.side_effect = fail_in_last_case
+    with pytest.raises(type(error)):
+        demo.record_neutrino_demo(demo_requests, tmp_path / "evidence.zip")
+    assert list(tmp_path.iterdir()) == [demo_requests]
+
+
+@pytest.mark.parametrize("kind", ["plan", "summary"])
+def test_demo_checks_saved_measurements_before_publication(
+    demo_requests, demo_source, fake_runner, monkeypatch, tmp_path, kind
+):
+    def corrupt(plan):
+        report = neutrinos.run_neutrino_benchmark(plan)
+        if kind == "plan":
+            report.plan.request.experiment.parameters.energy += 1
+        else:
+            report.summaries[0].points[-1].absolute_errors["sampling"]["other"].median = 999
+        return report
+
+    monkeypatch.setattr(demo, "run_neutrino_benchmark", corrupt)
+    with pytest.raises(ValueError):
+        demo.record_neutrino_demo(demo_requests, tmp_path / "evidence.zip")
+    assert list(tmp_path.iterdir()) == [demo_requests]
+
+
+@pytest.mark.parametrize("key", ["source_revision", "source_sha256"])
+def test_demo_detects_source_changes_during_recording(
+    demo_requests, demo_source, fake_runner, tmp_path, key
+):
+    source, probe = demo_source
+    after = deepcopy(source)
+    after[key] = "changed" if key == "source_revision" else {}
+    probe.side_effect = [source, after]
+    with pytest.raises(RuntimeError, match="changed during"):
+        demo.record_neutrino_demo(demo_requests, tmp_path / "evidence.zip")
+    assert list(tmp_path.iterdir()) == [demo_requests]
+
+
+def test_demo_concurrent_publication_preserves_the_completed_recording(
+    demo_requests, demo_source, fake_runner, monkeypatch, tmp_path
+):
+    original_link = os.link
+    destination = tmp_path / "evidence.zip"
+
+    def competing_link(source, output):
+        if source.name == "evidence.zip":
+            output.write_bytes(b"concurrent complete recording")
+        original_link(source, output)
+
+    monkeypatch.setattr(demo.os, "link", competing_link)
+    with pytest.raises(FileExistsError):
+        demo.record_neutrino_demo(demo_requests, destination)
+    assert destination.read_bytes() == b"concurrent complete recording"
+    assert not list(tmp_path.glob(".q-atlas-neutrino-demo-*"))

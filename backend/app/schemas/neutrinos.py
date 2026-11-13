@@ -67,6 +67,11 @@ class NeutrinoTimings(Contract):
     ideal_execution: float
 
 
+class NeutrinoRotation(Contract):
+    gate: Literal["ry", "rz"]
+    angle: float
+
+
 class NeutrinoRecord(Contract):
     experiment: Literal["q_neutrino"]
     status: Literal["completed"]
@@ -83,6 +88,9 @@ class NeutrinoRecord(Contract):
     circuit_depth: int
     shots: int
     counts: dict[str, int]
+    circuit_diagram: str | None = None
+    rotations: list[NeutrinoRotation] = Field(default_factory=list)
+    statevector: tuple[tuple[float, float], tuple[float, float]] | None = None
     basis_gates: list[str]
     timing_ms: NeutrinoTimings
     quantum_timing: TimingBreakdown
@@ -93,5 +101,6 @@ class NeutrinoResponse(Contract):
     model: Literal["effective_two_flavor"] = "effective_two_flavor"
     units: Literal["normalized"] = "normalized"
     axis: Literal["distance", "potential"]
+    resonance_potential: float | None = None
     coordinates: list[float]
     results: list[NeutrinoRecord]

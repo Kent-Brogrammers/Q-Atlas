@@ -12,9 +12,11 @@ Open http://127.0.0.1:5173/. No credentials are required for local runs or the r
 physical demo. If present, `.env` credentials stay in the backend. Startup submits no
 hardware jobs. Avoid installing/upgrading packages immediately before presenting.
 
-Experiment pages have shortcuts for **Local experiment**, **Physical QPU** and
-**Parameter study**. Select Physical QPU to expand its settings and recorded results.
-The dedicated `/hardware/` page opens this section by default. The sticky
+Experiment pages have one **Where should it run?** selection. Choose this computer
+for a local run or IBM for physical execution and saved results. Extra settings and
+parameter studies are optional. The compiler is **Python input → Run → Results**;
+QPU results appear in Results and do not require another submission. The dedicated
+`/hardware/` page shows the shared physical demo. The sticky
 **Navigation ↑** link returns to the page menu, including on phones.
 
 For a rehearsal using the production build, run `npm run build` from `frontend/`,
@@ -45,7 +47,7 @@ QPY circuits and resource metadata. It contains no environment file or credentia
 | 1:45–2:50 | Physical QPU Analytics | All five ran on `ibm_marrakesh`; completed job ID; real counts and classical errors; 2.0s usage belongs to the whole shared job |
 | 2:50–3:30 | Materials or final figure | Exact versus Trotter versus measured; more steps and more shots address different errors |
 | 3:30–4:10 | Search results | Grover has query advantages under an oracle model; 109/128 actual shots; device and oracle gates still cost work |
-| 4:10–4:45 | Compiler → Convert Python → Continue to test | Restricted AST → QUBO; source is never executed; same shared QAOA engine as Optimization |
+| 4:10–4:45 | Compiler → Convert Python → Run → Results | Restricted AST → QUBO; source is never executed; same shared QAOA engine as Optimization |
 | 4:45–5:00 | Final report / future work | Actual hardware demonstrated; practical runtime advantage and setup-effort reduction remain unproven |
 
 For a short live parameter study, choose two values and one seed. Do not launch a

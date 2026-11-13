@@ -183,6 +183,20 @@ class OptimizationMetrics(BenchmarkMetrics):
 
 
 class SearchMetrics(BenchmarkMetrics):
+    circuit_gate_counts: (
+        dict[
+            Annotated[str, Field(min_length=1, max_length=128)],
+            Annotated[int, Field(ge=1, strict=True)],
+        ]
+        | None
+    ) = Field(
+        default=None,
+        description=(
+            "Gate-name histogram for one Aer-transpiled circuit, excluding non-gate "
+            "instructions such as measurement and barriers. Composite gates count once; "
+            "not a physical hardware basis or a shot-batch operation count."
+        ),
+    )
     success_probability: Probability | None = None
     theoretical_success_probability: Probability | None = None
     quantum_oracle_queries: int | None = Field(default=None, ge=0)

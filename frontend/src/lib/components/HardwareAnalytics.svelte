@@ -39,26 +39,7 @@
     <strong>Physical IBM QPU measurement</strong> · simulated: false · {job.backend_name} · {job.shots}
     shots per circuit
   </p>
-  <div class="metrics">
-    <Metric
-      label="Classical reference"
-      value={duration(job.timings?.classical_ms)}
-      note="Independent reference / exact solver"
-    />
-    <Metric
-      label={job.shared_job_timings ? 'Shared job QPU usage' : 'Provider QPU usage'}
-      value={format(providerTimes?.quantum_seconds)}
-      unit="seconds"
-      note={job.shared_job_timings
-        ? 'Entire five-experiment job; not an individual runtime'
-        : 'Provider-reported usage; excludes local training'}
-    />
-    <Metric
-      label="Maximum circuit depth"
-      value={format(Math.max(...(job.circuit_depths ?? [0])))}
-      note={`${job.num_qubits} logical qubits · native transpiled circuits`}
-    />
-  </div>
+
   {#if names.length > 1}<label
       >Observable<select bind:value={selected}
         >{#each names as name}<option value={name}>{name}</option>{/each}</select
@@ -68,8 +49,31 @@
       {rows}
       metrics={['Classical', 'Physical QPU']}
       label={selectedName ?? 'Measured comparison'}
+      xLabel={job.task.kind === 'neutrinos'
+        ? job.task.parameters.axis === 'potential'
+          ? 'Matter potential (normalized)'
+          : 'Distance (normalized)'
+        : 'Time (dimensionless)'}
     />{/if}
   {#if job.metrics?.[0]}{@const m = job.metrics[0]}
+    <div class="metrics">
+      <Metric
+        label="Classical answer"
+        value={format(m.classical)}
+        unit={m.unit}
+        note="Independent reference for this input"
+      /><Metric
+        label="QPU measured answer"
+        note="Computed from physical measurement counts"
+        value={format(m.quantum)}
+        unit={m.unit}
+      /><Metric
+        label="Difference"
+        value={format(m.absolute_error)}
+        unit={m.unit}
+        note="Absolute error, or gap from the exact optimum"
+      />
+    </div>
     <p>
       <strong
         >{m.absolute_error === 0
@@ -100,7 +104,27 @@
     </table>
   </div>
   <details>
-    <summary>Timing details · these measure different parts of the work</summary>
+    <summary>Time &amp; circuit details · what each measurement includes</summary>
+    <div class="metrics">
+      <Metric
+        label="Classical reference"
+        value={duration(job.timings?.classical_ms)}
+        note="Independent reference / exact solver"
+      />
+      <Metric
+        label={job.shared_job_timings ? 'Shared job QPU usage' : 'Provider QPU usage'}
+        value={format(providerTimes?.quantum_seconds)}
+        unit="seconds"
+        note={job.shared_job_timings
+          ? 'Entire five-experiment job; not an individual runtime'
+          : 'Provider-reported usage; excludes local training'}
+      />
+      <Metric
+        label="Maximum circuit depth"
+        value={format(Math.max(...(job.circuit_depths ?? [0])))}
+        note={`${job.num_qubits} logical qubits · native transpiled circuits`}
+      />
+    </div>
     <div class="table-scroll">
       <table>
         <caption>Measured durations</caption><tbody

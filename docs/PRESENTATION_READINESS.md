@@ -29,6 +29,11 @@ browser checks passed at desktop, tablet and phone widths.
 
 ## Automated gates
 
+Current merged release: **1134 backend tests**, **17 frontend test files**, seven
+compiler tests and **15 simplified-workflow browser checks** passed, along with
+Ruff, formatting, generated types, Svelte/TypeScript and production build. The
+new [workflow audit](USABILITY_AUDIT.md) supersedes the earlier layout checks below.
+
 Required gates: backend pytest, Ruff lint/format, frontend tests, compiler tests,
 Svelte/TypeScript checks, generated-type check and production build. Hardware tests
 use mocked services and invented credentials; the physical evidence is a separate

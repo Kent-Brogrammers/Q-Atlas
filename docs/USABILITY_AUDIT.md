@@ -1,5 +1,41 @@
 # Final usability audit
 
+## Simplified workflow revision
+
+The later usability pass replaces the four-step compiler with **Python input → Run
+→ Results**. Generated source is optional; preparing a non-executing plan is no
+longer a user-facing step. Shared hardware callbacks retain the actual submitted,
+recovered or recorded job in Results. A newly completed active job opens Results
+automatically. Results retain the original hardware inputs and job ID.
+
+Each experiment has one execution choice: this computer or physical IBM QPU.
+Local settings, hardware settings, connection tools and repeated parameter studies
+are optional details. Previously completed measurements have a direct View result
+action. Hardware comparison cards explain the answer and its difference from the
+classical reference before timing/resource details. Single-point comparisons use
+cards rather than a plot with an arbitrary x coordinate. Duration units adjust
+between ns, µs, ms and s, preserving small nonzero measurements.
+
+Optimization includes a real 16-choice, 120-edge dense workload, checking 65,536
+assignments. A new local run measured **1707.3424 ms classical** and **6025.949365 ms
+Aer**, with optimum -459, best sample -441, gap 18. These are matched optimization
+inputs, both executed locally; there is no speedup claim. The
+[raw request and response](evidence/larger-workload-2026-11-12.json) are archived.
+The larger example is explicitly local; physical optimization remains bounded to
+eight choices, and compiler translation remains bounded to six.
+
+The incoming main branch's interactive Neutrino lab, search Wilson intervals,
+gate counts, benchmark sweeps and backend improvements are retained. The original
+audit below describes the earlier layout and verification.
+
+Merged verification: **1134 backend tests**, **17 frontend test files**, seven
+compiler tests, Ruff, Svelte/TypeScript, generated types and production build
+passed. **15 browser checks** cover three-step compiler conversion, actual QPU
+results in Results, automatic local Results navigation, rejected input, live
+Materials/Search, the incoming Neutrino lab, the larger workload, and all routes
+on a phone. No page errors or hardware submissions occurred. See
+[the workflow verification](evidence/simplified-workflows-2026-11-12.json).
+
 Audited all eight routes at 1440px, 900px and 390px, including navigation,
 page orientation, section access, keyboard controls and the compiler workflow.
 

@@ -1274,6 +1274,21 @@ export interface components {
             counts: {
                 [key: string]: number;
             };
+            /** Circuit Diagram */
+            circuit_diagram?: string | null;
+            /** Rotations */
+            rotations?: components["schemas"]["NeutrinoRotation"][];
+            /** Statevector */
+            statevector?: [
+                [
+                    number,
+                    number
+                ],
+                [
+                    number,
+                    number
+                ]
+            ] | null;
             /** Basis Gates */
             basis_gates: string[];
             timing_ms: components["schemas"]["NeutrinoTimings"];
@@ -1327,10 +1342,22 @@ export interface components {
              * @enum {string}
              */
             axis: "distance" | "potential";
+            /** Resonance Potential */
+            resonance_potential?: number | null;
             /** Coordinates */
             coordinates: number[];
             /** Results */
             results: components["schemas"]["NeutrinoRecord"][];
+        };
+        /** NeutrinoRotation */
+        NeutrinoRotation: {
+            /**
+             * Gate
+             * @enum {string}
+             */
+            gate: "ry" | "rz";
+            /** Angle */
+            angle: number;
         };
         /** NeutrinoSubdivision */
         NeutrinoSubdivision: {
@@ -1648,6 +1675,13 @@ export interface components {
             circuit_depth?: number | null;
             /** Shots */
             shots?: number | null;
+            /**
+             * Circuit Gate Counts
+             * @description Gate-name histogram for one Aer-transpiled circuit, excluding non-gate instructions such as measurement and barriers. Composite gates count once; not a physical hardware basis or a shot-batch operation count.
+             */
+            circuit_gate_counts?: {
+                [key: string]: number;
+            } | null;
             /** Success Probability */
             success_probability?: number | null;
             /** Theoretical Success Probability */

@@ -330,7 +330,13 @@
         if (result) void goToStep('results');
       }}
       onHardwareResult={(job) => {
-        if (job) physicalResult = job;
+        if (!job) return;
+        const finished =
+          physicalResult?.request_id === job.request_id &&
+          !physicalResult.measurement_complete &&
+          job.measurement_complete;
+        physicalResult = job;
+        if (finished) void goToStep('results');
       }}
     />
     {#if physicalResult}<button class="button primary" onclick={() => goToStep('results')}

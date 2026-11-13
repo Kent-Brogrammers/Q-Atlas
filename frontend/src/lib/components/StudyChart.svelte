@@ -2,7 +2,8 @@
   let {
     rows,
     metrics,
-    label
+    label,
+    xLabel = 'Selected parameter value'
   }: {
     rows: {
       value: number;
@@ -10,6 +11,7 @@
     }[];
     metrics: string[];
     label: string;
+    xLabel?: string;
   } = $props();
   const colors = ['#0f62fe', '#8a3ffc', '#00869b'];
   let values = $derived(
@@ -55,7 +57,7 @@
       {/each}
     {/each}
     {#each rows as row}<text x={x(row.value)} y="230" text-anchor="middle">{row.value}</text>{/each}
-    <text x="320" y="254" text-anchor="middle">Selected parameter value</text>
+    <text x="320" y="254" text-anchor="middle">{xLabel}</text>
   </svg>
   <figcaption>
     {#each metrics as metric, index}<span style:color={colors[index % 3]}>{metric}</span>{/each}

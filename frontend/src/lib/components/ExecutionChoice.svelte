@@ -15,6 +15,11 @@
     onJob?: (job: HardwareJob | null) => void;
   } = $props();
   let mode = $state('local');
+  let saved = $state<HardwareJob | null>(null);
+  function receive(job: HardwareJob | null) {
+    saved = job;
+    onJob?.(job);
+  }
 </script>
 
 <div class="execution-choice">
@@ -27,12 +32,20 @@
   </label>
   <p>
     {mode === 'local'
-      ? 'Ready to go. Run the example below, then read the result.'
+      ? experiment === 'neutrinos'
+        ? 'The curve updates automatically when you change a setting. No Run button is needed.'
+        : 'Ready to go. Run the example below, then read the result.'
       : 'Uses your IBM account. Results appear here when the job finishes.'}
   </p>
 </div>
+{#if saved?.measurement_complete && mode === 'local'}
+  <p>
+    A completed physical result is saved ({saved.created_at_utc}).
+    <button class="button" onclick={() => (mode = 'qpu')}>View completed QPU result</button>
+  </p>
+{/if}
 <div hidden={mode !== 'local'}>{@render children()}</div>
-<div hidden={mode !== 'qpu'}><HardwarePanel {experiment} {request} {onJob} simple /></div>
+<div hidden={mode !== 'qpu'}><HardwarePanel {experiment} {request} onJob={receive} simple /></div>
 
 <style>
   .execution-choice {

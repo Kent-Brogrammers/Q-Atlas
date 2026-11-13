@@ -39,6 +39,8 @@ def main():
     paths += [root / "docs/evidence/ibm-qpu-2026-11-12" / name for name in physical]
     paths += [root / "docs/evidence/fall-fest-2026-11-12" / name for name in local]
     paths.append(root / "docs/evidence/usability-audit-2026-11-12.json")
+    paths.append(root / "docs/evidence/simplified-workflows-2026-11-12.json")
+    paths.append(root / "docs/evidence/larger-workload-2026-11-12.json")
     for path in paths:
         if not path.is_file():
             raise FileNotFoundError(f"Missing presentation artifact: {path.name}")

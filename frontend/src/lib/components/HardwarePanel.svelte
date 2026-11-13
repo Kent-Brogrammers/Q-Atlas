@@ -93,7 +93,8 @@
       }, 15000);
   });
   $effect(() => {
-    onJob?.(job);
+    const current = job;
+    untrack(() => onJob?.(current));
   });
   onDestroy(() => {
     alive = false;
@@ -284,7 +285,12 @@
           class="button primary"
           disabled={!!blockedReason}
           title={blockedReason || 'Submit this experiment to an IBM quantum computer'}
-          onclick={() => action('submit')}>{busy ? 'Working with IBM…' : 'Run on IBM QPU'}</button
+          onclick={() => action('submit')}
+          >{busy
+            ? 'Working with IBM…'
+            : job?.measurement_complete
+              ? 'Run a new QPU job'
+              : 'Run on IBM QPU'}</button
         >
         <button class="button" disabled={busy} onclick={loadRecording}>View recorded example</button
         >

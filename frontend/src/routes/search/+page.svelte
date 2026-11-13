@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
-  import Panel from '#lib/components/Panel.svelte';
-  import StudyPanel from '#lib/components/StudyPanel.svelte';
   import ExecutionChoice from '#lib/components/ExecutionChoice.svelte';
+  import StudyPanel from '#lib/components/StudyPanel.svelte';
+  import Panel from '#lib/components/Panel.svelte';
   import SearchProbabilityChart from '#lib/search/SearchProbabilityChart.svelte';
   import {
     buildRequest,
@@ -17,6 +17,8 @@
   import { measureTrials, summarizeTrials, trialCurve } from '#lib/search/trials.ts';
   import { buildSearchExport, loadRecordedDemo } from '#lib/search/recorded.ts';
   import type { RecordingProvenance } from '#lib/search/recorded.ts';
+  import { intervalLabel, samplingInterval } from '#lib/search/uncertainty.ts';
+  import { gateResources } from '#lib/search/resources.ts';
 
   type RunMode = 'single' | 'curve' | 'trials';
 
@@ -40,6 +42,7 @@
   let progress = $state('');
   let controller: AbortController | undefined;
   let selected = $derived(results[selectedIndex]);
+  let resources = $derived(selected ? gateResources(selected) : null);
   let summary = $derived(
     completedMode === 'trials' && results.length ? summarizeTrials(results) : null
   );
@@ -155,7 +158,7 @@
 <header class="heading">
   <div>
     <p class="eyebrow">Search benchmark</p>
-    <h1>Find the target. Explore the probability.</h1>
+    <h1>Grover Search</h1>
     <p>Compare Grover amplification with classical search, one small instance at a time.</p>
   </div>
   <span class="badge">{recording ? 'Previously measured demo' : 'Local Aer simulator'}</span>
@@ -304,15 +307,11 @@
             Explicit offline fallback with recorded settings and timings. These buttons make no live
             requests.
           </p>
-          <button
-            class="button small"
-            disabled={loading || studying}
-            onclick={() => loadRecording('curve')}>Load recorded curve</button
+          <button class="button small" disabled={loading} onclick={() => loadRecording('curve')}
+            >Load recorded curve</button
           >
-          <button
-            class="button small"
-            disabled={loading || studying}
-            onclick={() => loadRecording('trials')}>Load recorded trials</button
+          <button class="button small" disabled={loading} onclick={() => loadRecording('trials')}
+            >Load recorded trials</button
           >
         </div>
       </Panel>
@@ -430,6 +429,18 @@
               >
               <tbody>
                 <tr
+                  ><th scope="row">Gates per transpiled circuit</th><td>Not applicable</td>
+                  <td>{resources?.total ?? 'Not available'}</td></tr
+                >
+                <tr
+                  ><th scope="row">Gate breakdown</th><td>Not applicable</td>
+                  <td>{resources?.breakdown ?? 'Not available'}</td></tr
+                >
+                <tr
+                  ><th scope="row">95% sampling interval (Wilson)</th><td>Not applicable</td>
+                  <td>{intervalLabel(samplingInterval(selected))}</td></tr
+                >
+                <tr
                   ><th scope="row">Returned bitstring</th><td class="mono"
                     >{selected.classical?.best_bitstring ?? 'Not available'}</td
                   ><td class="mono"
@@ -483,8 +494,10 @@
             The classical run stops at its first match. Quantum wall time includes the whole shot
             batch; the query count is per circuit execution. The most frequent quantum output may be
             unmarked. Total quantum oracle calls are iteration count times shots, not primitive
-            gates or measured simulator operations. These timings are not matched-success speedup
-            measurements.
+            gates or measured simulator operations. Gate counts describe one Aer-transpiled circuit,
+            excluding measurements, reset and barriers; retained composite gates count once. They
+            are not a native hardware gate count or a shot-batch total. These timings are not
+            matched-success speedup measurements.
           </p>
         </Panel>
         <Panel
@@ -504,8 +517,9 @@
                 ><tr
                   ><th scope="col">{summary ? 'Trial / iteration' : 'Iteration'}</th><th scope="col"
                     >Seed</th
-                  ><th scope="col">Measured</th><th scope="col">Theory</th><th scope="col">Shots</th
-                  ><th scope="col">Depth</th></tr
+                  ><th scope="col">Measured</th><th scope="col">95% sampling interval</th><th
+                    scope="col">Theory</th
+                  ><th scope="col">Shots</th><th scope="col">Depth</th></tr
                 ></thead
               >
               <tbody
@@ -520,9 +534,11 @@
                       ></th
                     ><td>{result.metadata.seed ?? 'Not available'}</td><td
                       >{percentage(result.metrics.success_probability)}</td
-                    ><td>{percentage(result.metrics.theoretical_success_probability)}</td><td
-                      >{result.metrics.shots ?? 'Not available'}</td
-                    ><td>{result.metrics.circuit_depth ?? 'Not available'}</td></tr
+                    ><td>{intervalLabel(samplingInterval(result))}</td><td
+                      >{percentage(result.metrics.theoretical_success_probability)}</td
+                    ><td>{result.metrics.shots ?? 'Not available'}</td><td
+                      >{result.metrics.circuit_depth ?? 'Not available'}</td
+                    ></tr
                   >{/each}</tbody
               >
             </table>
@@ -548,16 +564,20 @@
           <p>
             {summary
               ? 'Repeated trials use distinct recorded seeds at the same iteration setting.'
-              : 'Curves use the same seed at every iteration.'} Shot noise remains; no confidence interval
-            is claimed. Editing inputs clears previous results. Downloaded JSON contains every completed
-            point and its settings.
+              : 'Curves use the same seed at every iteration.'} Each raw run has a pointwise 95% Wilson
+            interval computed from successful and total shots, assuming independent shots at a fixed success
+            probability. The nominal 95% refers to repeated-sampling coverage, not a probability assigned
+            to this particular interval. These approximate intervals cover sampling uncertainty, not hardware
+            noise, model error or a whole curve simultaneously. The repeated-trial chart retains its observed
+            min/max range; it does not pool shots or display an interval for the mean. Missing shot counts
+            show “Not available.” Editing inputs clears previous results. Downloaded JSON contains the
+            raw counts needed to reproduce intervals, every completed point and its settings.
           </p>
         </details>
       {/if}
     </div>
   </div>
 </ExecutionChoice>
-
 <StudyPanel experiment="search" request={studyRequest} disabled={loading} bind:running={studying} />
 
 <style>
@@ -587,14 +607,14 @@
     flex-shrink: 0;
     padding: 7px 10px;
     border: 1px solid var(--border);
-    background: white;
+    background: var(--surface);
     border-radius: 4px;
     font-size: 12px;
   }
   .notice {
     padding: 14px 18px;
     border-left: 3px solid var(--blue);
-    background: #edf4ff;
+    background: color-mix(in srgb, var(--blue) 6%, var(--surface));
     margin: 0 0 24px;
   }
   .search-layout {
@@ -635,9 +655,10 @@
     display: block;
     width: 100%;
     min-height: 40px;
-    border: 1px solid #cdd7e3;
+    border: 1px solid var(--border);
     border-radius: 3px;
-    background: white;
+    background: var(--surface);
+    color: var(--text);
     padding: 8px 10px;
     font-family: var(--mono);
     font-size: 13px;
@@ -650,6 +671,9 @@
     align-items: center;
     gap: 9px;
     line-height: 1.5;
+  }
+  input[type='checkbox'] {
+    accent-color: var(--blue);
   }
   .hint {
     color: var(--muted);
@@ -684,8 +708,9 @@
     margin: 4px 4px 4px 0;
   }
   .recorded-banner {
-    border: 1px solid #d9b963;
-    background: #fff8e6;
+    border: 1px solid var(--accent, var(--violet));
+    background: color-mix(in srgb, var(--accent, var(--violet)) 8%, var(--surface));
+    color: var(--text);
     padding: 16px 20px;
     border-radius: 4px;
     font-size: 13px;
@@ -744,12 +769,12 @@
     font-weight: 500;
   }
   tr.selected {
-    background: #edf4ff;
+    background: color-mix(in srgb, var(--blue) 10%, var(--surface));
   }
   .point-button {
     border: 0;
     background: transparent;
-    color: #0f62fe;
+    color: var(--blue);
     padding: 0;
     text-decoration: underline;
     white-space: nowrap;
@@ -766,7 +791,7 @@
   }
   .method {
     border: 1px solid var(--border);
-    background: white;
+    background: var(--surface);
     padding: 18px 24px;
     border-radius: 5px;
     font-size: 13px;
@@ -781,11 +806,11 @@
     overflow-wrap: anywhere;
   }
   .error {
-    border: 1px solid #edbbbb;
+    border: 1px solid var(--error, var(--accent, var(--violet)));
     padding: 16px;
     margin-bottom: 20px;
-    color: #922c2c;
-    background: #fff8f8;
+    color: var(--text);
+    background: color-mix(in srgb, var(--error, var(--accent, var(--violet))) 6%, var(--surface));
     font-size: 13px;
     line-height: 1.6;
   }

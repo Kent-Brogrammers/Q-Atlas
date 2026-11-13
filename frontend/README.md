@@ -43,7 +43,8 @@ frontend using `../dev.sh`. Its materials route runs the existing spin-system
 simulation only when requested; the Materials route displays live results. The
 Neutrino Lab and Grover Search also use their live backend APIs. The compiler
 workflow never executes user code. Hardware metadata, submission and retrieval use
-separate typed compiler endpoints. Optimization benchmarks remain unavailable.
+separate typed compiler endpoints. Optimization runs local classical/QAOA comparisons
+through `POST /api/optimization/run`.
 
 ```sh
 npm run check
@@ -108,29 +109,34 @@ results, validates settings before requests, and shows backend errors explicitly
 
 The compiler at `/compiler/` is linked from the sidebar and Overview. The original
 `/optimization/` and `/materials/` remain accessible by direct URL. Materials sends
-live requests to its implemented backend endpoint; optimization benchmarks remain
-unavailable. `/search/` is linked from primary navigation and runs live Grover /
+live requests to its implemented backend endpoint. Optimization runs a local Aer
+comparison against the exact classical baseline. `/search/` is linked from primary navigation and runs live Grover /
 classical comparisons. Shared schemas and the React reference remain available.
 
 ## Retained behavior
 
-Optimization supports graph presets, manual partition changes, zoom/reset, QUBO
-inspection/copy, trace switching, optional example loading, and labeled JSON export.
-Results and charts start empty. **Load example data** reveals illustrative cost
-traces and counts, explicitly labeled as examples rather than measured output.
-No backend, seed, or optimizer run is attributed to those examples. Execution
-measurements remain unavailable.
+Optimization retains its graph presets, manual partitions, zoom/reset, QUBO
+inspection/copy, and explicitly labeled examples. **Run comparison** sends the
+selected graph, layers, shots, seed, optimizer budget and per-solver deadline through
+the existing typed client. The live response supplies assignments, objectives,
+optimality gap, actual depth/shots, evaluations, timing and reproducibility metadata.
+The graph can display the returned QAOA or classical partition, and manual node
+changes are labeled as the user's partition. Bitstrings put x[0] first.
 
-Example comparisons are UI-only data; they are not cast to `BenchmarkResult`.
-Exports separate `example_comparison` / `example_chart_data` from a generated-type
-checked `request_preview`. The shared backend requires recorded solver time and
-timing inclusion flags when a solver result exists. No placeholder measurement
-is fabricated to satisfy that contract.
+Changing configuration or resetting clears results and aborts pending transport.
+Duplicate submissions are suppressed, and late/cancelled responses are ignored.
+**Stop waiting** ends the client wait while the backend retains its bounded solver
+deadlines. Backend errors are displayed with retryable controls.
 
-Setup controls preview future requests. Changing the graph clears example displays;
-changing settings does not compute results. Only COBYLA is supported by the current
-shared API; SPSA is visibly disabled. The graph counts a selected partition's edges,
-not an optimized solution. Reference cuts describe the mathematical presets.
+Measured JSON export retains the exact request, complete response and
+`source=live_local_simulator`. The timing details identify each end-to-end solver
+interval and the QAOA optimizer, final transpilation and sampling components.
+Nullable measurements display as unavailable and measured zeros remain zero.
+
+**Load example data** reveals the retained illustrative objective traces and count
+histograms with explicit example labels. The live contract supplies a best sampled
+assignment and aggregate metrics. Its optimizer trace and full measurement counts
+need a coordinated contract extension before measured chart integration.
 
 Compiler edits invalidate the returned QUBO, generated script, and plan; requests
 use the shared typed API and ignore stale responses. The default example contains

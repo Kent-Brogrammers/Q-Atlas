@@ -1,5 +1,6 @@
 import { duration } from '../presentation/format.ts';
 import type { SearchRequest, SearchResult } from '../../types/index.ts';
+import { samplingInterval } from './uncertainty.ts';
 
 export interface SearchSettings {
   numQubits: number | undefined;
@@ -65,6 +66,7 @@ export interface CurvePoint {
   measured: number | null;
   theoretical: number | null;
   observedRange?: [number, number];
+  confidenceInterval?: [number, number];
 }
 
 export function curvePoints(results: SearchResult[]): CurvePoint[] {
@@ -80,7 +82,13 @@ export function curvePoints(results: SearchResult[]): CurvePoint[] {
         throw new Error('The backend reported an invalid probability.');
       }
     }
-    return { iteration, measured, theoretical };
+    const interval = measured === null ? null : samplingInterval(result);
+    return {
+      iteration,
+      measured,
+      theoretical,
+      ...(interval ? { confidenceInterval: interval } : {})
+    };
   });
 }
 
