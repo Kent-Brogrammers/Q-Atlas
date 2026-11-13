@@ -208,6 +208,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/compiler/neutrinos/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate */
+        post: operations["generate_api_compiler_neutrinos_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/compiler/neutrinos/benchmark": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Benchmark */
+        post: operations["benchmark_api_compiler_neutrinos_benchmark_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/compiler/analyze": {
         parameters: {
             query?: never;
@@ -412,6 +446,18 @@ export interface components {
             global_phase: components["schemas"]["CircuitAngle"][];
             /** Logical Depth */
             logical_depth: number;
+        };
+        /** CompiledNeutrino */
+        CompiledNeutrino: {
+            request: components["schemas"]["NeutrinoRequest"];
+            artifact: components["schemas"]["GeneratedPythonArtifact"];
+            /** Circuit Diagram */
+            circuit_diagram: string;
+            /**
+             * Method
+             * @default Validated neutrino declaration → exact layer rotations; no QAOA or QUBO
+             */
+            method?: string;
         };
         /** CompilerAnalyzeRequest */
         CompilerAnalyzeRequest: {
@@ -1358,6 +1404,11 @@ export interface components {
             gate: "ry" | "rz";
             /** Angle */
             angle: number;
+        };
+        /** NeutrinoSource */
+        NeutrinoSource: {
+            /** Source */
+            source: string;
         };
         /** NeutrinoSubdivision */
         NeutrinoSubdivision: {
@@ -2555,6 +2606,144 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CompilerHardwareJob"];
+                };
+            };
+            /** @description Route not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method not allowed */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Feature not implemented */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    generate_api_compiler_neutrinos_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NeutrinoSource"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompiledNeutrino"];
+                };
+            };
+            /** @description Route not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Method not allowed */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request validation failed */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Feature not implemented */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    benchmark_api_compiler_neutrinos_benchmark_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NeutrinoSource"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NeutrinoResponse"];
                 };
             };
             /** @description Route not found */

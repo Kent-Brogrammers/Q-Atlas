@@ -2,17 +2,22 @@
   import { onDestroy, tick } from 'svelte';
   import Icon from '#lib/components/Icon.svelte';
   import Panel from '#lib/components/Panel.svelte';
+  import CompilerNeutrinoWorkspace from '#lib/components/CompilerNeutrinoWorkspace.svelte';
+  import CompilerNeutrinoResult from '#lib/components/CompilerNeutrinoResult.svelte';
   import OptimizationWorkspace from '#lib/components/OptimizationWorkspace.svelte';
   import ComparisonResult from '#lib/components/ComparisonResult.svelte';
   import HardwareAnalytics from '#lib/components/HardwareAnalytics.svelte';
   import { api } from '../../api/client.ts';
+  import { downloadJson } from '#lib/studies/model.ts';
   import { compilerErrorMessage } from '../../compiler/errors.ts';
   import type {
     CompilerAnalyzeResult,
     GeneratedPythonArtifact,
     CompilerBenchmarkResult,
     OptimizationResult,
-    HardwareJob
+    HardwareJob,
+    CompiledNeutrino,
+    NeutrinoResponse
   } from '../../types/index.ts';
   import {
     DEFAULT_SCRIPT,
@@ -35,6 +40,8 @@
   let layers = $state(1);
   let analysis = $state<CompilerAnalyzeResult>();
   let artifact = $state<GeneratedPythonArtifact>();
+  let compiledNeutrino = $state<CompiledNeutrino | null>(null);
+  let neutrinoResult = $state<NeutrinoResponse | null>(null);
   let localResult = $state<CompilerBenchmarkResult | OptimizationResult | null>(null);
   let physicalResult = $state<HardwareJob | null>(null);
   let error = $state('');
@@ -45,7 +52,7 @@
   let active = true;
   let generatedUrl = $state('');
   const busy = $derived(!!loading || reading);
-  const hasResults = $derived(!!localResult || !!physicalResult);
+  const hasResults = $derived(!!localResult || !!physicalResult || !!neutrinoResult);
   $effect(() => {
     if (!artifact) {
       generatedUrl = '';
@@ -62,6 +69,8 @@
   function invalidate() {
     revision++;
     artifact = undefined;
+    compiledNeutrino = null;
+    neutrinoResult = null;
     analysis = undefined;
     localResult = null;
     physicalResult = null;
@@ -102,6 +111,15 @@
     error = '';
     const version = revision;
     try {
+      if (/(^|\n)\s*@qatlas\.neutrino\s*(\n|$)/.test(source)) {
+        const result = await api.compileNeutrinos({ source });
+        if (active && version === revision) {
+          compiledNeutrino = result;
+          artifact = result.artifact;
+          await goToStep('run');
+        }
+        return;
+      }
       const result = await api.generateScript({ source, p: layers });
       if (active && version === revision) {
         analysis = result;
@@ -149,7 +167,9 @@
   {step === 'input'
     ? 'Start with your Python'
     : step === 'run'
-      ? 'Run your compiled objective'
+      ? compiledNeutrino
+        ? 'Run your neutrino simulation'
+        : 'Run your compiled objective'
       : 'Your results'}
 </h2>
 {#if error}<p role="alert">{error}</p>{/if}
@@ -195,15 +215,16 @@
               }}>Load example<Icon name="reset" size={15} /></button
             >
             <p class="field-note">
-              Explore energy portfolios, dense weighted cuts, balanced workloads, or conflicting
-              tasks. Each example uses one binary choice per qubit, with three to six qubits.
+              Choose the Neutrino simulation example to compare SciPy propagation with the generated
+              one-qubit circuit. Other examples compile binary optimization objectives.
             </p>
           </fieldset>
           <div class="marker-guide">
             <h3>Mark your objective</h3>
             <p>
-              Put <code>@qatlas.objective</code> above the function you want to convert. Keep your function
-              and input names. No circuit code is required.
+              Use <code>@qatlas.objective</code> for binary optimization, or load the
+              <code>@qatlas.neutrino</code> science example. Keep your function and input names. No circuit
+              code is required.
             </p>
           </div>
           <details class="advanced-options">
@@ -271,8 +292,8 @@
             </button>
           </div>
           <p class="field-note" id="source-scope">
-            Supports binary optimization objectives with 1–6 inputs. The surrounding program stays
-            in place.
+            Supports binary optimization with 1–6 inputs, or a literal neutrino experiment
+            declaration. Submitted code is never executed.
           </p>
         </div>
       </Panel>
@@ -319,44 +340,91 @@
     </p>
     <details>
       <summary>View or download the compiled Python</summary>
-      <a class="button" href={generatedUrl} download={generatedFilename(fileName)}>Download .py</a>
+      <a
+        class="button"
+        href={generatedUrl}
+        download={compiledNeutrino ? 'neutrino_simulation_qiskit.py' : generatedFilename(fileName)}
+        >Download .py</a
+      >
       <textarea aria-label="Generated Python source" readonly value={artifact.source} rows="12"
       ></textarea>
     </details>
-    <OptimizationWorkspace
-      {source}
-      onResult={(result) => {
-        localResult = result;
-        if (result) void goToStep('results');
-      }}
-      onHardwareResult={(job) => {
-        if (!job) return;
-        const finished =
-          physicalResult?.request_id === job.request_id &&
-          !physicalResult.measurement_complete &&
-          job.measurement_complete;
-        physicalResult = job;
-        if (finished) void goToStep('results');
-      }}
-    />
+    {#if compiledNeutrino}
+      <CompilerNeutrinoWorkspace
+        {source}
+        compiled={compiledNeutrino}
+        onResult={(result) => {
+          neutrinoResult = result;
+          void goToStep('results');
+        }}
+        onJob={(job) => {
+          if (!job) return;
+          const finished =
+            physicalResult?.request_id === job.request_id &&
+            !physicalResult.measurement_complete &&
+            job.measurement_complete;
+          physicalResult = job;
+          if (finished) void goToStep('results');
+        }}
+      />
+    {:else}
+      <OptimizationWorkspace
+        {source}
+        onResult={(result) => {
+          localResult = result;
+          if (result) void goToStep('results');
+        }}
+        onHardwareResult={(job) => {
+          if (!job) return;
+          const finished =
+            physicalResult?.request_id === job.request_id &&
+            !physicalResult.measurement_complete &&
+            job.measurement_complete;
+          physicalResult = job;
+          if (finished) void goToStep('results');
+        }}
+      />
+    {/if}
     {#if physicalResult}<button class="button primary" onclick={() => goToStep('results')}
         >View QPU results &amp; status</button
       >{/if}
   </div>
 {/if}
 {#if step === 'results'}
+  {#if neutrinoResult}<Panel
+      title="Neutrino comparison completed"
+      subtitle="Same model and inputs on classical and compiled circuit paths"
+      ><div class="output-body">
+        <CompilerNeutrinoResult result={neutrinoResult} /><button
+          class="button"
+          onclick={() =>
+            downloadJson(
+              { source, request: compiledNeutrino?.request, result: neutrinoResult },
+              'compiler-neutrino-comparison.json'
+            )}>Download neutrino comparison</button
+        >
+      </div></Panel
+    >{/if}
   {#if physicalResult}
     <Panel
-      title={physicalResult.measurement_complete ? 'Completed QPU result' : 'QPU job status'}
+      title={physicalResult.measurement_complete
+        ? compiledNeutrino
+          ? 'Saved neutrino QPU result · original inputs'
+          : 'Completed QPU result'
+        : 'QPU job status'}
       subtitle={`${physicalResult.backend_name ?? 'IBM'} · ${physicalResult.job_id ?? 'Awaiting job ID'}`}
     >
       <div class="output-body">
         <p><strong>{physicalResult.status}</strong> · {physicalResult.created_at_utc}</p>
+        {#if compiledNeutrino}<p>
+            This physical job is separate from the local run above. Check its original settings
+            below before comparing results or timings.
+          </p>{/if}
         <p>
           This saved job keeps its original inputs. Job input: {physicalResult.task.kind ===
           'compiler'
             ? physicalResult.task.parameters.source
-            : 'Shared demonstration'}
+            : JSON.stringify(physicalResult.task.parameters)}
         </p>
         {#if physicalResult.measurement_complete}<HardwareAnalytics job={physicalResult} />
         {:else}<p>
@@ -377,12 +445,12 @@
       onclick={() => goToStep('input')}>Edit Python</button
     >
   </div>
-  <p>
-    Want a larger computation? The compiler supports up to six binary choices. <a
-      class="text-link"
-      href="/optimization/?example=large">Try the 16-choice workload benchmark →</a
-    >
-  </p>
+  {#if !compiledNeutrino}<p>
+      Want a larger computation? The compiler supports up to six binary choices. <a
+        class="text-link"
+        href="/optimization/?example=large">Try the 16-choice workload benchmark →</a
+      >
+    </p>{/if}
 {/if}
 
 <style>

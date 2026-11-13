@@ -1,4 +1,6 @@
 import type {
+  CompiledNeutrino,
+  NeutrinoSource,
   HardwareRequest,
   HardwareJob,
   HardwareReadiness,
@@ -143,6 +145,10 @@ export function createApiClient({
     health: (signal?: AbortSignal) => request<HealthResponse>('/health', undefined, signal),
     analyze: (body: CompilerAnalyzeRequest, signal?: AbortSignal) =>
       request<CompilerAnalyzeResult>('/compiler/analyze', body, signal),
+    compileNeutrinos: (body: NeutrinoSource, signal?: AbortSignal) =>
+      request<CompiledNeutrino>('/compiler/neutrinos/generate', body, signal),
+    benchmarkNeutrinos: (body: NeutrinoSource, signal?: AbortSignal) =>
+      request<NeutrinoResponse>('/compiler/neutrinos/benchmark', body, signal),
     generateScript: (body: CompilerGenerateRequest, signal?: AbortSignal) =>
       request<CompilerGenerateResult>('/compiler/generate', body, signal),
     prepareCompilerBenchmark: (body: CompilerBenchmarkRequest, signal?: AbortSignal) =>
