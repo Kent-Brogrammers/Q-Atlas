@@ -7,273 +7,209 @@
 <div class="overview">
   <header class="introduction">
     <h1>Q-Atlas</h1>
-    <p>
-      Explore five reproducible quantum experiments. Compare scientific predictions, solution
-      quality and measured local runtime, then vary parameters and export the evidence.
-    </p>
-    <div class="start-here">
-      <strong>Start with a live experiment</strong>
-      <p>
-        Open the Neutrino Lab, choose MSW resonance, then select Run experiment. Local runs need no
-        IBM account. For the completed hardware measurements, open Physical QPU Analytics and select
-        Load recorded physical demo.
-      </p>
-      <a class="text-link" href="/methodology/">Science report &amp; presentation downloads →</a>
-    </div>
-    <div class="workspace-actions">
-      <a class="button primary workspace-action-button" href="/hardware/"
-        ><span class="button-text">Physical QPU Analytics</span><span class="button-icon"
-          ><Icon name="arrow" size={30} /></span
-        ></a
-      >
-      <a class="button primary workspace-action-button" href="/compiler/">
-        <span class="button-text">Open Python Compiler</span>
-        <span class="button-icon"><Icon name="arrow" size={30} /></span>
-      </a>
-      <a class="button primary workspace-action-button" href="/neutrinos/">
-        <span class="button-text">Launch Neutrino Lab</span>
-        <span class="button-icon"><Icon name="arrow" size={30} /></span>
-      </a>
-      <a class="button primary workspace-action-button" href="/search/">
-        <span class="button-text">Explore Grover Search</span>
-        <span class="button-icon"><Icon name="arrow" size={30} /></span>
-      </a>
-      <a class="button primary workspace-action-button" href="/optimization/"
-        ><span class="button-text">Run Optimization</span><span class="button-icon"
-          ><Icon name="arrow" size={30} /></span
-        ></a
-      >
-      <a class="button primary workspace-action-button" href="/materials/"
-        ><span class="button-text">Explore Materials</span><span class="button-icon"
-          ><Icon name="arrow" size={30} /></span
-        ></a
-      >
-    </div>
+    <p>Neutrino simulation and classical validation.</p>
   </header>
 
-  <section class="compiler" aria-labelledby="compiler-title">
-    <h2 id="compiler-title">Python compiler</h2>
-    <p>
-      Load a .py file, mark one supported binary objective with <code>@qatlas.objective</code>, and
-      download the converted script. Your function names, input names, and surrounding Python stay
-      in place. No circuit code is required.
-    </p>
-    <p>
-      Source conversion, physical IBM sampling, local Aer comparisons and parameter studies are
-      available. The development launcher enables local execution; optional IBM sampling requires an
-      explicit submission.
-    </p>
-  </section>
-
-  <section class="science" aria-labelledby="science-title">
-    <h2 id="science-title">Why neutrino oscillations?</h2>
-    <p>
-      A neutrino prepared in one flavor can be detected in another after propagation. This arises
-      from mixing between flavor and mass states; matter can also change its evolution.
-    </p>
-    <p>
-      Q-Atlas aims to compare flavor probabilities from a quantum circuit with an independent
-      classical reference, measuring how closely they agree.
-    </p>
-    <a class="text-link" href="/methodology/">Read the methodology<Icon name="arrow" size={14} /></a
-    >
-  </section>
-
-  <section class="capabilities" aria-labelledby="capabilities-title">
-    <h2 id="capabilities-title">Simulation availability</h2>
-    <dl>
+  <section class="lab-entry" aria-labelledby="lab-title">
+    <div class="lab-introduction">
+      <h2 id="lab-title">Neutrino Lab</h2>
+      <p>
+        Explore how neutrino flavor changes with distance and matter. Compare Qiskit Aer
+        probabilities and finite-shot measurements with an independent SciPy reference.
+      </p>
+      <div class="workspace-actions">
+        <a class="button primary" href="/neutrinos/">
+          Launch Neutrino Lab<Icon name="arrow" size={17} />
+        </a>
+        <a class="text-link" href="/methodology/">Methodology and science report</a>
+      </div>
+    </div>
+    <dl class="capabilities" aria-label="Implemented simulation capabilities">
       <div>
-        <dt>Neutrino models and flavors</dt>
-        <dd>Effective two-flavor model · electron and other flavor</dd>
+        <dt>Model</dt>
+        <dd>Two flavors · electron and effective other</dd>
       </div>
       <div>
-        <dt>Vacuum and constant-density matter</dt>
-        <dd>Available, including two-layer profiles</dd>
+        <dt>Environments</dt>
+        <dd>Vacuum, constant-density matter and two layers</dd>
       </div>
       <div>
-        <dt>Classical–Qiskit comparison</dt>
-        <dd>SciPy reference, ideal Aer, and finite-shot measurements</dd>
+        <dt>Execution</dt>
+        <dd>Local Aer simulation · normalized units</dd>
       </div>
     </dl>
-    <p>Choose an experiment in the Neutrino Lab to explore its flavor probabilities.</p>
   </section>
+
+  <div class="supporting">
+    <section class="science" aria-labelledby="science-title">
+      <h2 id="science-title">Why neutrino oscillations?</h2>
+      <p>
+        A neutrino prepared in one flavor can be detected in another after propagation. Its mass
+        states accumulate different phases, changing the flavor probabilities. Matter changes this
+        evolution. The lab uses an effective two-flavor model to study these effects.
+      </p>
+    </section>
+
+    <section class="workspaces" aria-labelledby="workspaces-title">
+      <h2 id="workspaces-title">Other workspaces</h2>
+      <a href="/compiler/">
+        <span
+          >Python Compiler<small>Convert supported binary objectives into circuit code</small></span
+        ><Icon name="arrow" size={16} />
+      </a>
+      <a href="/search/">
+        <span
+          >Grover Search<small>Explore amplitude amplification and search probabilities</small
+          ></span
+        ><Icon name="arrow" size={16} />
+      </a>
+      <a href="/optimization/">
+        <span>Optimization<small>Compare QAOA and classical Max-Cut solvers</small></span><Icon
+          name="arrow"
+          size={16}
+        />
+      </a>
+      <a href="/materials/">
+        <span>Materials<small>Compare spin-system evolution with a classical reference</small></span
+        ><Icon name="arrow" size={16} />
+      </a>
+      <a href="/hardware/">
+        <span
+          >Physical QPU Analytics<small>Review recorded IBM quantum hardware measurements</small
+          ></span
+        ><Icon name="arrow" size={16} />
+      </a>
+    </section>
+  </div>
 </div>
 
 <style>
-  .start-here {
-    margin: 0 0 24px;
-    padding: 18px;
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--blue);
-    border-radius: 4px;
-    background: var(--surface);
-  }
-  .introduction .start-here p {
-    font-size: 14px;
-    line-height: 1.7;
-    margin: 8px 0 12px;
-  }
   .overview {
-    max-width: 980px;
+    max-width: 1120px;
+    margin: 0 auto;
   }
   .introduction {
-    padding: 14px 0 32px;
+    padding: 4px 0 30px;
   }
   h1 {
-    font-size: 38px;
-    font-weight: 400;
+    font-size: 36px;
+    font-weight: 500;
+    letter-spacing: -0.045em;
     line-height: 1.2;
-    margin: 0 0 14px;
+    margin: 0 0 9px;
   }
   .introduction p {
-    max-width: 650px;
-    margin: 0 0 24px;
-    font-size: 19px;
-    line-height: 1.55;
+    margin: 0;
+    font-size: 17px;
     color: var(--muted);
   }
-  .introduction .workspace-action-button {
-    min-width: 215px;
-    min-height: 0;
-    justify-content: center;
-    gap: 8px;
-    padding: 12px 20px;
-    border: 6px solid #88add3;
-    border-radius: 50px;
-    background: #12345b;
-    color: #fff;
+  .lab-entry {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 36px;
+    padding: 32px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--blue);
+    border-radius: 3px;
+  }
+  h2 {
+    font-size: 17px;
+    font-weight: 500;
+    margin: 0 0 12px;
+  }
+  .lab-introduction h2 {
+    font-size: 26px;
+    letter-spacing: -0.035em;
+  }
+  .lab-introduction p,
+  .science p {
     font-size: 14px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    transition:
-      background-color 0.3s,
-      border-color 0.3s,
-      border-width 0.15s;
-  }
-  .introduction .workspace-action-button:hover {
-    border-color: #6e9bc9;
-    background: #194a79;
-  }
-  .introduction .workspace-action-button:active {
-    border-width: 5px;
-  }
-  .introduction .workspace-action-button:focus-visible {
-    outline-color: var(--text);
-  }
-  .button-text {
-    font-size: 1.4em;
-    line-height: 1.15;
-  }
-  .button-icon {
-    display: inline-flex;
-    align-items: center;
-    padding-top: 5px;
-  }
-  .button-icon :global(svg) {
-    width: 24px;
-    height: 24px;
-  }
-  .workspace-action-button:hover .button-icon :global(svg) {
-    animation: jello-vertical 0.9s both;
-    transform-origin: left;
-  }
-  @keyframes jello-vertical {
-    0% {
-      transform: scale3d(1, 1, 1);
-    }
-    30% {
-      transform: scale3d(0.75, 1.25, 1);
-    }
-    40% {
-      transform: scale3d(1.25, 0.75, 1);
-    }
-    50% {
-      transform: scale3d(0.85, 1.15, 1);
-    }
-    65% {
-      transform: scale3d(1.05, 0.95, 1);
-    }
-    75% {
-      transform: scale3d(0.95, 1.05, 1);
-    }
-    100% {
-      transform: scale3d(1, 1, 1);
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .introduction .workspace-action-button {
-      transition: none;
-    }
-    .workspace-action-button:hover .button-icon :global(svg) {
-      animation: none;
-    }
+    line-height: 1.8;
+    color: var(--muted);
+    margin: 0;
+    max-width: 60ch;
   }
   .workspace-actions {
     display: flex;
+    align-items: center;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 20px;
+    margin-top: 26px;
   }
-  section {
-    border-top: 1px solid var(--border);
-    padding: 26px 0;
+  .workspace-actions .button {
+    min-height: 44px;
   }
-  h2 {
-    margin: 0 0 14px;
-    font-size: 18px;
-    font-weight: 500;
+  .capabilities {
+    margin: 0;
+    border-left: 1px solid var(--border);
+    padding-left: 30px;
+    display: grid;
+    gap: 21px;
+    align-content: center;
   }
-  .science p,
-  .compiler p {
-    max-width: 720px;
-    margin: 0 0 12px;
+  dt {
+    font-size: 12px;
     color: var(--muted);
-    font-size: 14px;
-    line-height: 1.75;
+    margin-bottom: 5px;
   }
-  .science .text-link {
-    margin-top: 4px;
-  }
-  dl {
+  dd {
+    font-size: 13px;
+    line-height: 1.6;
     margin: 0;
   }
-  dl > div {
+  .supporting {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 64px;
+    margin-top: 36px;
+  }
+  .workspaces a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     gap: 16px;
-    padding: 13px 0;
+    padding: 14px 0;
     border-bottom: 1px solid var(--border);
     font-size: 14px;
   }
-  dt {
-    color: var(--text);
+  .workspaces a:first-of-type {
+    padding-top: 0;
   }
-  dd {
-    margin: 0;
-    color: var(--muted);
+  .workspaces a:hover {
+    color: var(--blue);
   }
-  .capabilities > p {
-    margin: 16px 0 0;
-    color: var(--muted);
+  .workspaces small {
+    display: block;
+    margin-top: 5px;
     font-size: 12px;
     line-height: 1.6;
+    color: var(--muted);
   }
-  @media (max-width: 650px) {
-    .introduction {
-      padding-top: 4px;
-    }
-    .introduction .workspace-action-button {
-      width: 100%;
-      min-width: 0;
-    }
-    h1 {
-      font-size: 32px;
-    }
-    .introduction p {
-      font-size: 17px;
-    }
-    dl > div {
+  @media (max-width: 800px) {
+    .lab-entry,
+    .supporting {
       grid-template-columns: 1fr;
-      gap: 5px;
+      gap: 28px;
+    }
+    .capabilities {
+      border-left: 0;
+      border-top: 1px solid var(--border);
+      padding: 24px 0 0;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 20px;
+    }
+  }
+  @media (max-width: 500px) {
+    .introduction {
+      padding-bottom: 24px;
+    }
+    .lab-entry {
+      padding: 24px;
+    }
+    .capabilities {
+      grid-template-columns: 1fr;
+      gap: 16px;
     }
   }
 </style>

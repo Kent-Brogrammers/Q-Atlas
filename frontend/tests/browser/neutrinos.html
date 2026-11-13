@@ -37,6 +37,33 @@
       report.textContent = 'Running…';
       try {
         await until(point, 'Initial simulation did not finish');
+        const resizeErrors = [];
+        const onResizeError = (event) => {
+          if (event.message.includes('ResizeObserver loop')) resizeErrors.push(event.message);
+        };
+        const originalPlotWidth = point().getBoundingClientRect().width;
+        frame.contentWindow.addEventListener('error', onResizeError);
+        try {
+          frame.style.width = (frame.clientWidth > 390 ? 390 : 280) + 'px';
+          await until(
+            () => point().getBoundingClientRect().width !== originalPlotWidth,
+            'Chart did not respond to a narrower viewport'
+          );
+          frame.style.width = '100%';
+          await until(
+            () => point().getBoundingClientRect().width === originalPlotWidth,
+            'Chart did not recover its original width'
+          );
+          await new Promise((resolve) =>
+            frame.contentWindow.requestAnimationFrame(() =>
+              frame.contentWindow.requestAnimationFrame(resolve)
+            )
+          );
+          if (resizeErrors.length) throw new Error('Chart resizing caused an observer loop');
+        } finally {
+          frame.contentWindow.removeEventListener('error', onResizeError);
+          frame.style.width = '100%';
+        }
         const slider = () => doc().querySelector('[aria-label="Travel distance slider"]');
         edit(exact(), '3.125');
         await until(
@@ -74,7 +101,7 @@
         button('Reset').click();
         await until(() => +exact().value === 4 && point(), 'Reset did not restore the vacuum run');
         report.textContent =
-          'PASS — slider and numeric synchronization, normalized validation, loading invalidation, live run, graph selection, mode preservation and reset.';
+          'PASS — responsive chart, slider and numeric synchronization, normalized validation, loading invalidation, live run, graph selection, mode preservation and reset.';
       } catch (error) {
         report.textContent = 'FAIL — ' + error.message;
       } finally {

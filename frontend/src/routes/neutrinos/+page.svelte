@@ -13,24 +13,15 @@
   const experiments = [
     {
       id: 'vacuum',
-      title: 'Vacuum',
-      pitch: 'Follow a neutrino through empty space.',
-      icon: 'activity',
-      tone: '#82aaff'
+      title: 'Vacuum'
     },
     {
       id: 'density',
-      title: 'MSW resonance',
-      pitch: 'Find the density where mixing peaks.',
-      icon: 'atom',
-      tone: '#f2c078'
+      title: 'MSW resonance'
     },
     {
       id: 'layers',
-      title: 'Two layers',
-      pitch: 'Cross a boundary between two regions.',
-      icon: 'layers',
-      tone: '#63d8be'
+      title: 'Two layers'
     }
   ] as const;
   const percent = (p: number) => (p > 0 && p < 0.0001 ? '<0.01' : fmt(p * 100, 2));
@@ -81,7 +72,7 @@
   <header>
     <div>
       <h1>Neutrino Lab</h1>
-      <p>Discover how a neutrino changes flavor as it travels through space and matter.</p>
+      <p>Compare two-flavor propagation in vacuum and matter.</p>
     </div>
     <div class="switch" aria-label="Laboratory mode">
       <button aria-pressed={!advanced} onclick={() => (advanced = false)}>Explore</button><button
@@ -95,11 +86,7 @@
       <button
         class="choice"
         aria-pressed={experiment.id === e.id}
-        style:--tone={e.tone}
-        onclick={() => (settings = preset(e.id))}
-        ><span class="emblem"><Icon name={e.icon} size={23} /></span><span
-          ><strong>{e.title}</strong><small>{e.pitch}</small></span
-        ><span class="radio"></span></button
+        onclick={() => (settings = preset(e.id))}>{e.title}</button
       >
     {/each}
   </div>
@@ -115,8 +102,8 @@
                   fmt(settings.distance) +
                   '.'
                 : settings.environment === 'layers'
-                  ? 'Follow the particle through two equal-length regions.'
-                  : 'Follow the particle from its starting point to the selected distance.'}
+                  ? 'Propagation through two equal-length regions.'
+                  : 'Probability along the propagation path.'}
             </p>
           </div>
           <span class="source">Aer simulator</span>
@@ -259,14 +246,12 @@
             >
           </div>
         {/if}
-        <p class="foot">
-          The curve updates when you pause. Length, energy and potential use normalized scales.
-        </p>
+        <p class="foot">Updates automatically. All quantities use normalized scales.</p>
       </aside>
     </div>
-    <section class="learn">
-      <span class="learn-icon"><Icon name="book" size={22} /></span>
-      <div>
+    <details class="learn">
+      <summary>Physical model and assumptions</summary>
+      <div class="learn-content">
         <h2>
           {settings.environment === 'vacuum'
             ? 'Why does flavor change in empty space?'
@@ -305,7 +290,7 @@
           </p>
         </details>
       </div>
-    </section>
+    </details>
     {#if advanced && run.status === 'ready'}<Inspector
         result={run.result}
         request={run.request}
@@ -321,41 +306,14 @@
 </div>
 
 <style>
-  :global(.app-shell:has(.lab) .sidebar) {
-    --surface-raised: #101b2b;
-    --muted: #b9c7d7;
-    --text: #e8f0fa;
-    --accent: #79b1fc;
-    --blue: #93bfff;
-    border-right: 1px solid #26384c;
-  }
-  :global(.app-shell:has(.lab) .sidebar nav a.active) {
-    background: #1c3047;
-  }
-
-  :global(.workspace:has(.lab)) {
-    background: #0b1423;
-    color: #e9f0fa;
-  }
-  :global(.workspace:has(.lab) .topbar) {
-    background: #101c2d;
-    border-color: #2d4159;
-  }
-  :global(.workspace:has(.lab) .breadcrumb),
-  :global(.workspace:has(.lab) .breadcrumb strong) {
-    color: #bbc9da;
-  }
   .lab {
-    --lab-panel: #122135;
-    --lab-border: #31445c;
-    --lab-muted: #b4c3d4;
-    --lab-teal: #66dec2;
-    --blue: #91bbff;
-    color-scheme: dark;
-    color: #edf3fc;
-    max-width: 1420px;
+    --lab-panel: var(--surface);
+    --lab-border: var(--border);
+    --lab-muted: var(--muted);
+    --lab-teal: var(--cyan);
+    max-width: 1280px;
     margin: auto;
-    padding-bottom: 2rem;
+    padding-bottom: 1rem;
   }
   header,
   .control-title,
@@ -368,160 +326,135 @@
   }
   h1 {
     font-weight: 500;
-    letter-spacing: -0.05em;
-    font-size: clamp(2.2rem, 4vw, 3.7rem);
-    line-height: 1.1;
-    margin: 0.15em 0;
+    letter-spacing: -0.04em;
+    font-size: 30px;
+    line-height: 1.2;
+    margin: 0 0 8px;
   }
   header p,
   .plot-title p,
   .learn p,
   .foot {
     color: var(--lab-muted);
-    line-height: 1.6;
+    line-height: 1.7;
   }
   header p {
-    max-width: 54ch;
+    margin: 0;
+    font-size: 14px;
   }
   .switch {
     display: flex;
     border: 1px solid var(--lab-border);
-    border-radius: 9px;
-    padding: 4px;
+    border-radius: 3px;
+    padding: 3px;
+    background: var(--surface);
     flex-shrink: 0;
   }
   .switch button {
-    border-radius: 5px;
-    padding: 0.5em 0.9em;
-    font-size: 0.88rem;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    border-radius: 2px;
+    padding: 8px 12px;
+    font-size: 13px;
   }
   .switch button[aria-pressed='true'] {
-    background: #c6dafa;
-    color: #102239;
-    font-weight: 600;
+    background: var(--blue-soft);
+    color: var(--blue);
+    font-weight: 500;
   }
   .choices {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.8rem;
-    margin: 1.65rem 0;
+    display: flex;
+    border-bottom: 1px solid var(--lab-border);
+    margin: 26px 0 24px;
   }
   .choice {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-    text-align: left;
-    background: #101d2f;
-    border: 1px solid var(--lab-border);
-    border-radius: 11px;
-    padding: 1rem;
-    transition: background 0.15s;
+    min-height: 44px;
+    text-align: center;
+    padding: 12px 24px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--muted);
+    font-size: 14px;
+    transition:
+      background 0.15s,
+      color 0.15s;
   }
   .choice:hover {
-    background: #1c2c40;
+    color: var(--blue);
+    background: var(--blue-soft);
   }
   .choice[aria-pressed='true'] {
-    background: #1a2b41;
-    border-color: var(--tone);
-  }
-  .choice strong {
-    display: block;
-    font-size: 1rem;
-    font-weight: 600;
-  }
-  .choice small {
-    color: var(--lab-muted);
-    line-height: 1.4;
-    display: block;
-    font-size: 0.8rem;
-    margin-top: 0.15rem;
-  }
-  .emblem,
-  .learn-icon {
-    color: var(--tone);
-    display: grid;
-    place-items: center;
-    flex: none;
-  }
-  .radio {
-    margin-left: auto;
-    align-self: flex-start;
-    border: 1px solid #65798f;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    flex: none;
-  }
-  .choice[aria-pressed='true'] .radio {
-    background: var(--tone);
-    border-color: var(--tone);
+    border-bottom-color: var(--blue);
+    color: var(--blue);
+    font-weight: 500;
   }
   .deck {
     display: grid;
-    grid-template-columns: minmax(0, 2.6fr) minmax(225px, 1fr);
-    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: 20px;
     align-items: start;
   }
   .instrument,
-  .controls,
-  .learn {
+  .controls {
     border: 1px solid var(--lab-border);
-    border-radius: 14px;
+    border-radius: 3px;
     background: var(--lab-panel);
     min-width: 0;
-    padding: clamp(1rem, 2vw, 1.65rem);
+    padding: 24px;
   }
   h2 {
-    font-size: 1.2rem;
+    font-size: 17px;
     font-weight: 500;
-    letter-spacing: -0.025em;
+    letter-spacing: -0.015em;
+    margin: 0;
   }
   .plot-title {
     align-items: start;
-    margin-bottom: 1rem;
+    margin-bottom: 24px;
   }
-  .plot-title p,
-  .foot {
-    font-size: 0.81rem;
+  .plot-title p {
+    margin: 7px 0 0;
+    font-size: 13px;
   }
   .source {
-    color: #a9c2de;
-    font: 0.7rem var(--mono);
+    color: var(--muted);
+    font: 11px/1.7 var(--mono);
     white-space: nowrap;
   }
   .readout {
     border-top: 1px solid var(--lab-border);
-    margin-top: 1rem;
-    padding-top: 1rem;
+    margin-top: 20px;
+    padding-top: 18px;
   }
   .readout-head {
-    font-size: 0.8rem;
+    font-size: 12px;
   }
   output {
-    font: 0.78rem var(--mono);
+    font: 11px var(--mono);
     color: var(--lab-muted);
   }
   .readout input {
     width: 100%;
-    accent-color: #86adff;
-    margin: 0.4rem 0;
+    accent-color: var(--blue);
+    margin: 12px 0 18px;
   }
   .metrics {
     display: flex;
     align-items: end;
-    gap: clamp(0.8rem, 3vw, 3rem);
+    gap: clamp(20px, 3vw, 48px);
     flex-wrap: wrap;
   }
   .metrics small {
-    font-size: 0.8rem;
+    font-size: 12px;
     color: var(--lab-muted);
   }
   .metrics strong {
     display: block;
-    color: #82afff;
-    font: 500 clamp(1.4rem, 3vw, 2.25rem) var(--mono);
-    letter-spacing: -0.07em;
+    color: var(--blue);
+    font: 400 clamp(24px, 2.5vw, 30px)/1.5 var(--mono);
+    letter-spacing: -0.06em;
   }
   .metrics div:nth-child(2) strong {
     color: var(--lab-teal);
@@ -532,86 +465,111 @@
     margin-left: 0.12em;
   }
   .metrics p {
-    font-size: 0.73rem;
-    max-width: 12ch;
+    font-size: 11px;
+    max-width: 18ch;
+    line-height: 1.6;
     color: var(--lab-muted);
-    margin-bottom: 0.45rem;
+    margin: 0 0 7px;
   }
   .reset {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    font-size: 0.8rem;
+    gap: 5px;
+    padding: 5px 0 5px 5px;
+    border: 0;
+    background: transparent;
+    color: var(--blue);
+    font-size: 12px;
   }
   .foot {
     border-top: 1px solid var(--lab-border);
-    padding-top: 1rem;
-    margin-top: 1.15rem;
+    padding-top: 16px;
+    margin: 20px 0 0;
+    font-size: 11px;
   }
   .learn {
-    display: flex;
-    align-items: start;
-    gap: 1rem;
-    margin-top: 1rem;
-    background: #10272e;
-    border-color: #294c51;
+    margin-top: 20px;
+    border: 1px solid var(--lab-border);
+    border-radius: 3px;
+    background: var(--surface);
   }
-  .learn-icon {
-    color: var(--lab-teal);
-    margin-top: 2px;
+  .learn > summary {
+    padding: 18px 24px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .learn-content {
+    padding: 0 24px 20px;
+    max-width: 95ch;
+  }
+  .learn h2 {
+    font-size: 15px;
   }
   .learn p {
-    max-width: 95ch;
-    margin: 0.45rem 0;
-    font-size: 0.93rem;
+    margin: 10px 0;
+    font-size: 13px;
   }
   .learn details {
-    margin-top: 0.7rem;
-    font-size: 0.85rem;
+    margin-top: 16px;
+    font-size: 13px;
   }
-  .learn summary {
+  .learn details summary {
     cursor: pointer;
-    color: #9ae7d5;
+    color: var(--blue);
   }
   .controls h3 {
-    margin: 1rem 0 0.5rem;
+    font-size: 14px;
+    font-weight: 500;
+    margin: 24px 0 12px;
+    padding-top: 20px;
+    border-top: 1px solid var(--lab-border);
   }
   .controls label {
-    font-size: 0.8rem;
+    font-size: 12px;
   }
   .numbers {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.5rem;
+    gap: 12px;
   }
   .numbers input,
   select {
     width: 100%;
-    background: #101d30;
-    color: inherit;
-    border: 1px solid #52667d;
-    padding: 0.4rem;
-    border-radius: 5px;
-    font-size: 0.82rem;
+    min-width: 0;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid #bac7d7;
+    padding: 8px;
+    border-radius: 2px;
+    font-size: 12px;
+    margin-top: 6px;
   }
   .placeholder {
-    min-height: 320px;
+    min-height: 370px;
     display: grid;
     align-content: center;
     justify-items: center;
-    gap: 0.8rem;
+    gap: 12px;
     text-align: center;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .placeholder p {
+    max-width: 50ch;
+    line-height: 1.7;
   }
   .placeholder button {
-    background: #233951;
-    padding: 0.6em 1em;
-    border-radius: 6px;
+    background: var(--blue);
+    color: #fff;
+    border: 1px solid var(--blue);
+    padding: 10px 16px;
+    border-radius: 2px;
   }
   .progress {
     width: 30px;
-    height: 4px;
-    background: var(--lab-teal);
-    border-radius: 3px;
+    height: 3px;
+    background: var(--blue);
     animation: pulse 1s ease-in-out infinite alternate;
   }
   @keyframes pulse {
@@ -623,50 +581,47 @@
     .deck {
       grid-template-columns: 1fr;
     }
-    .choices {
-      gap: 0.5rem;
-    }
-    .choice {
-      padding: 0.8rem;
-    }
-    .choice .radio {
-      display: none;
-    }
-    .controls {
-      max-width: 100%;
-    }
   }
   @media (max-width: 650px) {
     header {
       align-items: start;
       flex-direction: column;
-      gap: 0.75rem;
+      gap: 18px;
+    }
+    h1 {
+      font-size: 27px;
     }
     .choices {
-      grid-template-columns: 1fr;
-      margin: 1rem 0;
+      margin: 20px 0;
     }
     .choice {
-      padding: 0.65rem 0.85rem;
+      flex: 1;
+      min-width: 0;
+      padding: 12px 8px;
+      font-size: 13px;
     }
-    .choice small {
-      margin: 0;
-    }
-    .choice .radio {
-      display: block;
+    .instrument,
+    .controls {
+      padding: 20px;
     }
     .plot-title {
       flex-wrap: wrap;
-      gap: 0.25rem;
+      gap: 8px;
+      margin-bottom: 20px;
     }
-    .learn {
-      gap: 0.6rem;
+    .metrics {
+      gap: 24px;
     }
     .metrics p {
       max-width: none;
+      width: 100%;
+      margin-top: -16px;
     }
-    .source {
-      font-size: 0.65rem;
+    .learn > summary {
+      padding: 18px 20px;
+    }
+    .learn-content {
+      padding-inline: 20px;
     }
   }
   @media (prefers-reduced-motion: reduce) {
