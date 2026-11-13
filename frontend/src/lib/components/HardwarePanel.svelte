@@ -43,6 +43,15 @@
   let expanded = $state(untrack(() => simple || experiment === 'suite'));
   let readinessError = $state('');
   let job = $state<HardwareJob | null>(null);
+  const featuredKinds: readonly HardwareJob['task']['kind'][] = ['neutrinos', 'compiler'];
+  let featuredResults = $derived(
+    featuredKinds.flatMap((kind) =>
+      (job?.children ?? []).filter((child) => child.task.kind === kind)
+    )
+  );
+  let supportingResults = $derived(
+    (job?.children ?? []).filter((child) => !featuredKinds.includes(child.task.kind))
+  );
   let requestId = $state('');
   let busy = $state(false);
   let error = $state('');
@@ -216,14 +225,18 @@
     <span>Use an IBM device or view the saved physical demo.</span>
   </summary>
   <Panel
-    title="Run on an IBM quantum computer"
-    subtitle="Physical QPU · credentials loaded privately by the backend from .env"
+    title={experiment === 'suite' ? 'Physical QPU results' : 'Run on an IBM quantum computer'}
+    subtitle={experiment === 'suite'
+      ? 'Archived measurements and independent classical references'
+      : 'Physical QPU · credentials loaded privately by the backend from .env'}
   >
     <div class="hardware-body">
       <p>
-        Run the configured {experiment} experiment on a physical IBM device and compare it with its independent
-        classical reference. One submission uses a maximum execution-time cap of 10 seconds. The shared
-        reservation cap includes compiler jobs.
+        {#if experiment === 'suite'}View the completed five-experiment recording or submit the
+          configured suite to an IBM device.{:else}Run the configured {experiment} experiment on a physical
+          IBM device and compare it with its independent classical reference.{/if}
+        One submission uses a maximum execution-time cap of 10 seconds. The shared reservation cap includes
+        compiler jobs.
       </p>
       <details class="advanced-settings">
         <summary>Change hardware settings</summary>
@@ -282,7 +295,14 @@
       </details>
       <div class="actions">
         <button
-          class="button primary"
+          class="button"
+          class:primary={experiment === 'suite'}
+          disabled={busy}
+          onclick={loadRecording}>View recorded example</button
+        >
+        <button
+          class="button"
+          class:primary={experiment !== 'suite'}
           disabled={!!blockedReason}
           title={blockedReason || 'Submit this experiment to an IBM quantum computer'}
           onclick={() => action('submit')}
@@ -291,8 +311,6 @@
             : job?.measurement_complete
               ? 'Run a new QPU job'
               : 'Run on IBM QPU'}</button
-        >
-        <button class="button" disabled={busy} onclick={loadRecording}>View recorded example</button
         >
       </div>
       <details>
@@ -337,48 +355,73 @@
           >Check QPU job</button
         >{/if}
       {#if job}
-        <p role="status">
-          <strong>{job.status}</strong> · Device: {job.backend_name ?? 'Selecting'} · Provider job: {job.job_id ??
-            'Not acknowledged yet'}
-        </p>
-        <p class="note">
-          Recorded at {job.created_at_utc}. Last saved update: {job.updated_at_utc}.
-        </p>
-        <p>{job.message}</p>
-        <label class="poll"
-          ><input type="checkbox" bind:checked={autoRefresh} />Refresh active job status every 15
-          seconds</label
-        >
-        {#if job.job_id}<a
-            href={`https://quantum.cloud.ibm.com/workloads/${encodeURIComponent(job.job_id)}`}
-            target="_blank"
-            rel="noreferrer">Open IBM workload</a
-          >{/if}
-        <div class="actions">
-          <button
-            class="button"
-            onclick={() =>
-              downloadJson(
-                job,
-                `q-atlas-${experiment}-${recordedMode ? 'recorded-' : ''}physical-qpu.json`
-              )}>Download physical QPU evidence</button
-          >{#if job.job_id && !canStartAnother(job)}<button
-              class="button"
-              disabled={busy}
-              onclick={() => action('cancel')}>Cancel QPU job</button
+        <details class="job-record" open={experiment !== 'suite' || !job.measurement_complete}>
+          <summary>{job.status} · IBM job record and exports</summary>
+          <p role="status">
+            <strong>{job.status}</strong> · Device: {job.backend_name ?? 'Selecting'} · Provider job:
+            {job.job_id ?? 'Not acknowledged yet'}
+          </p>
+          <p class="note">
+            Recorded at {job.created_at_utc}. Last saved update: {job.updated_at_utc}.
+          </p>
+          <p>{job.message}</p>
+          <label class="poll"
+            ><input type="checkbox" bind:checked={autoRefresh} />Refresh active job status every 15
+            seconds</label
+          >
+          {#if job.job_id}<a
+              href={`https://quantum.cloud.ibm.com/workloads/${encodeURIComponent(job.job_id)}`}
+              target="_blank"
+              rel="noreferrer">Open IBM workload</a
             >{/if}
-        </div>
-        <p class="note">
-          This stored job retains its original inputs even when page settings change. Queued,
-          running, failed and unknown submissions are not reported as measurements.
-        </p>
+          <div class="actions">
+            <button
+              class="button"
+              onclick={() =>
+                downloadJson(
+                  job,
+                  `q-atlas-${experiment}-${recordedMode ? 'recorded-' : ''}physical-qpu.json`
+                )}>Download physical QPU evidence</button
+            >{#if job.job_id && !canStartAnother(job)}<button
+                class="button"
+                disabled={busy}
+                onclick={() => action('cancel')}>Cancel QPU job</button
+              >{/if}
+          </div>
+          <p class="note">
+            This stored job retains its original inputs even when page settings change. Queued,
+            running, failed and unknown submissions are not reported as measurements.
+          </p>
+        </details>
         {#if job.measurement_complete}
-          <HardwareAnalytics {job} />
-          {#each job.children ?? [] as child}<details open>
-              <summary>{child.task.kind} · physical QPU comparison</summary><HardwareAnalytics
-                job={child}
-              />
-            </details>{/each}
+          {#if job.children?.length}
+            {#each featuredResults as child}
+              <section
+                class="featured-result"
+                aria-label={child.task.kind === 'neutrinos'
+                  ? 'Neutrino Lab physical results'
+                  : 'Python Compiler physical results'}
+              >
+                <h3>{child.task.kind === 'neutrinos' ? 'Neutrino Lab' : 'Python Compiler'}</h3>
+                <HardwareAnalytics job={child} />
+              </section>
+            {/each}
+            {#if supportingResults.length}
+              <details class="supporting-results">
+                <summary>Supporting experiments from this job ({supportingResults.length})</summary>
+                {#each supportingResults as child}<details>
+                    <summary>{child.task.kind} · physical QPU comparison</summary>
+                    <HardwareAnalytics job={child} />
+                  </details>{/each}
+              </details>
+            {/if}
+            <details class="shared-evidence">
+              <summary>Shared job timings and complete evidence</summary>
+              <HardwareAnalytics {job} />
+            </details>
+          {:else}
+            <HardwareAnalytics {job} />
+          {/if}
         {/if}
       {/if}
     </div>
@@ -447,6 +490,36 @@
     border: 1px solid var(--border);
     padding: 12px;
     background: var(--surface-raised);
+  }
+  .featured-result,
+  .supporting-results,
+  .shared-evidence {
+    margin-top: 24px;
+    border-top: 1px solid var(--border);
+    padding-top: 20px;
+    min-width: 0;
+  }
+  .job-record {
+    margin: 20px 0;
+  }
+  .job-record > summary {
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .featured-result h3 {
+    margin: 0 0 12px;
+    font-size: 18px;
+    font-weight: 500;
+  }
+  .supporting-results > summary,
+  .shared-evidence > summary {
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .supporting-results > details {
+    margin-top: 16px;
   }
   .settings {
     display: grid;

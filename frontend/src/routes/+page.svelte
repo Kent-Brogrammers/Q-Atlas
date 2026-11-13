@@ -7,15 +7,17 @@
 <div class="overview">
   <header class="introduction">
     <h1>Q-Atlas</h1>
-    <p>Neutrino simulation and classical validation.</p>
+    <p>Neutrino oscillations with independent classical and quantum calculations.</p>
+    <p class="challenge">Ohio State Qiskit Fall Fest 2026 · Quantum for Science</p>
   </header>
 
   <section class="lab-entry" aria-labelledby="lab-title">
     <div class="lab-introduction">
       <h2 id="lab-title">Neutrino Lab</h2>
       <p>
-        Explore how neutrino flavor changes with distance and matter. Compare Qiskit Aer
-        probabilities and finite-shot measurements with an independent SciPy reference.
+        Explore how neutrino flavor changes in vacuum and matter. Compare Qiskit calculations with
+        an independent SciPy reference, study sampling error across shots and seeds, and inspect
+        recorded IBM hardware measurements.
       </p>
       <div class="workspace-actions">
         <a class="button primary" href="/neutrinos/">
@@ -35,7 +37,7 @@
       </div>
       <div>
         <dt>Execution</dt>
-        <dd>Local Aer simulation · normalized units</dd>
+        <dd>Local Aer simulation and physical IBM measurements</dd>
       </div>
     </dl>
   </section>
@@ -50,36 +52,19 @@
       </p>
     </section>
 
-    <section class="workspaces" aria-labelledby="workspaces-title">
-      <h2 id="workspaces-title">Other workspaces</h2>
-      <a href="/compiler/">
-        <span
-          >Python Compiler<small>Convert supported binary objectives into circuit code</small></span
-        ><Icon name="arrow" size={16} />
-      </a>
-      <a href="/search/">
-        <span
-          >Grover Search<small>Explore amplitude amplification and search probabilities</small
-          ></span
-        ><Icon name="arrow" size={16} />
-      </a>
-      <a href="/optimization/">
-        <span>Optimization<small>Compare QAOA and classical Max-Cut solvers</small></span><Icon
-          name="arrow"
-          size={16}
-        />
-      </a>
-      <a href="/materials/">
-        <span>Materials<small>Compare spin-system evolution with a classical reference</small></span
-        ><Icon name="arrow" size={16} />
-      </a>
-      <a href="/hardware/">
-        <span
-          >Physical QPU Analytics<small>Review recorded IBM quantum hardware measurements</small
-          ></span
-        ><Icon name="arrow" size={16} />
-      </a>
+    <section class="compiler" aria-labelledby="compiler-title">
+      <h2 id="compiler-title">Python Compiler</h2>
+      <p>
+        Convert supported Python optimization objectives into QUBO representations and Qiskit
+        circuits. Compare classical and shared QAOA solvers, with local and physical IBM execution.
+      </p>
+      <a class="button" href="/compiler/">Open Python Compiler<Icon name="arrow" size={16} /></a>
     </section>
+  </div>
+  <div class="hardware-reference">
+    <a class="text-link" href="/hardware/"
+      >View recorded IBM hardware results<Icon name="arrow" size={14} /></a
+    >
   </div>
 </div>
 
@@ -103,6 +88,10 @@
     font-size: 17px;
     color: var(--muted);
   }
+  .introduction .challenge {
+    margin-top: 10px;
+    font-size: 13px;
+  }
   .lab-entry {
     display: grid;
     grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
@@ -123,7 +112,8 @@
     letter-spacing: -0.035em;
   }
   .lab-introduction p,
-  .science p {
+  .science p,
+  .compiler p {
     font-size: 14px;
     line-height: 1.8;
     color: var(--muted);
@@ -164,27 +154,13 @@
     gap: 64px;
     margin-top: 36px;
   }
-  .workspaces a {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 14px 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 14px;
+  .compiler .button {
+    margin-top: 20px;
   }
-  .workspaces a:first-of-type {
-    padding-top: 0;
-  }
-  .workspaces a:hover {
-    color: var(--blue);
-  }
-  .workspaces small {
-    display: block;
-    margin-top: 5px;
-    font-size: 12px;
-    line-height: 1.6;
-    color: var(--muted);
+  .hardware-reference {
+    border-top: 1px solid var(--border);
+    margin-top: 32px;
+    padding-top: 20px;
   }
   @media (max-width: 800px) {
     .lab-entry,

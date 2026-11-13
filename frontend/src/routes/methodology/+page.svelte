@@ -15,58 +15,13 @@
 <header class="page-heading">
   <div>
     <h1>Methodology</h1>
-    <p>Scientific questions, models, measured results, resources and reproducible evidence.</p>
+    <p>
+      Neutrino oscillations for Quantum for Science, with a supporting Python optimization compiler.
+    </p>
   </div>
 </header>
 
 <article class="methodology">
-  <section>
-    <h2>Final science report and presentation material</h2>
-    <p>
-      The final report follows the challenge's problem, model, mapping, method, baseline, results,
-      scaling and impact questions. It distinguishes actual physical measurements from ideal
-      simulation and theoretical resource claims.
-    </p>
-    <p>
-      <a class="text-link" href={finalReport} download="Q-Atlas-final-science-report.md"
-        >Download final science report</a
-      >
-      · <a href="/q-atlas-presentation.zip" download>Download presentation pack</a>
-    </p>
-    <figure>
-      <a href={finalFigure} download="Q-Atlas-final-results.png"
-        ><img
-          src={finalFigure}
-          alt="Final Q-Atlas physical results for search, neutrinos, materials and optimization, with conditional shot uncertainty"
-        /></a
-      >
-      <figcaption>
-        Recorded physical QPU data. Intervals describe conditional shot uncertainty and exclude
-        device bias, drift and model error. Click the figure to download it.
-      </figcaption>
-    </figure>
-  </section>
-  <section>
-    <h2>All five experiments executed on IBM hardware</h2>
-    <p>
-      Physical IBM device: ibm_marrakesh. Completed job: dbr0sthabdes73fp2v60. Eight circuits
-      covered Compiler, Optimization, Grover Search, Materials and Neutrinos, with 128 shots per
-      circuit. Provider usage was 2.0 seconds for the entire shared job.
-    </p>
-    <p>
-      Compiler and Optimization sampled their exact optima. Search succeeded in 109 of 128 shots;
-      neutrino conversion at the resonant point was 126 of 128. The app compares each measurement
-      with its independent classical reference. Per-experiment QPU runtime is unavailable because
-      the experiments shared a job.
-    </p>
-    <p>
-      <a href="/hardware/">Open physical QPU analytics</a> ·
-      <a href={qpuEvidence} download="q-atlas-five-physical-qpu.json"
-        >Download raw hardware evidence</a
-      >
-      · <a href={qpuReport} download="Q-Atlas-physical-results.md">Download results report</a>
-    </p>
-  </section>
   <section>
     <h2>Our scientific question</h2>
     <p>
@@ -74,10 +29,9 @@
       reproduce an independent prediction with finite measurements?
     </p>
     <p>
-      We compare the same model and input on both paths. Observable error or solution quality
-      accompanies runtime. Grover demonstrates theoretical oracle-query improvement; local simulator
-      runtime and physical QPU usage are different measurements. No practical quantum speedup has
-      been established by this project.
+      We compare the same normalized model and inputs using independent SciPy calculations and
+      Qiskit circuits. Repeated experiments vary shot counts and seeds to measure sampling error.
+      Recorded IBM hardware measurements provide a physical comparison alongside local Aer results.
     </p>
     <p>
       <a class="text-link" href={scienceAnswers} download="Q-Atlas-science-challenge-answers.md"
@@ -99,6 +53,45 @@
       <a href={evidenceProvenance} download="provenance.json">Source provenance</a>
     </p>
   </section>
+  <section>
+    <h2>Supporting Python Compiler</h2>
+    <p>
+      The compiler translates supported Python binary optimization objectives into QUBO
+      representations and Qiskit circuits. It compares classical optimization with the shared QAOA
+      solver, using local simulation or supported physical IBM execution.
+    </p>
+    <a class="text-link" href="/compiler/">Open Python Compiler<Icon name="arrow" size={14} /></a>
+  </section>
+  <section>
+    <h2>Final science report and presentation material</h2>
+    <p>
+      The final report follows the challenge's problem, model, mapping, method, baseline, results,
+      scaling and impact questions. It distinguishes actual physical measurements from ideal
+      simulation and theoretical resource claims.
+    </p>
+    <p>
+      <a class="text-link" href={finalReport} download="Q-Atlas-final-science-report.md"
+        >Download final science report</a
+      >
+      · <a href="/q-atlas-presentation.zip" download>Download presentation pack</a>
+    </p>
+    <details class="supplementary">
+      <summary>Full hardware results figure for all five experiments</summary>
+      <figure>
+        <a href={finalFigure} download="Q-Atlas-final-results.png"
+          ><img
+            src={finalFigure}
+            alt="Final Q-Atlas physical results for search, neutrinos, materials and optimization, with conditional shot uncertainty"
+          /></a
+        >
+        <figcaption>
+          Recorded physical QPU data. Intervals describe conditional shot uncertainty and exclude
+          device bias, drift and model error. Click the figure to download it.
+        </figcaption>
+      </figure>
+    </details>
+  </section>
+
   <section>
     <h2>Physical model</h2>
     <p>
@@ -155,9 +148,59 @@
     </p>
     <a class="text-link" href="/neutrinos/">Open Neutrino Lab<Icon name="arrow" size={14} /></a>
   </section>
+  <details class="archive">
+    <summary>Original five-experiment IBM hardware record</summary>
+    <section>
+      <h2>All five experiments executed on IBM hardware</h2>
+      <p>
+        Physical IBM device: ibm_marrakesh. Completed job: dbr0sthabdes73fp2v60. Eight circuits
+        covered Compiler, Optimization, Grover Search, Materials and Neutrinos, with 128 shots per
+        circuit. Provider usage was 2.0 seconds for the entire shared job.
+      </p>
+      <p>
+        Compiler and Optimization sampled their exact optima. Search succeeded in 109 of 128 shots;
+        neutrino conversion at the resonant point was 126 of 128. The app compares each measurement
+        with its independent classical reference. Per-experiment QPU runtime is unavailable because
+        the experiments shared a job.
+      </p>
+      <p>
+        <a href="/hardware/">Open physical QPU analytics</a> ·
+        <a href={qpuEvidence} download="q-atlas-five-physical-qpu.json"
+          >Download raw hardware evidence</a
+        >
+        · <a href={qpuReport} download="Q-Atlas-physical-results.md">Download results report</a>
+      </p>
+      <p>
+        Supporting experiments compare the same model and input on both paths. Observable error or
+        solution quality accompanies runtime. Grover demonstrates theoretical oracle-query
+        improvement. Local simulator runtime and physical QPU usage are different measurements. The
+        project has established no practical quantum speedup.
+      </p>
+    </section>
+  </details>
 </article>
 
 <style>
+  summary {
+    cursor: pointer;
+    line-height: 1.6;
+  }
+  .supplementary {
+    margin-top: 20px;
+    font-size: 13px;
+  }
+  .archive {
+    border-top: 1px solid var(--border);
+    padding: 24px 0;
+  }
+  .archive > summary {
+    font-size: 17px;
+    font-weight: 500;
+  }
+  .archive > section {
+    border: 0;
+    padding-bottom: 0;
+  }
   figure {
     margin: 20px 0;
   }

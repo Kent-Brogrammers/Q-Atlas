@@ -41,7 +41,9 @@
   </p>
 
   {#if names.length > 1}<label
-      >Observable<select bind:value={selected}
+      >Observable<select
+        value={selectedName}
+        onchange={(event) => (selected = event.currentTarget.value)}
         >{#each names as name}<option value={name}>{name}</option>{/each}</select
       ></label
     >{/if}
@@ -86,23 +88,23 @@
         measured point.{/if}
     </p>
   {/if}
-  <div class="table-scroll">
-    <table>
-      <caption>Same-instance classical and physical quantum results</caption><thead
-        ><tr
-          ><th>Quantity</th><th>Coordinate</th><th>Classical</th><th>QPU</th><th
-            >Absolute error / gap</th
-          ><th>Unit</th></tr
-        ></thead
-      ><tbody>
-        {#each job.metrics ?? [] as m}<tr
-            ><td>{m.name}</td><td>{format(m.coordinate)}</td><td>{format(m.classical)}</td><td
-              >{format(m.quantum)}</td
-            ><td>{format(m.absolute_error)}</td><td>{m.unit}</td></tr
-          >{/each}
-      </tbody>
-    </table>
-  </div>
+  {#if job.metrics?.length}<div class="table-scroll">
+      <table>
+        <caption>Same-instance classical and physical quantum results</caption><thead
+          ><tr
+            ><th>Quantity</th><th>Coordinate</th><th>Classical</th><th>QPU</th><th
+              >Absolute error / gap</th
+            ><th>Unit</th></tr
+          ></thead
+        ><tbody>
+          {#each job.metrics ?? [] as m}<tr
+              ><td>{m.name}</td><td>{format(m.coordinate)}</td><td>{format(m.classical)}</td><td
+                >{format(m.quantum)}</td
+              ><td>{format(m.absolute_error)}</td><td>{m.unit}</td></tr
+            >{/each}
+        </tbody>
+      </table>
+    </div>{/if}
   <details>
     <summary>Time &amp; circuit details · what each measurement includes</summary>
     <div class="metrics">
@@ -135,10 +137,12 @@
     </div>
   </details>
   <p class="note">
-    {job.timing_note} Physical results include shot and device noise. Materials error also includes product-formula
-    approximation. QAOA trains angles locally before QPU sampling. Search reports classical success 1
-    for a completed exact search; ideal Grover success and query counts are retained in the reference
-    record.
+    {job.timing_note} Physical results include shot and device noise.
+    {#if job.task.kind === 'materials'}Materials error also includes product-formula approximation.{/if}
+    {#if job.task.kind === 'compiler' || job.task.kind === 'optimization'}QAOA trains angles locally
+      before QPU sampling.{/if}
+    {#if job.task.kind === 'search'}Search reports classical success 1 for a completed exact search;
+      ideal Grover success and query counts are retained in the reference record.{/if}
   </p>
   <details>
     <summary>Raw counts, inputs, references, and package versions</summary>
@@ -165,6 +169,9 @@
     border-collapse: collapse;
     font-size: 12px;
     margin-top: 15px;
+  }
+  .table-scroll {
+    overflow-x: auto;
   }
   td,
   th {
