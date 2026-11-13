@@ -43,10 +43,11 @@
           class:active={active?.href === item.href}
           href={item.href}
           aria-current={active?.href === item.href ? 'page' : undefined}
+          aria-label={item.title}
           title={item.title}
         >
           <Icon name={item.icon} /><span>{item.title}</span><span class="mobile-nav-label"
-            >{item.title}</span
+            >{item.mobileTitle}</span
           >
         </a>
       {/each}

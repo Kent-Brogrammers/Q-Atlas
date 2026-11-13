@@ -48,7 +48,7 @@
 
 <style>
   .parameter {
-    margin: 1em 0;
+    margin: 22px 0;
   }
   .parameter-label,
   .inputs {
@@ -58,30 +58,31 @@
     gap: 0.6em;
   }
   label {
-    font-size: 0.9rem;
+    font-size: 13px;
     font-weight: 500;
   }
   .parameter-label span,
   small {
     color: var(--lab-muted);
-    font-size: 0.75rem;
+    font-size: 11px;
   }
   .inputs {
-    margin: 0.35em 0;
+    margin: 9px 0;
   }
   .inputs input[type='range'] {
     min-width: 0;
     width: 100%;
-    accent-color: var(--lab-teal);
+    accent-color: var(--blue);
   }
   input[type='number'] {
     width: 6.4em;
-    padding: 0.4em 0.5em;
-    background: #101d30;
+    min-width: 0;
+    padding: 8px;
+    background: var(--surface);
     color: inherit;
-    border: 1px solid #52667d;
-    border-radius: 5px;
-    font: 0.82rem var(--mono);
+    border: 1px solid #bac7d7;
+    border-radius: 2px;
+    font: 12px var(--mono);
   }
   small {
     display: block;
