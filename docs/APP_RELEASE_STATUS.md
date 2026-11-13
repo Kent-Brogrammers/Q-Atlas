@@ -22,11 +22,10 @@ has been retained.
 | Search | Existing Grover run, iteration curve, seeded trials and explicit recorded fallback | Qubit counts, iterations, or shots; size-study figure distinguishes expected/observed classical checks and quantum queries per attempt |
 | Neutrinos | Existing distance/density curves and effective two-flavor model | Shot counts across the same full curve and distinct base seeds |
 
-All five workspaces are in the main sidebar. Each offers live JSON export. Study
+All five workspaces are in the main sidebar. Each offers live JSON export. The explicit recorded physical-demo loader also works without the backend and labels the archive with its original request date. Study
 exports preserve the plan, each effective request, raw responses, package provenance
 available from the API, completed/failed/cancelled status, and recomputed summaries.
-The Methodology page includes the scientific question, downloadable challenge answers,
-archived measurement figure, raw evidence and source provenance.
+The Methodology page includes the final science report, physical-result figure, raw evidence, source provenance and an offline presentation ZIP. See PRESENTATION_READINESS.md and PRESENTATION_RUNBOOK.md for the final audit and demo.
 
 ## Start and demonstrate
 
@@ -40,7 +39,7 @@ Open http://127.0.0.1:5173/. The launcher now enables local compiler simulation 
 default. Set `QATLAS_ENABLE_COMPILER_AER=0` to retain a conversion-only deployment.
 A backend started separately still requires `QATLAS_ENABLE_COMPILER_AER=1` for local
 compiler execution. The backend also loads optional `QUANTUM-KEY` and `QUANTUM-CDN` (IBM instance name/CRN) from `.env`; missing values do not prompt or block startup. No IBM account is needed for local experiments. Physical IBM jobs
-remain a separate explicitly confirmed action; none were submitted for this release.
+remain a separate explicitly confirmed action. The physical release completed the shared five-experiment IBM job described above.
 
 For a production-build rehearsal, run `npm run build` in `frontend/`, then
 `npm run preview -- --port 5173`. Start the backend in another terminal from `backend/`:
@@ -91,7 +90,14 @@ the backend; other live experiments require the local API.
 
 ## Release checks
 
-Backend pytest: **1048 passed**, with 68 dependency deprecation warnings.
+Final presentation release: **1068 backend tests passed**, all 12 frontend test-file
+subtests and seven compiler tests passed, and lint/format, generated types,
+Svelte/TypeScript and production build passed. The final browser rehearsal passed
+**16 checks** with zero new hardware submissions, including full-cap readiness,
+all five live/local and physical views, report/ZIP downloads and explicit offline
+physical evidence. See [the final audit](PRESENTATION_READINESS.md).
+
+Earlier local-release backend pytest: **1048 passed**, with 68 dependency deprecation warnings.
 Backend Ruff lint/format passed. Frontend Svelte/TypeScript checks, all 11 test-file
 subtests, seven compiler tests, generated-type verification and static production
 build passed. New study tests cover controlled inputs, bounds, exact shot bookkeeping,

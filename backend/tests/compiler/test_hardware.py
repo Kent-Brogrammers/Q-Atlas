@@ -88,7 +88,7 @@ def test_physical_result_and_durable_duplicate_prevention(mocked):
     assert completed.angles == [0.2, 0.3] and completed.local_training_ms == 25
     assert hardware.refresh(request.request_id) == completed
     job.result.assert_called_once()
-    assert hardware.devices().reserved_seconds == 10
+    assert hardware.devices().reserved_seconds == 2
 
 
 def test_lost_acknowledgement_retains_reservation_and_never_retries(mocked):
@@ -282,7 +282,7 @@ def test_six_qubit_portfolio_can_submit_and_decode_without_changing_job_caps(moc
     completed = hardware.refresh(request.request_id)
     assert completed.measurement.best_bitstring == "110100"
     assert completed.measurement.optimality_gap == 0
-    assert hardware.devices().reserved_seconds == 10
+    assert hardware.devices().reserved_seconds == 2
     submit.assert_called_once()
 
 

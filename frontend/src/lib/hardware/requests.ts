@@ -24,6 +24,13 @@ export function hardwareTask(
     throw new Error('QPU Trotter steps must be 1–32.');
   if (!Number.isInteger(layers) || layers < 1 || layers > 2)
     throw new Error('QPU layers must be 1–2.');
+  if (experiment === 'optimization') {
+    const p = (base as OptimizationRequest).problem;
+    if ((p.kind === 'graph' ? p.num_vertices : p.qubo.num_variables) > 8)
+      throw new Error(
+        'This larger benchmark runs locally. Choose a graph with at most 8 choices for a physical QPU run.'
+      );
+  }
   const parameters = JSON.parse(JSON.stringify(base)) as Requests[Experiment];
   if (experiment === 'neutrinos') {
     const p = parameters as NeutrinoRequest;

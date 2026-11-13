@@ -8,6 +8,7 @@ import {
   makeRequest,
   pickHardwareJob
 } from '../src/lib/hardware/requests.ts';
+import { loadPhysicalRecording } from '../src/lib/hardware/recorded.ts';
 import { cycleProblem } from '../src/lib/studies/model.ts';
 import type { HardwareJob, NeutrinoRequest, SearchRequest } from '../src/types/index.ts';
 
@@ -120,6 +121,22 @@ test('a shared job selects the experiment-specific evidence and keeps shared usa
   assert.equal(pickHardwareJob(parent, 'suite'), parent);
   assert.equal(child.shared_job_timings.quantum_seconds, 2);
   assert.equal(makeRequest(parent.task, id, '', 64).shots, 64);
+});
+
+test('recorded physical fallback retains real provenance and clones the archived evidence', () => {
+  const suite = loadPhysicalRecording('suite');
+  assert.equal(suite.simulated, false);
+  assert.equal(suite.job_id, 'dbr0sthabdes73fp2v60');
+  assert.equal(suite.children!.length, 5);
+  for (const kind of ['compiler', 'optimization', 'materials', 'search', 'neutrinos'] as const) {
+    const child = loadPhysicalRecording(kind);
+    assert.equal(child.task.kind, kind);
+    assert.equal(child.measurement_complete, true);
+    assert.ok(child.counts!.length > 0);
+    assert.equal(child.shared_job_timings!.quantum_seconds, 2);
+  }
+  suite.children![0].counts![0] = {};
+  assert.ok(Object.keys(loadPhysicalRecording('compiler').counts![0]).length > 0);
 });
 
 test('physical submissions, recovery and cancellation use the additive endpoints without credentials in requests', async () => {

@@ -9,6 +9,7 @@ import hashlib
 import io
 import json
 import logging
+import math
 import os
 import threading
 from pathlib import Path
@@ -110,9 +111,34 @@ def _read(path):
         ) from None
 
 
+def _charge(status, cap, usage=None, measured=False):
+    """Count confirmed provider use; retain the cap until completion is verified."""
+    if status == "FAILED_BEFORE_SUBMISSION":
+        return 0
+    if (
+        status == "DONE"
+        and measured
+        and isinstance(usage, (int, float))
+        and not isinstance(usage, bool)
+        and math.isfinite(usage)
+        and usage >= 0
+    ):
+        # Round each charge upward; a provider overrun must never be capped away.
+        return math.ceil(usage)
+    return cap
+
+
 def _reserved(folder):
     records = (_read(path) for path in folder.glob("*.json"))
-    total = sum(r.max_execution_seconds for r in records if r.status != "FAILED_BEFORE_SUBMISSION")
+    total = sum(
+        _charge(
+            r.status,
+            r.max_execution_seconds,
+            r.measurement.quantum_seconds if r.measurement else None,
+            r.measurement is not None,
+        )
+        for r in records
+    )
     from app.schemas.hardware import HardwareJob
 
     for path in (folder / "experiments").glob("*.json"):
@@ -126,8 +152,12 @@ def _reserved(folder):
                     "records before submitting another job."
                 ),
             ) from None
-        if record.status != "FAILED_BEFORE_SUBMISSION":
-            total += record.max_execution_seconds
+        total += _charge(
+            record.status,
+            record.max_execution_seconds,
+            record.timings.quantum_seconds,
+            record.measurement_complete,
+        )
     return total
 
 

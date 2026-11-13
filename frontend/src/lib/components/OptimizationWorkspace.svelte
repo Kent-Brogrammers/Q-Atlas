@@ -11,15 +11,18 @@
   import ComparisonResult from './ComparisonResult.svelte';
   import StudyPanel from './StudyPanel.svelte';
   import Panel from './Panel.svelte';
-  import HardwarePanel from './HardwarePanel.svelte';
+  import ExecutionChoice from './ExecutionChoice.svelte';
+  import type { HardwareJob } from '../../types/index.ts';
   let {
     source,
     problem,
-    onResult
+    onResult,
+    onHardwareResult
   }: {
     source?: string;
     problem?: OptimizationRequest['problem'];
     onResult?: (result: CompilerBenchmarkResult | OptimizationResult | null) => void;
+    onHardwareResult?: (job: HardwareJob | null) => void;
   } = $props();
   let layers = $state(1);
   let shots = $state(1024);
@@ -109,79 +112,98 @@
   }
 </script>
 
-<HardwarePanel {experiment} {request} />
-
-<Panel title="Run a local comparison" subtitle="Exact classical solve and shared QAOA · Qiskit Aer">
-  <div class="workspace-body">
-    <p>Choose the same objective and a bounded solver budget. No IBM account is required.</p>
-    <form
-      onsubmit={(event) => {
-        event.preventDefault();
-        void run();
-      }}
-    >
-      <fieldset disabled={running || studying}>
-        <label
-          >QAOA layers<input type="number" min="1" max="8" required bind:value={layers} /></label
-        >
-        <label
-          >Final shots<input
-            type="number"
-            min="1"
-            max="100000"
-            required
-            bind:value={shots}
-          /></label
-        >
-        <label
-          >Seed<input type="number" min="0" max="4294967295" required bind:value={seed} /></label
-        >
-        <label
-          >Optimizer evaluation budget<input
-            type="number"
-            min="1"
-            max="1000"
-            required
-            bind:value={evaluations}
-          /></label
-        >
-        <label
-          >Timeout per solver (seconds)<input
-            type="number"
-            min="1"
-            max="60"
-            required
-            bind:value={timeout}
-          /></label
-        >
-      </fieldset>
-      <div class="actions">
-        <button class="button primary" disabled={running || studying || !request}
-          >{running ? 'Running comparison…' : 'Run local comparison'}</button
-        >
-        {#if running}<button type="button" class="button" onclick={() => controller?.abort()}
-            >Stop waiting</button
-          >{/if}
-        {#if result}<button
-            type="button"
-            class="button"
-            onclick={() =>
-              downloadJson(
-                { source: 'live_local_comparison', request, result },
-                `q-atlas-${experiment}-comparison.json`
-              )}>Download result JSON</button
-          >{/if}
-      </div>
-    </form>
-    {#if !request}<p role="alert">Enter valid settings before running.</p>{/if}
-    {#if error}<p role="alert">{error}</p>{/if}
-    {#if running}<p role="status">
-        Solvers run sequentially. Stopping browser waiting leaves backend worker deadlines in force.
-      </p>{/if}
-    {#if result}<ComparisonResult {result} />{/if}
-  </div>
-</Panel>
-<StudyPanel {experiment} {request} disabled={running || studying} />
+<ExecutionChoice {experiment} {request} onJob={onHardwareResult}>
+  <Panel
+    title="Run a local comparison"
+    subtitle="Exact classical solve and shared QAOA · Qiskit Aer"
+  >
+    <div class="workspace-body">
+      <p>Choose the same objective and a bounded solver budget. No IBM account is required.</p>
+      <form
+        onsubmit={(event) => {
+          event.preventDefault();
+          void run();
+        }}
+      >
+        <details>
+          <summary>Change solver settings</summary>
+          <fieldset disabled={running || studying}>
+            <label
+              >QAOA layers<input
+                type="number"
+                min="1"
+                max="8"
+                required
+                bind:value={layers}
+              /></label
+            >
+            <label
+              >Final shots<input
+                type="number"
+                min="1"
+                max="100000"
+                required
+                bind:value={shots}
+              /></label
+            >
+            <label
+              >Seed<input
+                type="number"
+                min="0"
+                max="4294967295"
+                required
+                bind:value={seed}
+              /></label
+            >
+            <label
+              >Optimizer evaluation budget<input
+                type="number"
+                min="1"
+                max="1000"
+                required
+                bind:value={evaluations}
+              /></label
+            >
+            <label
+              >Timeout per solver (seconds)<input
+                type="number"
+                min="1"
+                max="60"
+                required
+                bind:value={timeout}
+              /></label
+            >
+          </fieldset>
+        </details>
+        <div class="actions">
+          <button class="button primary" disabled={running || studying || !request}
+            >{running ? 'Running comparison…' : 'Run local comparison'}</button
+          >
+          {#if running}<button type="button" class="button" onclick={() => controller?.abort()}
+              >Stop waiting</button
+            >{/if}
+          {#if result}<button
+              type="button"
+              class="button"
+              onclick={() =>
+                downloadJson(
+                  { source: 'live_local_comparison', request, result },
+                  `q-atlas-${experiment}-comparison.json`
+                )}>Download result JSON</button
+            >{/if}
+        </div>
+      </form>
+      {#if !request}<p role="alert">Enter valid settings before running.</p>{/if}
+      {#if error}<p role="alert">{error}</p>{/if}
+      {#if running}<p role="status">
+          Solvers run sequentially. Stopping browser waiting leaves backend worker deadlines in
+          force.
+        </p>{/if}
+      {#if result}<ComparisonResult {result} />{/if}
+    </div>
+  </Panel>
+</ExecutionChoice>
+<StudyPanel {experiment} {request} disabled={running} bind:running={studying} />
 
 <style>
   .workspace-body {

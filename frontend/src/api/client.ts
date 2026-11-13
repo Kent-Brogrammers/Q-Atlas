@@ -1,6 +1,7 @@
 import type {
   HardwareRequest,
   HardwareJob,
+  HardwareReadiness,
   CompilerHardwareRequest,
   CompilerHardwareJob,
   CompilerHardwareDevices,
@@ -120,6 +121,7 @@ export function createApiClient({
     return request<BenchmarkResults[E]>(endpoint.slice('/api'.length), body, signal, timeout);
   }
   return {
+    hardwareReadiness: () => request<HardwareReadiness>('/hardware/readiness'),
     hardwareDevices: () => request<CompilerHardwareDevices>('/hardware/devices'),
     hardwareDemo: () => request<HardwareRequest>('/hardware/demo'),
     hardwareJobs: (experiment?: string) =>

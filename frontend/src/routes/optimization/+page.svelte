@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+  import { largerWorkload } from '#lib/presentation/workloads.ts';
   import { graphs } from '#lib/data/fixtures.ts';
   import Panel from '#lib/components/Panel.svelte';
   import GraphView from '#lib/components/GraphView.svelte';
@@ -6,10 +8,14 @@
   import { cycleProblem } from '#lib/studies/model.ts';
   import type { OptimizationRequest } from '../../types/index.ts';
   let selected = $state('prism');
+  onMount(() => {
+    if (new URL(window.location.href).searchParams.get('example') === 'large') selected = 'large';
+  });
   let size = $state(6);
   let custom = $state(JSON.stringify(cycleProblem(4), null, 2));
   let graph = $derived(graphs.find((item) => item.id === selected));
   let input = $derived.by(() => {
+    if (selected === 'large') return { problem: largerWorkload(), error: '' };
     if (selected === 'generated') return { problem: cycleProblem(size), error: '' };
     if (selected !== 'custom')
       return { problem: { kind: 'qubo' as const, qubo: graph!.qubo }, error: '' };
@@ -41,11 +47,17 @@
       >Graph<select bind:value={selected}
         >{#each graphs as item}<option value={item.id}
             >{item.name} · {item.nodes.length} vertices</option
-          >{/each}<option value="generated">Cycle graph · choose size</option><option value="custom"
+          >{/each}<option value="large">Larger workload · 16 choices, 65,536 assignments</option
+        ><option value="generated">Cycle graph · choose size</option><option value="custom"
           >Custom weighted graph / QUBO JSON</option
         ></select
       ></label
     >
+    {#if selected === 'large'}<p>
+        <strong>Real larger benchmark:</strong> 16 binary choices, 120 weighted edges, 65,536 possible
+        assignments. Exact solving and quantum simulation can take seconds or reach their timeout. This
+        preset is for local execution; physical runs support up to eight choices.
+      </p>{/if}
     {#if selected === 'generated'}<label
         >Vertices<select bind:value={size}
           >{#each Array.from({ length: 14 }, (_, i) => i + 3) as n}<option value={n}>{n}</option

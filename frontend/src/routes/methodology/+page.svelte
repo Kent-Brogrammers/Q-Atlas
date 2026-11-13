@@ -2,6 +2,8 @@
   import Icon from '#lib/components/Icon.svelte';
   import qpuEvidence from '../../../../docs/evidence/ibm-qpu-2026-11-12/five-experiments.json?url';
   import qpuReport from '../../../../docs/evidence/ibm-qpu-2026-11-12/RESULTS.md?url';
+  import finalReport from '../../../../docs/FINAL_SCIENCE_REPORT.md?url';
+  import finalFigure from '../../../../docs/evidence/ibm-qpu-2026-11-12/final-results.png?url';
   import scienceAnswers from '../../../../docs/SCIENCE_CHALLENGE_ANSWERS.md?url';
   import evidenceFigure from '../../../../docs/evidence/fall-fest-2026-11-12/neutrino-resonance.png?url';
   import evidenceRaw from '../../../../docs/evidence/fall-fest-2026-11-12/neutrino-resonance.json?url';
@@ -13,11 +15,37 @@
 <header class="page-heading">
   <div>
     <h1>Methodology</h1>
-    <p>The scientific scope and validation plan for the Neutrino Lab.</p>
+    <p>Scientific questions, models, measured results, resources and reproducible evidence.</p>
   </div>
 </header>
 
 <article class="methodology">
+  <section>
+    <h2>Final science report and presentation material</h2>
+    <p>
+      The final report follows the challenge's problem, model, mapping, method, baseline, results,
+      scaling and impact questions. It distinguishes actual physical measurements from ideal
+      simulation and theoretical resource claims.
+    </p>
+    <p>
+      <a class="text-link" href={finalReport} download="Q-Atlas-final-science-report.md"
+        >Download final science report</a
+      >
+      · <a href="/q-atlas-presentation.zip" download>Download presentation pack</a>
+    </p>
+    <figure>
+      <a href={finalFigure} download="Q-Atlas-final-results.png"
+        ><img
+          src={finalFigure}
+          alt="Final Q-Atlas physical results for search, neutrinos, materials and optimization, with conditional shot uncertainty"
+        /></a
+      >
+      <figcaption>
+        Recorded physical QPU data. Intervals describe conditional shot uncertainty and exclude
+        device bias, drift and model error. Click the figure to download it.
+      </figcaption>
+    </figure>
+  </section>
   <section>
     <h2>All five experiments executed on IBM hardware</h2>
     <p>

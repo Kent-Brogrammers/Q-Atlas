@@ -1,0 +1,39 @@
+{
+  "source_sha256": "aa85684301f1251a091c455f40b5bf3e370de92a515aafe2744a36bcc0a22cad",
+  "job_id": "dbr0sthabdes73fp2v60",
+  "search_successes": 109,
+  "search_shots": 128,
+  "search_wilson_95": [
+    0.7797727087736895,
+    0.9028653688464999
+  ],
+  "neutrino_coordinates": [
+    0.0,
+    0.9210609940028851,
+    1.8421219880057702
+  ],
+  "neutrino_successes": [
+    15,
+    126,
+    15
+  ],
+  "neutrino_wilson_95": [
+    [
+      0.07231682349355734,
+      0.18436615865334754
+    ],
+    [
+      0.9448190233201829,
+      0.9957045502898559
+    ],
+    [
+      0.07231682349355734,
+      0.18436615865334754
+    ]
+  ],
+  "materials_magnetization": 0.46875,
+  "materials_magnetization_se": 0.05966761196262873,
+  "materials_energy": -1.0218749999999999,
+  "materials_energy_se": 0.1050677479929359,
+  "uncertainty_scope": "Wilson 95% binomial intervals for probabilities. Materials bars use approximate 95% mean intervals from joint-shot sample variances and independent Z/X batches. These conditional sampling intervals do not include device bias, drift, Trotter or model uncertainty. One device job is not an independent repetition study."
+}

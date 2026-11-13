@@ -119,126 +119,129 @@
   }
 </script>
 
-<Panel title="Parameter study" subtitle="Sequential local runs · complete raw evidence retained">
-  <div class="study-body">
-    <p>
-      Choose a finite grid and distinct seeds. Other controls follow the settings above.
-      {#if experiment === 'optimization'}A size study uses unit-weight cycle graphs at every size.{/if}
-      {#if experiment === 'search'}A size study uses one explicit all-zero target and automatic
-        iterations at every size.{/if}
-      {#if experiment === 'materials'}Each request measures only the configured terminal time.{/if}
-    </p>
-    <fieldset disabled={running || disabled}>
-      <div class="study-settings">
-        <label
-          >Vary<select bind:value={axis} onchange={chooseAxis}
-            >{#each axes[experiment] as item}<option value={item.id}>{item.label}</option
-              >{/each}</select
-          ></label
-        >
-        <label>Values, comma separated<input bind:value={valueText} /></label>
-        <label>Seeds, comma separated<input bind:value={seedText} /></label>
-        <label
-          >Suite budget (seconds)<input
-            type="number"
-            min="1"
-            max="120"
-            bind:value={budget}
-          /></label
-        >
-      </div>
-    </fieldset>
-    <p class="note">
-      {preview.plan
-        ? `${preview.plan.points.length} requests · ${preview.plan.totalShots.toLocaleString()} final measurement shots · up to ${budget}s`
-        : preview.error}
-    </p>
-    <div class="actions">
-      <button class="button primary" disabled={running || disabled || !preview.plan} onclick={run}
-        >{running ? 'Measuring study…' : 'Run selected study'}</button
-      >
-      {#if running}<button class="button" onclick={() => controller?.abort()}>Stop study</button
-        >{/if}
-      {#if report}<button
-          class="button"
-          onclick={() =>
-            downloadJson(
-              { ...JSON.parse(JSON.stringify(report)), summaries: summary },
-              `q-atlas-${experiment}-study.json`
-            )}>Download study JSON</button
-        >{/if}
-    </div>
-    <p class="note" role="status">{progress}</p>
-    {#if error}<p role="alert">{error}</p>{/if}
-    {#if report}
-      <p role="status">
-        <strong
-          >{report.status === 'completed'
-            ? 'Live Aer study complete.'
-            : 'Incomplete study.'}</strong
-        >
-        {report.records.filter((r) => r.status === 'completed').length} completed requests out of {report
-          .plan.points.length} planned.
+<details id="parameter-study">
+  <summary>Advanced: compare several settings</summary>
+  <Panel title="Parameter study" subtitle="Sequential local runs · complete raw evidence retained">
+    <div class="study-body">
+      <p>
+        Choose a finite grid and distinct seeds. Other controls follow the settings above.
+        {#if experiment === 'optimization'}A size study uses unit-weight cycle graphs at every size.{/if}
+        {#if experiment === 'search'}A size study uses one explicit all-zero target and automatic
+          iterations at every size.{/if}
+        {#if experiment === 'materials'}Each request measures only the configured terminal time.{/if}
       </p>
-      {#each report.records.filter((r) => r.status !== 'completed') as record}<p role="alert">
-          Value {record.value}, seed {record.seed}: {record.error}
-        </p>{/each}
-      {#if summary.some((row) => row.count > 0)}
-        <StudyChart
-          rows={summary}
-          metrics={['Classical reference (ms)', 'Circuit path (ms)']}
-          label="Measured runtime by parameter"
-        />
-        {#if experiment === 'search' && report.plan.axis === 'size'}<StudyChart
-            rows={summary}
-            metrics={[
-              'Oracle queries per attempt',
-              'Classical expected queries',
-              'Classical observed queries'
-            ]}
-            label="Oracle query counts by search size"
-          />{/if}
-        <label
-          >Quality / resource metric<select bind:value={selectedMetric}
-            ><option value="">Choose a metric</option
-            >{#each keys.filter((k) => !k.endsWith('(ms)')) as name}<option value={name}
-                >{name}</option
-              >{/each}</select
-          ></label
-        >
-        {#if selectedMetric}<StudyChart
-            rows={summary}
-            metrics={[selectedMetric]}
-            label={selectedMetric}
-          />{/if}
-        <div class="table-scroll">
-          <table>
-            <caption>Completed-run statistics · observed ranges, not confidence intervals</caption
-            ><thead
-              ><tr
-                ><th>Value</th><th>Runs</th><th>Metric</th><th>Samples</th><th>Median</th><th
-                  >Minimum</th
-                ><th>Maximum</th></tr
-              ></thead
-            ><tbody>
-              {#each summary as row}{#each Object.entries(row.metrics) as [name, m]}<tr
-                    ><td>{row.value}</td><td>{row.count}</td><td>{name}</td><td>{m.count}</td><td
-                      >{format(m.median)}</td
-                    ><td>{format(m.min)}</td><td>{format(m.max)}</td></tr
-                  >{/each}{/each}
-            </tbody>
-          </table>
+      <fieldset disabled={running || disabled}>
+        <div class="study-settings">
+          <label
+            >Vary<select bind:value={axis} onchange={chooseAxis}
+              >{#each axes[experiment] as item}<option value={item.id}>{item.label}</option
+                >{/each}</select
+            ></label
+          >
+          <label>Values, comma separated<input bind:value={valueText} /></label>
+          <label>Seeds, comma separated<input bind:value={seedText} /></label>
+          <label
+            >Suite budget (seconds)<input
+              type="number"
+              min="1"
+              max="120"
+              bind:value={budget}
+            /></label
+          >
         </div>
+      </fieldset>
+      <p class="note">
+        {preview.plan
+          ? `${preview.plan.points.length} requests · ${preview.plan.totalShots.toLocaleString()} final measurement shots · up to ${budget}s`
+          : preview.error}
+      </p>
+      <div class="actions">
+        <button class="button primary" disabled={running || disabled || !preview.plan} onclick={run}
+          >{running ? 'Measuring study…' : 'Run selected study'}</button
+        >
+        {#if running}<button class="button" onclick={() => controller?.abort()}>Stop study</button
+          >{/if}
+        {#if report}<button
+            class="button"
+            onclick={() =>
+              downloadJson(
+                { ...JSON.parse(JSON.stringify(report)), summaries: summary },
+                `q-atlas-${experiment}-study.json`
+              )}>Download study JSON</button
+          >{/if}
+      </div>
+      <p class="note" role="status">{progress}</p>
+      {#if error}<p role="alert">{error}</p>{/if}
+      {#if report}
+        <p role="status">
+          <strong
+            >{report.status === 'completed'
+              ? 'Live Aer study complete.'
+              : 'Incomplete study.'}</strong
+          >
+          {report.records.filter((r) => r.status === 'completed').length} completed requests out of {report
+            .plan.points.length} planned.
+        </p>
+        {#each report.records.filter((r) => r.status !== 'completed') as record}<p role="alert">
+            Value {record.value}, seed {record.seed}: {record.error}
+          </p>{/each}
+        {#if summary.some((row) => row.count > 0)}
+          <StudyChart
+            rows={summary}
+            metrics={['Classical reference (ms)', 'Circuit path (ms)']}
+            label="Measured runtime by parameter"
+          />
+          {#if experiment === 'search' && report.plan.axis === 'size'}<StudyChart
+              rows={summary}
+              metrics={[
+                'Oracle queries per attempt',
+                'Classical expected queries',
+                'Classical observed queries'
+              ]}
+              label="Oracle query counts by search size"
+            />{/if}
+          <label
+            >Quality / resource metric<select bind:value={selectedMetric}
+              ><option value="">Choose a metric</option
+              >{#each keys.filter((k) => !k.endsWith('(ms)')) as name}<option value={name}
+                  >{name}</option
+                >{/each}</select
+            ></label
+          >
+          {#if selectedMetric}<StudyChart
+              rows={summary}
+              metrics={[selectedMetric]}
+              label={selectedMetric}
+            />{/if}
+          <div class="table-scroll">
+            <table>
+              <caption>Completed-run statistics · observed ranges, not confidence intervals</caption
+              ><thead
+                ><tr
+                  ><th>Value</th><th>Runs</th><th>Metric</th><th>Samples</th><th>Median</th><th
+                    >Minimum</th
+                  ><th>Maximum</th></tr
+                ></thead
+              ><tbody>
+                {#each summary as row}{#each Object.entries(row.metrics) as [name, m]}<tr
+                      ><td>{row.value}</td><td>{row.count}</td><td>{name}</td><td>{m.count}</td><td
+                        >{format(m.median)}</td
+                      ><td>{format(m.min)}</td><td>{format(m.max)}</td></tr
+                    >{/each}{/each}
+              </tbody>
+            </table>
+          </div>
+        {/if}
       {/if}
-    {/if}
-    <p class="note">
-      Ranges describe the selected seeds. Simulation and reference paths can perform different
-      workloads; these timings do not establish quantum speedup. Stop prevents further requests and
-      cancels browser waiting; backend workers retain their own time limits. Failed points stay in
-      exports and are excluded from statistics.
-    </p>
-  </div>
-</Panel>
+      <p class="note">
+        Ranges describe the selected seeds. Simulation and reference paths can perform different
+        workloads; these timings do not establish quantum speedup. Stop prevents further requests
+        and cancels browser waiting; backend workers retain their own time limits. Failed points
+        stay in exports and are excluded from statistics.
+      </p>
+    </div>
+  </Panel>
+</details>
 
 <style>
   .study-body {

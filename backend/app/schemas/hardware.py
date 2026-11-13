@@ -90,6 +90,15 @@ class HardwareTimings(Contract):
     provider_execution_ms: float | None = None
 
 
+class HardwareReadiness(Contract):
+    configured: bool
+    sdk_installed: bool
+    reserved_seconds: int | None = None
+    budget_seconds: int | None = None
+    remaining_reservation_seconds: int | None = None
+    message: str
+
+
 class HardwareJob(Contract):
     request_id: str
     task: HardwareTask

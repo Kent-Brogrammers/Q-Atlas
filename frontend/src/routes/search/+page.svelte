@@ -2,7 +2,7 @@
   import { onDestroy } from 'svelte';
   import Panel from '#lib/components/Panel.svelte';
   import StudyPanel from '#lib/components/StudyPanel.svelte';
-  import HardwarePanel from '#lib/components/HardwarePanel.svelte';
+  import ExecutionChoice from '#lib/components/ExecutionChoice.svelte';
   import SearchProbabilityChart from '#lib/search/SearchProbabilityChart.svelte';
   import {
     buildRequest,
@@ -173,383 +173,390 @@
     </p>
   </div>{/if}
 
-<HardwarePanel experiment="search" request={studyRequest} />
-
-<div class="search-layout">
-  <aside aria-label="Search configuration">
-    <Panel title="Configure search" subtitle="Bitstrings put qubit 0 on the left">
-      <form
-        novalidate
-        onsubmit={(event) => {
-          event.preventDefault();
-          void run('single');
-        }}
-        oninput={clearResults}
-      >
-        <fieldset disabled={loading || studying}>
-          <label for="qubits">Qubits</label><input
-            id="qubits"
-            type="number"
-            min="1"
-            max="6"
-            step="1"
-            required
-            bind:value={settings.numQubits}
-          />
-          <label for="targets">Marked bitstrings</label><textarea
-            id="targets"
-            rows="2"
-            required
-            spellcheck="false"
-            bind:value={settings.targets}
-            aria-describedby="targets-help"
-          ></textarea>
-          <p id="targets-help" class="hint">
-            Separate unique targets with commas or spaces. Preserve leading zeros, for example 001,
-            110.
-          </p>
-          <label class="check"
-            ><input type="checkbox" bind:checked={settings.automatic} /> Suggest iterations for a single
-            run</label
-          >
-          <label for="iterations">Single-run iterations</label><input
-            id="iterations"
-            type="number"
-            min="0"
-            max="32"
-            step="1"
-            disabled={settings.automatic}
-            required={!settings.automatic}
-            bind:value={settings.iterations}
-          />
-          <label for="shots">Shots per iteration point</label><input
-            id="shots"
-            type="number"
-            min="1"
-            max="10000"
-            step="1"
-            required
-            bind:value={settings.shots}
-          />
-          <label for="seed">Seed</label><input
-            id="seed"
-            type="number"
-            min="0"
-            max={2 ** 32 - 1}
-            step="1"
-            required
-            bind:value={settings.seed}
-          />
-          <label for="timeout">Timeout per point (seconds)</label><input
-            id="timeout"
-            type="number"
-            min="0.001"
-            max="60"
-            step="any"
-            required
-            bind:value={settings.timeout}
-          />
-          <button class="button primary" type="submit">Run comparison</button>
-          <div class="curve-controls">
-            <label for="last-iteration">Curve: iterations 0 through</label><input
-              id="last-iteration"
-              type="number"
-              min="0"
-              max="12"
-              step="1"
-              required
-              bind:value={maxIteration}
-            /><button class="button" type="button" onclick={() => void run('curve')}
-              >Measure probability curve</button
-            >
-          </div>
-          <p class="hint">
-            A curve runs up to 13 independent requests in sequence, using the same shots and seed.
-            More iterations can reduce success.
-          </p>
-          <div class="curve-controls">
-            <label for="repetitions">Repeated trials (same iteration setting)</label>
-            <input
-              id="repetitions"
-              type="number"
-              min="2"
-              max="5"
-              step="1"
-              bind:value={repetitions}
-            />
-            <button class="button" type="button" onclick={() => void run('trials')}
-              >Run repeated trials</button
-            >
+<ExecutionChoice experiment="search" request={studyRequest}>
+  <div class="search-layout">
+    <aside aria-label="Search configuration">
+      <Panel title="Configure search" subtitle="Bitstrings put qubit 0 on the left">
+        <form
+          novalidate
+          onsubmit={(event) => {
+            event.preventDefault();
+            void run('single');
+          }}
+          oninput={clearResults}
+        >
+          <fieldset disabled={loading || studying}>
+            <details>
+              <summary>Change search settings</summary>
+              <label for="qubits">Qubits</label><input
+                id="qubits"
+                type="number"
+                min="1"
+                max="6"
+                step="1"
+                required
+                bind:value={settings.numQubits}
+              />
+              <label for="targets">Marked bitstrings</label><textarea
+                id="targets"
+                rows="2"
+                required
+                spellcheck="false"
+                bind:value={settings.targets}
+                aria-describedby="targets-help"
+              ></textarea>
+              <p id="targets-help" class="hint">
+                Separate unique targets with commas or spaces. Preserve leading zeros, for example
+                001, 110.
+              </p>
+              <label class="check"
+                ><input type="checkbox" bind:checked={settings.automatic} /> Suggest iterations for a
+                single run</label
+              >
+              <label for="iterations">Single-run iterations</label><input
+                id="iterations"
+                type="number"
+                min="0"
+                max="32"
+                step="1"
+                disabled={settings.automatic}
+                required={!settings.automatic}
+                bind:value={settings.iterations}
+              />
+              <label for="shots">Shots per iteration point</label><input
+                id="shots"
+                type="number"
+                min="1"
+                max="10000"
+                step="1"
+                required
+                bind:value={settings.shots}
+              />
+              <label for="seed">Seed</label><input
+                id="seed"
+                type="number"
+                min="0"
+                max={2 ** 32 - 1}
+                step="1"
+                required
+                bind:value={settings.seed}
+              />
+              <label for="timeout">Timeout per point (seconds)</label><input
+                id="timeout"
+                type="number"
+                min="0.001"
+                max="60"
+                step="any"
+                required
+                bind:value={settings.timeout}
+              />
+            </details>
+            <button class="button primary" type="submit">Run comparison</button>
+            <details>
+              <summary>Advanced: curves &amp; repeated trials</summary>
+              <div class="curve-controls">
+                <label for="last-iteration">Curve: iterations 0 through</label><input
+                  id="last-iteration"
+                  type="number"
+                  min="0"
+                  max="12"
+                  step="1"
+                  required
+                  bind:value={maxIteration}
+                /><button class="button" type="button" onclick={() => void run('curve')}
+                  >Measure probability curve</button
+                >
+              </div>
+              <p class="hint">
+                A curve runs up to 13 independent requests in sequence, using the same shots and
+                seed. More iterations can reduce success.
+              </p>
+              <div class="curve-controls">
+                <label for="repetitions">Repeated trials (same iteration setting)</label>
+                <input
+                  id="repetitions"
+                  type="number"
+                  min="2"
+                  max="5"
+                  step="1"
+                  bind:value={repetitions}
+                />
+                <button class="button" type="button" onclick={() => void run('trials')}
+                  >Run repeated trials</button
+                >
+                <p class="hint">
+                  Two to five runs at the single-run iteration setting. Seeds increment from your
+                  chosen seed; every raw run is retained.
+                </p>
+              </div>
+            </details>
+          </fieldset>
+        </form>
+        {#if loading}<div class="running">
+            <button class="button small" onclick={() => controller?.abort()}>Stop requests</button>
             <p class="hint">
-              Two to five runs at the single-run iteration setting. Seeds increment from your chosen
-              seed; every raw run is retained.
+              The current backend worker may finish or reach its timeout after you stop.
             </p>
-          </div>
-        </fieldset>
-      </form>
-      {#if loading}<div class="running">
-          <button class="button small" onclick={() => controller?.abort()}>Stop requests</button>
+          </div>{/if}
+        <div class="recorded-controls">
+          <strong>Previously measured demo</strong>
           <p class="hint">
-            The current backend worker may finish or reach its timeout after you stop.
+            Explicit offline fallback with recorded settings and timings. These buttons make no live
+            requests.
+          </p>
+          <button
+            class="button small"
+            disabled={loading || studying}
+            onclick={() => loadRecording('curve')}>Load recorded curve</button
+          >
+          <button
+            class="button small"
+            disabled={loading || studying}
+            onclick={() => loadRecording('trials')}>Load recorded trials</button
+          >
+        </div>
+      </Panel>
+    </aside>
+
+    <div class="results" aria-busy={loading}>
+      {#if recording}<div class="recorded-banner" role="status">
+          <strong>Previously measured demo — not a live run</strong>
+          <p>
+            Recorded {recording.recorded_at_utc}. Source revision {recording.source_revision.slice(
+              0,
+              7
+            )}{recording.working_tree_dirty ? ' (working tree had pending changes)' : ''}. Timings
+            belong to the recorded simulator environment. Changing inputs clears this recording.
           </p>
         </div>{/if}
-      <div class="recorded-controls">
-        <strong>Previously measured demo</strong>
-        <p class="hint">
-          Explicit offline fallback with recorded settings and timings. These buttons make no live
-          requests.
-        </p>
-        <button
-          class="button small"
-          disabled={loading || studying}
-          onclick={() => loadRecording('curve')}>Load recorded curve</button
+      <p class="progress" role="status" aria-live="polite">
+        {loading ? progress || 'Running the local search benchmark…' : progress}
+      </p>
+      <Panel
+        title="Success probability"
+        subtitle="Measured outcomes and ideal theory at each iteration"
+      >
+        <SearchProbabilityChart
+          {points}
+          measurementLabel={summary ? 'Mean success across trials' : 'Measured Aer shots'}
+        />
+      </Panel>
+      {#if summary}
+        <Panel
+          title="Repeated-run summary"
+          subtitle={`${summary.trialCount} seeded trials at iteration ${summary.iteration}`}
         >
-        <button
-          class="button small"
-          disabled={loading || studying}
-          onclick={() => loadRecording('trials')}>Load recorded trials</button
+          <div class="metrics trial-metrics">
+            <div>
+              <span>Mean success</span><strong>{percentage(summary.meanSuccessProbability)}</strong>
+            </div>
+            <div>
+              <span>Observed min / max</span><strong
+                >{percentage(summary.minimumSuccessProbability)} / {percentage(
+                  summary.maximumSuccessProbability
+                )}</strong
+              >
+            </div>
+            <div>
+              <span>Sample standard deviation</span><strong
+                >{(summary.sampleStandardDeviation * 100).toFixed(2)} pp</strong
+              >
+            </div>
+            <div><span>Total shots</span><strong>{summary.totalShots}</strong></div>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <caption
+                >Median solver time across all recorded trials. No warm-up run is excluded.</caption
+              >
+              <thead
+                ><tr><th scope="col">Classical search</th><th scope="col">Grover shot batch</th></tr
+                ></thead
+              >
+              <tbody
+                ><tr
+                  ><td>{milliseconds(summary.medianClassicalMs)}</td><td
+                    >{milliseconds(summary.medianQuantumMs)}</td
+                  ></tr
+                ></tbody
+              >
+            </table>
+          </div>
+          <p class="explanation">
+            Seeds: {summary.seeds.join(', ')}. {summary.shotsPerTrial} shots per trial. The range and
+            sample standard deviation describe variation across these runs; pp means percentage points.
+            Neither is a confidence interval. Repeated simulator runs do not establish quantum speedup.
+          </p>
+        </Panel>
+      {/if}
+      {#if selected}
+        <Panel
+          title={`${summary ? `Trial ${selectedIndex + 1} · ` : ''}Iteration ${selected.metadata.parameters.iterations}`}
+          subtitle={recording
+            ? 'Previously measured backend results · not a live run'
+            : 'Real backend results · one simulator run per point'}
         >
-      </div>
-    </Panel>
-  </aside>
-
-  <div class="results" aria-busy={loading}>
-    {#if recording}<div class="recorded-banner" role="status">
-        <strong>Previously measured demo — not a live run</strong>
-        <p>
-          Recorded {recording.recorded_at_utc}. Source revision {recording.source_revision.slice(
-            0,
-            7
-          )}{recording.working_tree_dirty ? ' (working tree had pending changes)' : ''}. Timings
-          belong to the recorded simulator environment. Changing inputs clears this recording.
-        </p>
-      </div>{/if}
-    <p class="progress" role="status" aria-live="polite">
-      {loading ? progress || 'Running the local search benchmark…' : progress}
-    </p>
-    <Panel
-      title="Success probability"
-      subtitle="Measured outcomes and ideal theory at each iteration"
-    >
-      <SearchProbabilityChart
-        {points}
-        measurementLabel={summary ? 'Mean success across trials' : 'Measured Aer shots'}
-      />
-    </Panel>
-    {#if summary}
-      <Panel
-        title="Repeated-run summary"
-        subtitle={`${summary.trialCount} seeded trials at iteration ${summary.iteration}`}
-      >
-        <div class="metrics trial-metrics">
-          <div>
-            <span>Mean success</span><strong>{percentage(summary.meanSuccessProbability)}</strong>
+          <div class="metrics">
+            <div>
+              <span>Measured success</span><strong
+                >{percentage(selected.metrics.success_probability)}</strong
+              >
+            </div>
+            <div>
+              <span>Ideal success</span><strong
+                >{percentage(selected.metrics.theoretical_success_probability)}</strong
+              >
+            </div>
+            <div>
+              <span>Oracle calls / shot</span><strong
+                >{selected.metrics.quantum_oracle_queries ?? 'Not available'}</strong
+              >
+            </div>
+            <div>
+              <span>Transpiled depth</span><strong
+                >{selected.metrics.circuit_depth ?? 'Not available'}</strong
+              >
+            </div>
           </div>
-          <div>
-            <span>Observed min / max</span><strong
-              >{percentage(summary.minimumSuccessProbability)} / {percentage(
-                summary.maximumSuccessProbability
-              )}</strong
-            >
+          <div class="table-scroll">
+            <table>
+              <caption>Query counts and measured runtime describe different costs.</caption>
+              <thead
+                ><tr
+                  ><th scope="col">Comparison</th><th scope="col">Classical search</th><th
+                    scope="col">Grover simulation</th
+                  ></tr
+                ></thead
+              >
+              <tbody>
+                <tr
+                  ><th scope="row">Returned bitstring</th><td class="mono"
+                    >{selected.classical?.best_bitstring ?? 'Not available'}</td
+                  ><td class="mono"
+                    >{selected.quantum?.best_bitstring ?? 'Not available'} (most frequent)</td
+                  ></tr
+                >
+                <tr
+                  ><th scope="row">Expected / worst queries</th><td
+                    >{selected.metrics.classical_expected_queries ?? 'Not available'} / {selected
+                      .metrics.classical_worst_case_queries ?? 'Not available'}</td
+                  ><td
+                    >{selected.metrics.quantum_oracle_queries ?? 'Not available'} per shot, with success
+                    shown above</td
+                  ></tr
+                >
+                <tr
+                  ><th scope="row">Observed classical checks</th><td
+                    >{selected.metrics.classical_observed_queries ?? 'Not available'}</td
+                  ><td>Not applicable</td></tr
+                >
+                <tr
+                  ><th scope="row">Successful shots / total shots</th><td>Not applicable</td><td
+                    >{selected.metrics.successful_shots ?? 'Not available'} / {selected.metrics
+                      .shots ?? 'Not available'}</td
+                  ></tr
+                >
+                <tr
+                  ><th scope="row">Oracle calls across shot batch</th><td>Not applicable</td><td
+                    >{selected.metrics.quantum_total_oracle_queries ?? 'Not available'}</td
+                  ></tr
+                >
+                <tr
+                  ><th scope="row">Solver wall time</th><td
+                    >{milliseconds(selected.classical?.elapsed_ms)}</td
+                  ><td>{milliseconds(selected.quantum?.elapsed_ms)}</td></tr
+                >
+                <tr
+                  ><th scope="row">Transpilation</th><td>Not applicable</td><td
+                    >{milliseconds(selected.quantum?.timing.transpilation_ms)}</td
+                  ></tr
+                >
+                <tr
+                  ><th scope="row">Sampling</th><td>Not applicable</td><td
+                    >{milliseconds(selected.quantum?.timing.sampling_ms)}</td
+                  ></tr
+                >
+              </tbody>
+            </table>
           </div>
-          <div>
-            <span>Sample standard deviation</span><strong
-              >{(summary.sampleStandardDeviation * 100).toFixed(2)} pp</strong
-            >
+          <p class="explanation">
+            The classical run stops at its first match. Quantum wall time includes the whole shot
+            batch; the query count is per circuit execution. The most frequent quantum output may be
+            unmarked. Total quantum oracle calls are iteration count times shots, not primitive
+            gates or measured simulator operations. These timings are not matched-success speedup
+            measurements.
+          </p>
+        </Panel>
+        <Panel
+          title={summary ? 'Individual trial measurements' : 'Iteration measurements'}
+          subtitle={summary
+            ? 'Select a trial to inspect its raw comparison'
+            : 'Select an iteration to inspect its comparison'}
+        >
+          <div class="table-scroll">
+            <table>
+              <caption
+                >{results.length} measured {summary
+                  ? 'trials'
+                  : `point${results.length === 1 ? '' : 's'}`}; no illustrative results.</caption
+              >
+              <thead
+                ><tr
+                  ><th scope="col">{summary ? 'Trial / iteration' : 'Iteration'}</th><th scope="col"
+                    >Seed</th
+                  ><th scope="col">Measured</th><th scope="col">Theory</th><th scope="col">Shots</th
+                  ><th scope="col">Depth</th></tr
+                ></thead
+              >
+              <tbody
+                >{#each results as result, index}<tr class:selected={selectedIndex === index}
+                    ><th scope="row"
+                      ><button
+                        class="point-button"
+                        aria-pressed={selectedIndex === index}
+                        onclick={() => (selectedIndex = index)}
+                        >{summary ? `Trial ${index + 1} / ` : 'Iteration '}{result.metadata
+                          .parameters.iterations}</button
+                      ></th
+                    ><td>{result.metadata.seed ?? 'Not available'}</td><td
+                      >{percentage(result.metrics.success_probability)}</td
+                    ><td>{percentage(result.metrics.theoretical_success_probability)}</td><td
+                      >{result.metrics.shots ?? 'Not available'}</td
+                    ><td>{result.metrics.circuit_depth ?? 'Not available'}</td></tr
+                  >{/each}</tbody
+              >
+            </table>
           </div>
-          <div><span>Total shots</span><strong>{summary.totalShots}</strong></div>
-        </div>
-        <div class="table-scroll">
-          <table>
-            <caption
-              >Median solver time across all recorded trials. No warm-up run is excluded.</caption
-            >
-            <thead
-              ><tr><th scope="col">Classical search</th><th scope="col">Grover shot batch</th></tr
-              ></thead
-            >
-            <tbody
-              ><tr
-                ><td>{milliseconds(summary.medianClassicalMs)}</td><td
-                  >{milliseconds(summary.medianQuantumMs)}</td
-                ></tr
-              ></tbody
-            >
-          </table>
-        </div>
-        <p class="explanation">
-          Seeds: {summary.seeds.join(', ')}. {summary.shotsPerTrial} shots per trial. The range and sample
-          standard deviation describe variation across these runs; pp means percentage points. Neither
-          is a confidence interval. Repeated simulator runs do not establish quantum speedup.
-        </p>
-      </Panel>
-    {/if}
-    {#if selected}
-      <Panel
-        title={`${summary ? `Trial ${selectedIndex + 1} · ` : ''}Iteration ${selected.metadata.parameters.iterations}`}
-        subtitle={recording
-          ? 'Previously measured backend results · not a live run'
-          : 'Real backend results · one simulator run per point'}
-      >
-        <div class="metrics">
-          <div>
-            <span>Measured success</span><strong
-              >{percentage(selected.metrics.success_probability)}</strong
-            >
+          <div class="export">
+            <button class="button small" onclick={download}>Download measured JSON</button>
           </div>
-          <div>
-            <span>Ideal success</span><strong
-              >{percentage(selected.metrics.theoretical_success_probability)}</strong
-            >
-          </div>
-          <div>
-            <span>Oracle calls / shot</span><strong
-              >{selected.metrics.quantum_oracle_queries ?? 'Not available'}</strong
-            >
-          </div>
-          <div>
-            <span>Transpiled depth</span><strong
-              >{selected.metrics.circuit_depth ?? 'Not available'}</strong
-            >
-          </div>
-        </div>
-        <div class="table-scroll">
-          <table>
-            <caption>Query counts and measured runtime describe different costs.</caption>
-            <thead
-              ><tr
-                ><th scope="col">Comparison</th><th scope="col">Classical search</th><th scope="col"
-                  >Grover simulation</th
-                ></tr
-              ></thead
-            >
-            <tbody>
-              <tr
-                ><th scope="row">Returned bitstring</th><td class="mono"
-                  >{selected.classical?.best_bitstring ?? 'Not available'}</td
-                ><td class="mono"
-                  >{selected.quantum?.best_bitstring ?? 'Not available'} (most frequent)</td
-                ></tr
-              >
-              <tr
-                ><th scope="row">Expected / worst queries</th><td
-                  >{selected.metrics.classical_expected_queries ?? 'Not available'} / {selected
-                    .metrics.classical_worst_case_queries ?? 'Not available'}</td
-                ><td
-                  >{selected.metrics.quantum_oracle_queries ?? 'Not available'} per shot, with success
-                  shown above</td
-                ></tr
-              >
-              <tr
-                ><th scope="row">Observed classical checks</th><td
-                  >{selected.metrics.classical_observed_queries ?? 'Not available'}</td
-                ><td>Not applicable</td></tr
-              >
-              <tr
-                ><th scope="row">Successful shots / total shots</th><td>Not applicable</td><td
-                  >{selected.metrics.successful_shots ?? 'Not available'} / {selected.metrics
-                    .shots ?? 'Not available'}</td
-                ></tr
-              >
-              <tr
-                ><th scope="row">Oracle calls across shot batch</th><td>Not applicable</td><td
-                  >{selected.metrics.quantum_total_oracle_queries ?? 'Not available'}</td
-                ></tr
-              >
-              <tr
-                ><th scope="row">Solver wall time</th><td
-                  >{milliseconds(selected.classical?.elapsed_ms)}</td
-                ><td>{milliseconds(selected.quantum?.elapsed_ms)}</td></tr
-              >
-              <tr
-                ><th scope="row">Transpilation</th><td>Not applicable</td><td
-                  >{milliseconds(selected.quantum?.timing.transpilation_ms)}</td
-                ></tr
-              >
-              <tr
-                ><th scope="row">Sampling</th><td>Not applicable</td><td
-                  >{milliseconds(selected.quantum?.timing.sampling_ms)}</td
-                ></tr
-              >
-            </tbody>
-          </table>
-        </div>
-        <p class="explanation">
-          The classical run stops at its first match. Quantum wall time includes the whole shot
-          batch; the query count is per circuit execution. The most frequent quantum output may be
-          unmarked. Total quantum oracle calls are iteration count times shots, not primitive gates
-          or measured simulator operations. These timings are not matched-success speedup
-          measurements.
-        </p>
-      </Panel>
-      <Panel
-        title={summary ? 'Individual trial measurements' : 'Iteration measurements'}
-        subtitle={summary
-          ? 'Select a trial to inspect its raw comparison'
-          : 'Select an iteration to inspect its comparison'}
-      >
-        <div class="table-scroll">
-          <table>
-            <caption
-              >{results.length} measured {summary
-                ? 'trials'
-                : `point${results.length === 1 ? '' : 's'}`}; no illustrative results.</caption
-            >
-            <thead
-              ><tr
-                ><th scope="col">{summary ? 'Trial / iteration' : 'Iteration'}</th><th scope="col"
-                  >Seed</th
-                ><th scope="col">Measured</th><th scope="col">Theory</th><th scope="col">Shots</th
-                ><th scope="col">Depth</th></tr
-              ></thead
-            >
-            <tbody
-              >{#each results as result, index}<tr class:selected={selectedIndex === index}
-                  ><th scope="row"
-                    ><button
-                      class="point-button"
-                      aria-pressed={selectedIndex === index}
-                      onclick={() => (selectedIndex = index)}
-                      >{summary ? `Trial ${index + 1} / ` : 'Iteration '}{result.metadata.parameters
-                        .iterations}</button
-                    ></th
-                  ><td>{result.metadata.seed ?? 'Not available'}</td><td
-                    >{percentage(result.metrics.success_probability)}</td
-                  ><td>{percentage(result.metrics.theoretical_success_probability)}</td><td
-                    >{result.metrics.shots ?? 'Not available'}</td
-                  ><td>{result.metrics.circuit_depth ?? 'Not available'}</td></tr
-                >{/each}</tbody
-            >
-          </table>
-        </div>
-        <div class="export">
-          <button class="button small" onclick={download}>Download measured JSON</button>
-        </div>
-      </Panel>
-      <details class="method">
-        <summary>Method, timing scope, and reproducibility</summary>
-        <p>{selected.metadata.oracle_assumptions}</p>
-        <p>
-          Targets: <span class="mono">{selected.metadata.parameters.marked_states.join(', ')}</span
-          >. Seed: {selected.metadata.seed ?? 'Not set'}. Shots: {selected.metrics.shots ??
-            'Not available'}. Repetitions per point: {selected.metadata.repetitions ?? 1}.
-        </p>
-        <p>
-          Package versions: {Object.entries(selected.metadata.versions ?? {})
-            .map(([name, value]) => `${name} ${value}`)
-            .join(' · ')}
-        </p>
-        <p>
-          {summary
-            ? 'Repeated trials use distinct recorded seeds at the same iteration setting.'
-            : 'Curves use the same seed at every iteration.'} Shot noise remains; no confidence interval
-          is claimed. Editing inputs clears previous results. Downloaded JSON contains every completed
-          point and its settings.
-        </p>
-      </details>
-    {/if}
+        </Panel>
+        <details class="method">
+          <summary>Method, timing scope, and reproducibility</summary>
+          <p>{selected.metadata.oracle_assumptions}</p>
+          <p>
+            Targets: <span class="mono"
+              >{selected.metadata.parameters.marked_states.join(', ')}</span
+            >. Seed: {selected.metadata.seed ?? 'Not set'}. Shots: {selected.metrics.shots ??
+              'Not available'}. Repetitions per point: {selected.metadata.repetitions ?? 1}.
+          </p>
+          <p>
+            Package versions: {Object.entries(selected.metadata.versions ?? {})
+              .map(([name, value]) => `${name} ${value}`)
+              .join(' · ')}
+          </p>
+          <p>
+            {summary
+              ? 'Repeated trials use distinct recorded seeds at the same iteration setting.'
+              : 'Curves use the same seed at every iteration.'} Shot noise remains; no confidence interval
+            is claimed. Editing inputs clears previous results. Downloaded JSON contains every completed
+            point and its settings.
+          </p>
+        </details>
+      {/if}
+    </div>
   </div>
-</div>
+</ExecutionChoice>
 
 <StudyPanel experiment="search" request={studyRequest} disabled={loading} bind:running={studying} />
 

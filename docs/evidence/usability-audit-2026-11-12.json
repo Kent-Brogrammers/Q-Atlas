@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "checks": [
+    "1440px: / navigation, labels, overflow",
+    "1440px: /compiler navigation, labels, overflow",
+    "1440px: /neutrinos navigation, labels, overflow, section jumps, keyboard disclosure and recorded result",
+    "1440px: /optimization navigation, labels, overflow, section jumps, keyboard disclosure and recorded result",
+    "1440px: /materials navigation, labels, overflow, section jumps, keyboard disclosure and recorded result",
+    "1440px: /search navigation, labels, overflow, section jumps, keyboard disclosure and recorded result",
+    "1440px: /hardware navigation, labels, overflow",
+    "1440px: /methodology navigation, labels, overflow",
+    "900px: / navigation, labels, overflow",
+    "900px: /compiler navigation, labels, overflow",
+    "900px: /neutrinos navigation, labels, overflow, section jumps, keyboard disclosure and recorded result",
+    "900px: /optimization navigation, labels, overflow, section jumps, keyboard disclosure and recorded result",
+    "900px: /materials navigation, labels, overflow, section jumps, keyboard disclosure and recorded result",
+    "900px: /search navigation, labels, overflow, section jumps, keyboard disclosure and recorded result",
+    "900px: /hardware navigation, labels, overflow",
+    "900px: /methodology navigation, labels, overflow",
+    "390px: / navigation, labels, overflow",
+    "390px: /compiler navigation, labels, overflow",
+    "390px: /neutrinos navigation, labels, overflow, section jumps, keyboard disclosure and recorded result",
+    "390px: /optimization navigation, labels, overflow, section jumps, keyboard disclosure and recorded result",
+    "390px: /materials navigation, labels, overflow, section jumps, keyboard disclosure and recorded result",
+    "390px: /search navigation, labels, overflow, section jumps, keyboard disclosure and recorded result",
+    "390px: /hardware navigation, labels, overflow",
+    "390px: /methodology navigation, labels, overflow",
+    "Compiler conversion \u2192 Test \u2192 physical archive \u2192 local comparison remains usable"
+  ],
+  "hardware_submissions": 0,
+  "page_errors": [],
+  "recorded_at_utc": "2026-11-12T23:13:34.954053+00:00"
+}

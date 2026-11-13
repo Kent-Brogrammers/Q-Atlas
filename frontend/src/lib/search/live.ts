@@ -1,3 +1,4 @@
+import { duration } from '../presentation/format.ts';
 import type { SearchRequest, SearchResult } from '../../types/index.ts';
 
 export interface SearchSettings {
@@ -114,5 +115,5 @@ export function percentage(value: number | null | undefined): string {
 }
 
 export function milliseconds(value: number | null | undefined): string {
-  return value == null ? 'Not measured' : `${value.toFixed(3)} ms`;
+  return duration(value);
 }

@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { CompilerBenchmarkResult, OptimizationResult } from '../../types/index.ts';
   import Metric from './Metric.svelte';
+  import { duration } from '../presentation/format.ts';
   let { result }: { result: CompilerBenchmarkResult | OptimizationResult } = $props();
   const format = (value: number | null | undefined) =>
     value == null ? 'Unavailable' : Number(value.toPrecision(6)).toLocaleString();
@@ -10,6 +11,14 @@
   <p>
     <strong>Live local Aer measurement</strong> · {result.metrics.num_qubits} qubits · {result
       .metadata.config.p} layers · {result.metrics.shots} shots · seed {result.metadata.seed}
+  </p>
+  <p class="outcome">
+    <strong
+      >{result.metrics.optimality_gap === 0
+        ? 'The quantum samples found the exact best answer.'
+        : 'The quantum samples did not reach the exact best answer.'}</strong
+    >
+    Lower cost is better. Compare the answer first; then check how much computation each method used.
   </p>
   <div class="metrics">
     <Metric
@@ -33,24 +42,39 @@
       note={`${result.metrics.optimizer_evaluations ?? 'Unknown'} optimizer evaluations`}
     />
   </div>
-  <div class="table-scroll">
-    <table>
-      <caption>Measured wall-clock milliseconds · declared solver scopes</caption><thead
-        ><tr
-          ><th>Method</th><th>Total</th><th>Optimizer</th><th>Transpilation</th><th>Sampling</th
-          ></tr
-        ></thead
-      ><tbody>
-        {#each [result.classical, result.quantum] as solver}{#if solver}<tr
-              ><td>{solver.algorithm}</td><td>{format(solver.elapsed_ms)}</td><td
-                >{format(solver.timing.optimizer_ms)}</td
-              ><td>{format(solver.timing.transpilation_ms)}</td><td
-                >{format(solver.timing.sampling_ms)}</td
-              ></tr
-            >{/if}{/each}
-      </tbody>
-    </table>
+  <div class="metrics">
+    <Metric
+      label="Classical computation"
+      value={duration(result.classical?.elapsed_ms)}
+      note="Checked every possible assignment"
+    />
+    <Metric
+      label="Quantum simulation on this computer"
+      value={duration(result.quantum?.elapsed_ms)}
+      note="Includes angle search and final sampling; no physical QPU"
+    />
   </div>
+  <details>
+    <summary>How the time was spent</summary>
+    <div class="table-scroll">
+      <table>
+        <caption>Measured durations · units adjust to the measurement</caption><thead
+          ><tr
+            ><th>Method</th><th>Total</th><th>Optimizer</th><th>Transpilation</th><th>Sampling</th
+            ></tr
+          ></thead
+        ><tbody>
+          {#each [result.classical, result.quantum] as solver}{#if solver}<tr
+                ><td>{solver.algorithm}</td><td>{duration(solver.elapsed_ms)}</td><td
+                  >{duration(solver.timing.optimizer_ms)}</td
+                ><td>{duration(solver.timing.transpilation_ms)}</td><td
+                  >{duration(solver.timing.sampling_ms)}</td
+                ></tr
+              >{/if}{/each}
+        </tbody>
+      </table>
+    </div>
+  </details>
   <p class="note">
     Canonical objective: minimize. API assignments list x[0] first. QAOA is trained with ideal
     statevector expectations, then sampled. Both methods run on the CPU; the sample gap accompanies

@@ -1,5 +1,9 @@
 # Q-Atlas — Quantum Computing for Science challenge answers
 
+**Final report:** [FINAL_SCIENCE_REPORT.md](FINAL_SCIENCE_REPORT.md) answers these
+questions using the completed app and physical measurements. The earlier study and
+readiness notes below retain their original context.
+
 **Hardware update:** all five experiences have now run on a physical IBM QPU.
 Job `dbr0sthabdes73fp2v60` completed on `ibm_marrakesh`: eight circuits, 128 shots each,
 with 2.0 seconds of provider-reported usage for the entire shared job. Compiler and

@@ -2,6 +2,7 @@
   import type { HardwareJob } from '../../types/index.ts';
   import Metric from './Metric.svelte';
   import StudyChart from './StudyChart.svelte';
+  import { duration } from '../presentation/format.ts';
   let { job }: { job: HardwareJob } = $props();
   let names = $derived([...new Set(job.metrics?.map((m) => m.name) ?? [])]);
   let providerTimes = $derived(job.shared_job_timings ?? job.timings);
@@ -41,8 +42,7 @@
   <div class="metrics">
     <Metric
       label="Classical reference"
-      value={format(job.timings?.classical_ms)}
-      unit="ms"
+      value={duration(job.timings?.classical_ms)}
       note="Independent reference / exact solver"
     />
     <Metric
@@ -64,11 +64,24 @@
         >{#each names as name}<option value={name}>{name}</option>{/each}</select
       ></label
     >{/if}
-  {#if rows.length}<StudyChart
+  {#if rows.length > 1}<StudyChart
       {rows}
       metrics={['Classical', 'Physical QPU']}
       label={selectedName ?? 'Measured comparison'}
     />{/if}
+  {#if job.metrics?.[0]}{@const m = job.metrics[0]}
+    <p>
+      <strong
+        >{m.absolute_error === 0
+          ? 'The measured result matches the classical reference.'
+          : 'The measured result differs from the classical reference.'}</strong
+      >
+      {m.name}: classical {format(m.classical)}, QPU {format(m.quantum)} ({m.unit}).
+      {#if job.task.kind === 'compiler' || job.task.kind === 'optimization'}Lower cost is better;
+        this compares the best sampled assignment.{:else}The table below shows the error for every
+        measured point.{/if}
+    </p>
+  {/if}
   <div class="table-scroll">
     <table>
       <caption>Same-instance classical and physical quantum results</caption><thead
@@ -86,14 +99,17 @@
       </tbody>
     </table>
   </div>
-  <div class="table-scroll">
-    <table>
-      <caption>Timing scopes in milliseconds</caption><tbody
-        >{#each timings as [name, value]}<tr><th>{name}</th><td>{format(value)}</td></tr
-          >{/each}</tbody
-      >
-    </table>
-  </div>
+  <details>
+    <summary>Timing details · these measure different parts of the work</summary>
+    <div class="table-scroll">
+      <table>
+        <caption>Measured durations</caption><tbody
+          >{#each timings as [name, value]}<tr><th>{name}</th><td>{duration(value)}</td></tr
+            >{/each}</tbody
+        >
+      </table>
+    </div>
+  </details>
   <p class="note">
     {job.timing_note} Physical results include shot and device noise. Materials error also includes product-formula
     approximation. QAOA trains angles locally before QPU sampling. Search reports classical success 1

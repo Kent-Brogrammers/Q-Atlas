@@ -5,6 +5,7 @@ type Schemas = components['schemas'];
 export type HardwareRequest = Schemas['HardwareRequest'];
 export type HardwareJob = Schemas['HardwareJob'];
 export type HardwareMetric = Schemas['HardwareMetric'];
+export type HardwareReadiness = Schemas['HardwareReadiness'];
 export type NeutrinoRequest = Schemas['NeutrinoRequest'];
 export type NeutrinoResponse = Schemas['NeutrinoResponse'];
 export type NeutrinoRecord = Schemas['NeutrinoRecord'];

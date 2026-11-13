@@ -71,15 +71,19 @@ experiment. No runtime speedup is inferred from these tiny, differently scoped p
 - Neutrinos supports at most 9 points and 8 layers; the UI offers at most 5 points.
 - Native circuits are bounded to depth 2500 and 20000 aggregate instructions.
 - All new and legacy compiler jobs share the existing per-instance reservation cap
-  (`QATLAS_COMPILER_QPU_BUDGET_SECONDS`, default 60). Cancelled/unknown/finished jobs
-  retain their conservative reservation; only failures known to precede submission
-  release it. This cap is not the account's measured remaining balance.
+  (`QATLAS_COMPILER_QPU_BUDGET_SECONDS`, default 60). Completed, measured jobs with
+  valid provider usage count that usage rounded up to whole seconds. Active,
+  cancelled, unknown or unmeasured jobs retain their full reservation; failures
+  known to precede submission cost zero. A shared suite counts its parent once.
+  This cap is not the account's measured remaining balance.
 
 Before this demo the local ledger reserved 50 seconds. The shared five-experiment
 job used the final 10-second reservation; its measured provider usage was 2 seconds.
-The cap was not increased. Further submissions can be rejected by that cap while
-all saved measurements remain viewable. Check actual IBM usage and intentionally
-configure an appropriate local cap before any additional tests.
+The cap was not increased. The original accounting kept completed reservations
+permanently and disabled Run at 60/60. The corrected ledger reconciles the four
+completed jobs to their recorded 2-second usage, retaining 20 seconds for queued/
+cancelled jobs: 28 seconds charged, 32 available. No new physical job was needed
+for this fix. Restart the backend to load it; refresh readiness in the UI.
 
 The server saves an idempotent UUID and reservation before remote submission. It
 records `SUBMISSION_UNKNOWN` before calling IBM. Repeating the same request returns
@@ -112,7 +116,7 @@ From `backend/`, retrieve the completed demo without submitting another job:
 Changing `--request-record` intentionally selects another request; the shared cap
 still applies. Preserve these request records and the original backend instance.
 
-Release validation: full backend suite **1067 passed**, plus frontend tests,
+Initial hardware-release validation: full backend suite **1067 passed**, plus frontend tests,
 Svelte/TypeScript checks, regenerated API types, lint/format and production build.
 Tests use dummy credentials and mocked provider services; the physical evidence
 above comes from the separately submitted and completed real IBM job.
@@ -122,3 +126,8 @@ rendered the actual job, exports retained raw counts and `simulated: false`, the
 shared-job hub displayed all five analyses, archived evidence downloaded, and the
 390px mobile layout fit. This verification submitted zero jobs. See the
 [browser verification record](evidence/ibm-qpu-2026-11-12/browser-verification.json).
+
+The final presentation release adds quota readiness, explicit offline physical
+evidence, a new science report and presentation exports. Its updated gates are
+**1068 backend tests** and **16 browser checks**, with zero new hardware submissions;
+see [presentation readiness](PRESENTATION_READINESS.md).

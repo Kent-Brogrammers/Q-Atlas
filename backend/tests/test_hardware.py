@@ -117,6 +117,9 @@ def test_five_real_circuit_builders_decode_physical_results_and_preserve_evidenc
     assert hardware.submit(r).job_id == "mock-job"
     submitted.assert_called_once()
     assert hardware.list_jobs(kind)[0].measurement_complete
+    # Completed physical use is charged once, rounded up, rather than keeping all 10s.
+    assert hardware.readiness().reserved_seconds == 2
+    assert hardware.readiness().remaining_reservation_seconds == 18
 
 
 def test_unknown_acknowledgement_is_recoverable_and_never_resubmits(provider):
@@ -181,9 +184,34 @@ def test_five_experiment_bundle_uses_one_reservation_and_separate_measurements(p
     assert all(child.job_id == "mock-job" for child in result.children)
     assert all(child.timings.quantum_seconds is None for child in result.children)
     assert all(child.shared_job_timings.quantum_seconds == 1.2 for child in result.children)
+    assert hardware.readiness().reserved_seconds == 2  # Parent charged once, never per child.
     assert hardware.list_jobs("materials")[0].task.kind == "materials"
     assert hardware.list_jobs("compiler")[0].measurement_complete
     submitted.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    "status,usage,measured,expected",
+    [
+        ("DONE", 1.2, True, 2),
+        ("DONE", 0, True, 0),
+        ("DONE", 12.1, True, 13),
+        ("DONE", None, True, 10),
+        ("DONE", -1, True, 10),
+        ("DONE", float("nan"), True, 10),
+        ("DONE", float("inf"), True, 10),
+        ("DONE", 2, False, 10),
+        ("RUNNING", 2, True, 10),
+        ("SUBMISSION_UNKNOWN", 2, True, 10),
+        ("CANCELLED", None, False, 10),
+        ("ERROR", None, False, 10),
+        ("FAILED_BEFORE_SUBMISSION", None, False, 0),
+    ],
+)
+def test_completed_usage_accounting_preserves_uncertain_reservations(
+    status, usage, measured, expected
+):
+    assert ibm._charge(status, 10, usage, measured) == expected
 
 
 def test_invalid_results_remain_unmeasured_and_never_fabricate(provider):
@@ -195,6 +223,7 @@ def test_invalid_results_remain_unmeasured_and_never_fabricate(provider):
     ]
     record = hardware.refresh(r.request_id)
     assert not record.measurement_complete and record.counts == [] and record.metrics == []
+    assert hardware.readiness().reserved_seconds == 10
     assert "retrieval failed" in record.message
     submitted.assert_called_once()
 
@@ -206,6 +235,21 @@ def test_resource_limits_precede_any_provider_or_submission(provider):
     with pytest.raises(ValueError, match="8 iterations"):
         hardware.submit(r)
     submitted.assert_not_called()
+
+
+def test_readiness_reports_shared_cap_without_contacting_provider(provider):
+    _, _, submitted = provider
+    ready = hardware.readiness()
+    assert ready.configured and ready.remaining_reservation_seconds == 20
+    ibm._service.assert_not_called()
+    hardware.submit(request("search"))
+    hardware.submit(request("materials"))
+    ibm._service.reset_mock()
+    full = hardware.readiness()
+    assert full.reserved_seconds == 20 and full.remaining_reservation_seconds == 0
+    assert "cap is full" in full.message
+    ibm._service.assert_not_called()
+    assert submitted.call_count == 2
 
 
 def test_cancel_uses_existing_job_and_keeps_reservation(provider):

@@ -8,9 +8,14 @@ from app.api.compiler_hardware import _call
 from app.compiler import hardware as ibm
 from app.quantum import hardware
 from app.schemas.compiler_hardware import CompilerHardwareDevices
-from app.schemas.hardware import HardwareJob, HardwareRequest
+from app.schemas.hardware import HardwareJob, HardwareReadiness, HardwareRequest
 
 router = APIRouter(prefix="/hardware", tags=["physical quantum hardware"])
+
+
+@router.get("/readiness", response_model=HardwareReadiness)
+def readiness():
+    return _call(hardware.readiness)
 
 
 @router.get("/devices", response_model=CompilerHardwareDevices)

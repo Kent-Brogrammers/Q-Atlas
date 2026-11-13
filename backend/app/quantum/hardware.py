@@ -2,15 +2,51 @@
 
 import fcntl
 from datetime import UTC, datetime
-from importlib.metadata import version
+from importlib.metadata import PackageNotFoundError, version
 from time import perf_counter
 
 from app.compiler import hardware as ibm
-from app.schemas.hardware import HardwareJob, HardwareRequest
+from app.schemas.hardware import HardwareJob, HardwareReadiness, HardwareRequest
 
 
 def now():
     return datetime.now(UTC).isoformat()
+
+
+def readiness():
+    """Local configuration and reservation state only; never authenticate or submit."""
+    try:
+        version("qiskit-ibm-runtime")
+        installed = True
+    except PackageNotFoundError:
+        installed = False
+    try:
+        _, _, root, budget = ibm._settings()
+        reserved = ibm._reserved(root)
+    except (ibm.HardwareRequestError, ibm.HardwareOperationError) as error:
+        return HardwareReadiness(configured=False, sdk_installed=installed, message=str(error))
+    remaining = max(0, budget - reserved)
+    message = (
+        "Ready for a new QPU job. Completed jobs count recorded IBM usage (rounded up); "
+        "active or uncertain jobs retain their full reservation. "
+        "Submission will authenticate with IBM."
+        if remaining >= 10
+        else "The shared local reservation cap is full. Saved QPU results remain available. "
+        "Check actual IBM usage before intentionally changing the configured cap."
+    )
+    if not installed:
+        message = (
+            "Install the locked hardware extra to submit QPU jobs. "
+            "Local simulation remains available."
+        )
+    return HardwareReadiness(
+        configured=True,
+        sdk_installed=installed,
+        reserved_seconds=reserved,
+        budget_seconds=budget,
+        remaining_reservation_seconds=remaining,
+        message=message,
+    )
 
 
 def _read(path):

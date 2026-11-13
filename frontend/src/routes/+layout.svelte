@@ -32,7 +32,7 @@
 
 <a class="skip-link" href="#main-content">Skip to workspace</a>
 <div class="app-shell">
-  <aside class="sidebar" aria-label="Workspace navigation">
+  <aside id="workspace-navigation" class="sidebar" aria-label="Workspace navigation" tabindex="-1">
     <a class="brand" href="/" aria-label="Q-Atlas overview"
       ><Logo /><span>Q<span class="brand-dash">—</span>Atlas<span class="brand-dot">.</span></span
       ></a
@@ -45,9 +45,7 @@
           aria-current={active?.href === item.href ? 'page' : undefined}
           title={item.title}
         >
-          <Icon name={item.icon} /><span>{item.title}</span><span class="mobile-nav-label"
-            >{item.title}</span
-          >
+          <Icon name={item.icon} /><span>{item.title}</span>
         </a>
       {/each}
     </nav>
@@ -55,8 +53,12 @@
   <div class="workspace">
     <header class="topbar">
       <div class="breadcrumb">
-        <span>Q-Atlas</span><Icon name="chevron" size={12} /><strong>{title}</strong>
+        <a href="/" aria-label="Back to overview">Q-Atlas</a><Icon
+          name="chevron"
+          size={12}
+        /><strong>{title}</strong>
       </div>
+      <a class="navigation-return" href="#workspace-navigation">Navigation ↑</a>
     </header>
     <main id="main-content" tabindex="-1">
       {#key page.url.pathname}
