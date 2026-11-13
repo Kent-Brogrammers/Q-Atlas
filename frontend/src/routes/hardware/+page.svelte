@@ -21,16 +21,13 @@
 <header class="page-heading">
   <div>
     <h1>Physical QPU Analytics</h1>
-    <p>
-      All five experiments on a real IBM quantum computer, with independent classical references.
-    </p>
+    <p>Recorded neutrino and compiler measurements from a physical IBM quantum computer.</p>
   </div>
 </header>
 <p class="intro">
-  The five-experiment demo combines small Compiler, Optimization, Grover Search, Materials and
-  Neutrino circuits into one physical job. Each experiment retains separate measurements. Device
-  usage and wall time belong to the entire job; the app does not assign them to individual
-  experiments or infer a speedup.
+  Neutrino Lab and Python Compiler are featured below. The original IBM job also measured
+  Optimization, Materials and Grover Search. All five experiments retain their measurements and
+  references. Device usage and wall time describe the shared job.
 </p>
 {#if error}<p role="alert">{error}</p>{/if}
 <HardwarePanel experiment="suite" suiteTask={preset?.task ?? null} />
