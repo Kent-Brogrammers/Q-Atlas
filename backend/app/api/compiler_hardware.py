@@ -1,5 +1,6 @@
 """Explicit compiler QPU operations; importing or browsing the compiler submits nothing."""
 
+import logging
 from uuid import UUID
 
 from fastapi import APIRouter
@@ -13,9 +14,10 @@ from app.schemas.compiler_hardware import (
     CompilerHardwareJob,
     CompilerHardwareRequest,
 )
-from app.schemas.contracts import ErrorDetail
+from app.schemas.contracts import Diagnostic, ErrorDetail
 
 router = APIRouter(prefix="/hardware", tags=["compiler hardware"])
+logger = logging.getLogger(__name__)
 
 
 def _call(operation):
@@ -30,13 +32,34 @@ def _call(operation):
                 diagnostics=error.diagnostics,
             ),
         )
-    except ValueError:
+    except hardware.HardwareRequestError as error:
+        logger.warning("Compiler hardware request rejected: %s", error.code)
         return error_response(
             422,
             ErrorDetail(
                 code="VALIDATION_ERROR",
-                message="Check hardware settings, credentials/instance, six-input limit, "
-                "and remaining local reservation cap.",
+                message=str(error),
+                diagnostics=[Diagnostic(code=error.code, message=str(error), severity="error")],
+            ),
+        )
+    except hardware.HardwareOperationError as error:
+        logger.warning("Compiler hardware operation failed: %s", error.code)
+        return error_response(
+            503,
+            ErrorDetail(
+                code="HTTP_ERROR",
+                message=str(error),
+                diagnostics=[Diagnostic(code=error.code, message=str(error), severity="error")],
+            ),
+        )
+    except ValueError:
+        logger.warning("Compiler hardware request rejected: HARDWARE_VALIDATION_FAILED")
+        return error_response(
+            422,
+            ErrorDetail(
+                code="VALIDATION_ERROR",
+                message="Check credentials/instance, experiment resource limits, "
+                "and remaining shared reservation cap.",
             ),
         )
     except Exception:

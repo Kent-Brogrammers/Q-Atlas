@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "hardware_submissions": 0,
+  "checks": [
+    "optimization: actual physical results, classical comparison, shared timing label and raw evidence export",
+    "materials: actual physical results, classical comparison, shared timing label and raw evidence export",
+    "search: actual physical results, classical comparison, shared timing label and raw evidence export",
+    "neutrinos: actual physical results, classical comparison, shared timing label and raw evidence export",
+    "compiler: physical results through the shared Test workflow",
+    "physical analytics hub: completed shared job and all five experiment analytics",
+    "methodology: downloadable archived real hardware evidence",
+    "mobile: physical analytics layout fits 390px"
+  ]
+}

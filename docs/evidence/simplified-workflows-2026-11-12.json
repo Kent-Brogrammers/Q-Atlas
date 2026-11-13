@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "checks": [
+    "Compiler has three steps; conversion goes directly to Run",
+    "Compiler Results renders actual QPU measurements and job ID without another submission",
+    "Local comparison automatically opens Results; both sources retain measurements",
+    "Source edits invalidate results and unsupported source is rejected",
+    "materials: one mode choice, single local run, physical saved results",
+    "search: one mode choice, single local run, physical saved results",
+    "Incoming Neutrino lab and automatic curve work with physical results mode",
+    "16-choice workload runs live, with readable timings and solution quality",
+    "Phone navigation fits compiler",
+    "Phone navigation fits materials",
+    "Phone navigation fits search",
+    "Phone navigation fits neutrinos",
+    "Phone navigation fits optimization",
+    "Phone navigation fits hardware",
+    "Phone navigation fits methodology"
+  ],
+  "hardware_submissions": 0,
+  "page_errors": [],
+  "recorded_at_utc": "2026-11-13T02:52:06.180378+00:00",
+  "scope": "Merged production app, live local API via test proxy to port 8010, saved physical IBM evidence, hardware POST requests blocked."
+}

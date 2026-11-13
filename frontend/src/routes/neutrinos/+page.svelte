@@ -1,4 +1,7 @@
 <script lang="ts">
+  import ExecutionChoice from '#lib/components/ExecutionChoice.svelte';
+  import StudyPanel from '#lib/components/StudyPanel.svelte';
+  import { buildRequest } from '#lib/neutrinos/live.ts';
   import { onDestroy } from 'svelte';
   import { api } from '../../api/client.ts';
   import Chart from '#lib/components/NeutrinoProbabilityChart.svelte';
@@ -46,6 +49,14 @@
       (e) => e.id === (settings.environment === 'matter' ? 'density' : settings.environment)
     )!
   );
+  let studying = $state(false);
+  let studyRequest = $derived.by(() => {
+    try {
+      return buildRequest(settings);
+    } catch {
+      return null;
+    }
+  });
   let point = $derived(run.status === 'ready' ? run.result.results[index] : null);
   let coordinate = $derived(run.status === 'ready' ? run.result.coordinates[index] : null);
   let density = $derived(settings.environment === 'density');
@@ -79,210 +90,219 @@
       >
     {/each}
   </div>
-  <div class="deck">
-    <section class="instrument">
-      <div class="plot-title">
-        <div>
-          <h2>Flavor probability</h2>
-          <p>
-            {density
-              ? 'Vary matter potential at a fixed travel distance of ' +
-                fmt(settings.distance) +
-                '.'
-              : settings.environment === 'layers'
-                ? 'Propagation through two equal-length regions.'
-                : 'Probability along the propagation path.'}
-          </p>
-        </div>
-        <span class="source">Aer simulator</span>
-      </div>
-      {#if run.status === 'ready' && point}
-        <Chart result={run.result} bind:index {advanced} />
-        <div class="readout">
-          <div class="readout-head">
-            <label for="inspect">Inspect a point</label><output
-              >{density ? 'Potential' : 'Distance'} {fmt(coordinate, 4)}</output
-            >
+  <ExecutionChoice experiment="neutrinos" request={studyRequest}>
+    <div class="deck">
+      <section class="instrument">
+        <div class="plot-title">
+          <div>
+            <h2>Flavor probability</h2>
+            <p>
+              {density
+                ? 'Vary matter potential at a fixed travel distance of ' +
+                  fmt(settings.distance) +
+                  '.'
+                : settings.environment === 'layers'
+                  ? 'Propagation through two equal-length regions.'
+                  : 'Probability along the propagation path.'}
+            </p>
           </div>
-          <input
-            id="inspect"
-            aria-label="Selected graph point"
-            type="range"
-            min="0"
-            max={run.result.results.length - 1}
-            step="1"
-            bind:value={index}
-          />
-          <div class="metrics">
-            <div>
-              <small>Electron flavor</small><strong
-                >{percent(point.ideal.electron)}<em>%</em></strong
+          <span class="source">Aer simulator</span>
+        </div>
+        {#if run.status === 'ready' && point}
+          <Chart result={run.result} bind:index {advanced} />
+          <div class="readout">
+            <div class="readout-head">
+              <label for="inspect">Inspect a point</label><output
+                >{density ? 'Potential' : 'Distance'} {fmt(coordinate, 4)}</output
               >
             </div>
-            <div>
-              <small>Other flavor</small><strong>{percent(point.ideal.other)}<em>%</em></strong>
-            </div>
-            <p>Ideal detection chances at this point</p>
-          </div>
-        </div>
-      {:else}<div class="placeholder" aria-live="polite">
-          {#if run.status === 'error'}<strong>Unable to plot this run</strong>
-            <p>{run.message}</p>
-            <button onclick={() => runner.update({ ...settings }, 0)}>Retry simulation</button
-            >{:else}<span class="progress"></span><strong
-              >{run.status === 'running'
-                ? 'Simulating flavor probabilities…'
-                : 'Preparing your curve…'}</strong
-            >{/if}
-        </div>{/if}
-    </section>
-    <aside class="controls">
-      <div class="control-title">
-        <h2>Controls</h2>
-        <button class="reset" onclick={() => (settings = preset(settings.environment))}
-          ><Icon name="reset" size={14} /> Reset</button
-        >
-      </div>
-      {#if advanced && experiment.id === 'density'}<label for="scan">Matter experiment</label
-        ><select id="scan" bind:value={settings.environment}
-          ><option value="density">Sweep matter potential</option><option value="matter"
-            >Travel at constant density</option
-          ></select
-        >{/if}
-      <Parameter
-        label="Travel distance"
-        unit="L/L₀"
-        help={density
-          ? 'Baseline held fixed across the density sweep.'
-          : 'Length of the path through this environment.'}
-        min={0}
-        max={100}
-        bind:value={settings.distance}
-      />
-      {#if settings.environment === 'layers' || settings.environment === 'matter'}<Parameter
-          label={settings.environment === 'layers' ? 'First layer potential' : 'Matter potential'}
-          unit="V/V₀"
-          help="Higher potential represents more electrons per unit volume."
-          min={0}
-          max={10}
-          bind:value={settings.potential}
-        />{/if}
-      {#if settings.environment === 'layers'}<Parameter
-          label="Second layer potential"
-          unit="V/V₀"
-          help="Potential after the halfway point."
-          min={0}
-          max={10}
-          bind:value={settings.second_potential}
-        />{/if}
-      {#if density}<Parameter
-          label="Sweep limit"
-          unit="V/V₀"
-          help="The largest matter potential on the horizontal axis."
-          min={0}
-          max={10}
-          bind:value={settings.max_potential}
-        />{/if}
-      {#if advanced || experiment.id === 'vacuum'}<Parameter
-          label="Mixing angle"
-          unit="rad"
-          help="Sets how the two mass states combine into a flavor."
-          min={0}
-          max={Math.PI / 2}
-          bind:value={settings.theta}
-        />{/if}
-      {#if advanced}
-        <Parameter
-          label="Energy"
-          unit="E/E₀"
-          help="At fixed mass splitting, energy changes the oscillation phase."
-          min={0.01}
-          max={100}
-          bind:value={settings.energy}
-        />
-        <Parameter
-          label="Mass-squared splitting"
-          unit="Δm²/Δ₀"
-          help="Signed difference between the squared masses."
-          min={-10}
-          max={10}
-          bind:value={settings.delta_m2}
-        />
-        <label for="particle">Particle</label><select id="particle" bind:value={settings.particle}
-          ><option value="neutrino">Neutrino</option><option value="antineutrino"
-            >Antineutrino</option
-          ></select
-        >
-        <h3>Sampling</h3>
-        <div class="numbers">
-          <label>Points<input type="number" min="2" max="41" bind:value={settings.samples} /></label
-          ><label
-            >Shots / point<input
-              type="number"
-              min="1"
-              max="100000"
-              bind:value={settings.shots}
-            /></label
-          ><label
-            >Initial seed<input
-              type="number"
+            <input
+              id="inspect"
+              aria-label="Selected graph point"
+              type="range"
               min="0"
-              max="4294967295"
-              bind:value={settings.seed}
-            /></label
+              max={run.result.results.length - 1}
+              step="1"
+              bind:value={index}
+            />
+            <div class="metrics">
+              <div>
+                <small>Electron flavor</small><strong
+                  >{percent(point.ideal.electron)}<em>%</em></strong
+                >
+              </div>
+              <div>
+                <small>Other flavor</small><strong>{percent(point.ideal.other)}<em>%</em></strong>
+              </div>
+              <p>Ideal detection chances at this point</p>
+            </div>
+          </div>
+        {:else}<div class="placeholder" aria-live="polite">
+            {#if run.status === 'error'}<strong>Unable to plot this run</strong>
+              <p>{run.message}</p>
+              <button onclick={() => runner.update({ ...settings }, 0)}>Retry simulation</button
+              >{:else}<span class="progress"></span><strong
+                >{run.status === 'running'
+                  ? 'Simulating flavor probabilities…'
+                  : 'Preparing your curve…'}</strong
+              >{/if}
+          </div>{/if}
+      </section>
+      <aside class="controls">
+        <div class="control-title">
+          <h2>Controls</h2>
+          <button class="reset" onclick={() => (settings = preset(settings.environment))}
+            ><Icon name="reset" size={14} /> Reset</button
           >
         </div>
-      {/if}
-      <p class="foot">Updates automatically. All quantities use normalized scales.</p>
-    </aside>
-  </div>
-  <details class="learn">
-    <summary>Physical model and assumptions</summary>
-    <div class="learn-content">
-      <h2>
-        {settings.environment === 'vacuum'
-          ? 'Why does flavor change in empty space?'
-          : settings.environment === 'layers'
-            ? 'What happens at the boundary?'
-            : 'How does matter change mixing?'}
-      </h2>
-      {#if settings.environment === 'vacuum'}<p>
-          An electron-flavor neutrino starts as a combination of two mass states. They accumulate
-          phase at different rates as they travel. Their interference changes the chance of
-          detecting each flavor. The mixing angle controls how large that swing can be.
-        </p>
-      {:else if settings.environment === 'layers'}<p>
-          The neutrino carries its state across the boundary. The second potential changes how the
-          state evolves from there. Follow the marker across the shaded region to see how the
-          detection chances develop.
-        </p>
-      {:else}<p>
-          Electrons in matter change how the two flavors mix. At resonance they mix maximally. The
-          distance traveled still determines the oscillation phase, so even maximal mixing can give
-          a small conversion probability.
-        </p>{/if}
-      {#if point?.analytical?.mixing_strength != null}<p>
-          At this point the mixing allows up to <b
-            >{fmt(point.analytical.mixing_strength * 100, 2)}%</b
+        {#if advanced && experiment.id === 'density'}<label for="scan">Matter experiment</label
+          ><select id="scan" bind:value={settings.environment}
+            ><option value="density">Sweep matter potential</option><option value="matter"
+              >Travel at constant density</option
+            ></select
+          >{/if}
+        <Parameter
+          label="Travel distance"
+          unit="L/L₀"
+          help={density
+            ? 'Baseline held fixed across the density sweep.'
+            : 'Length of the path through this environment.'}
+          min={0}
+          max={100}
+          bind:value={settings.distance}
+        />
+        {#if settings.environment === 'layers' || settings.environment === 'matter'}<Parameter
+            label={settings.environment === 'layers' ? 'First layer potential' : 'Matter potential'}
+            unit="V/V₀"
+            help="Higher potential represents more electrons per unit volume."
+            min={0}
+            max={10}
+            bind:value={settings.potential}
+          />{/if}
+        {#if settings.environment === 'layers'}<Parameter
+            label="Second layer potential"
+            unit="V/V₀"
+            help="Potential after the halfway point."
+            min={0}
+            max={10}
+            bind:value={settings.second_potential}
+          />{/if}
+        {#if density}<Parameter
+            label="Sweep limit"
+            unit="V/V₀"
+            help="The largest matter potential on the horizontal axis."
+            min={0}
+            max={10}
+            bind:value={settings.max_potential}
+          />{/if}
+        {#if advanced || experiment.id === 'vacuum'}<Parameter
+            label="Mixing angle"
+            unit="rad"
+            help="Sets how the two mass states combine into a flavor."
+            min={0}
+            max={Math.PI / 2}
+            bind:value={settings.theta}
+          />{/if}
+        {#if advanced}
+          <Parameter
+            label="Energy"
+            unit="E/E₀"
+            help="At fixed mass splitting, energy changes the oscillation phase."
+            min={0.01}
+            max={100}
+            bind:value={settings.energy}
+          />
+          <Parameter
+            label="Mass-squared splitting"
+            unit="Δm²/Δ₀"
+            help="Signed difference between the squared masses."
+            min={-10}
+            max={10}
+            bind:value={settings.delta_m2}
+          />
+          <label for="particle">Particle</label><select id="particle" bind:value={settings.particle}
+            ><option value="neutrino">Neutrino</option><option value="antineutrino"
+              >Antineutrino</option
+            ></select
           >
-          conversion. The ideal conversion probability at the sampled distance is
-          <b>{percent(point.ideal.other)}%</b>.
-        </p>{/if}
-      <details>
-        <summary>What are flavor, qubits and shots?</summary>
-        <p>
-          Flavor describes how a neutrino interacts when detected. One simulated qubit can represent
-          the two outcomes in this simplified model. A shot prepares and measures the circuit once.
-          Repeating it estimates the probability of each outcome.
-        </p>
-      </details>
+          <h3>Sampling</h3>
+          <div class="numbers">
+            <label
+              >Points<input type="number" min="2" max="41" bind:value={settings.samples} /></label
+            ><label
+              >Shots / point<input
+                type="number"
+                min="1"
+                max="100000"
+                bind:value={settings.shots}
+              /></label
+            ><label
+              >Initial seed<input
+                type="number"
+                min="0"
+                max="4294967295"
+                bind:value={settings.seed}
+              /></label
+            >
+          </div>
+        {/if}
+        <p class="foot">Updates automatically. All quantities use normalized scales.</p>
+      </aside>
     </div>
-  </details>
-  {#if advanced && run.status === 'ready'}<Inspector
-      result={run.result}
-      request={run.request}
-      {index}
-    />{/if}
+    <details class="learn">
+      <summary>Physical model and assumptions</summary>
+      <div class="learn-content">
+        <h2>
+          {settings.environment === 'vacuum'
+            ? 'Why does flavor change in empty space?'
+            : settings.environment === 'layers'
+              ? 'What happens at the boundary?'
+              : 'How does matter change mixing?'}
+        </h2>
+        {#if settings.environment === 'vacuum'}<p>
+            An electron-flavor neutrino starts as a combination of two mass states. They accumulate
+            phase at different rates as they travel. Their interference changes the chance of
+            detecting each flavor. The mixing angle controls how large that swing can be.
+          </p>
+        {:else if settings.environment === 'layers'}<p>
+            The neutrino carries its state across the boundary. The second potential changes how the
+            state evolves from there. Follow the marker across the shaded region to see how the
+            detection chances develop.
+          </p>
+        {:else}<p>
+            Electrons in matter change how the two flavors mix. At resonance they mix maximally. The
+            distance traveled still determines the oscillation phase, so even maximal mixing can
+            give a small conversion probability.
+          </p>{/if}
+        {#if point?.analytical?.mixing_strength != null}<p>
+            At this point the mixing allows up to <b
+              >{fmt(point.analytical.mixing_strength * 100, 2)}%</b
+            >
+            conversion. The ideal conversion probability at the sampled distance is
+            <b>{percent(point.ideal.other)}%</b>.
+          </p>{/if}
+        <details>
+          <summary>What are flavor, qubits and shots?</summary>
+          <p>
+            Flavor describes how a neutrino interacts when detected. One simulated qubit can
+            represent the two outcomes in this simplified model. A shot prepares and measures the
+            circuit once. Repeating it estimates the probability of each outcome.
+          </p>
+        </details>
+      </div>
+    </details>
+    {#if advanced && run.status === 'ready'}<Inspector
+        result={run.result}
+        request={run.request}
+        {index}
+      />{/if}
+  </ExecutionChoice>
+  <StudyPanel
+    experiment="neutrinos"
+    request={studyRequest}
+    disabled={run.status === 'running'}
+    bind:running={studying}
+  />
 </div>
 
 <style>

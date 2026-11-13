@@ -21,7 +21,7 @@
         <a class="button primary" href="/neutrinos/">
           Launch Neutrino Lab<Icon name="arrow" size={17} />
         </a>
-        <a class="text-link" href="/methodology/">Read the methodology</a>
+        <a class="text-link" href="/methodology/">Methodology and science report</a>
       </div>
     </div>
     <dl class="capabilities" aria-label="Implemented simulation capabilities">
@@ -60,6 +60,22 @@
       <a href="/search/">
         <span
           >Grover Search<small>Explore amplitude amplification and search probabilities</small
+          ></span
+        ><Icon name="arrow" size={16} />
+      </a>
+      <a href="/optimization/">
+        <span>Optimization<small>Compare QAOA and classical Max-Cut solvers</small></span><Icon
+          name="arrow"
+          size={16}
+        />
+      </a>
+      <a href="/materials/">
+        <span>Materials<small>Compare spin-system evolution with a classical reference</small></span
+        ><Icon name="arrow" size={16} />
+      </a>
+      <a href="/hardware/">
+        <span
+          >Physical QPU Analytics<small>Review recorded IBM quantum hardware measurements</small
           ></span
         ><Icon name="arrow" size={16} />
       </a>

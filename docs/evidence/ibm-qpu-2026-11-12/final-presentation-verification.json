@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "hardware_submissions": 0,
+  "checks": [
+    "QPU readiness reports the full reservation and disables new submissions",
+    "Physical hub displays the completed shared job and all five analyses",
+    "optimization: real IBM counts, job ID and classical analytics render",
+    "materials: real IBM counts, job ID and classical analytics render",
+    "search: real IBM counts, job ID and classical analytics render",
+    "neutrinos: real IBM counts, job ID and classical analytics render",
+    "Optimization live classical/shared-QAOA solve",
+    "Optimization parameter study and raw JSON export",
+    "Editing local controls clears stale results",
+    "Materials live exact/ideal/shot time series",
+    "Neutrinos live resonance curve and full export",
+    "Search live run and repeated parameter evidence",
+    "Compiler safe conversion, physical evidence, live solve and Results navigation",
+    "Final report and presentation ZIP download",
+    "Backend-disconnected explicit physical recording, dated banner and raw export",
+    "Offline physical analytics fits a 390px mobile viewport"
+  ],
+  "recorded_at_utc": "2026-11-12T23:04:58.528692+00:00",
+  "scope": "Production-build browser rehearsal with live local API, actual saved IBM evidence, and simulated backend disconnection. No physical jobs submitted."
+}

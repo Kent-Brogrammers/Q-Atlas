@@ -197,6 +197,7 @@ summary:focus-visible,
   min-height: 100dvh;
 }
 .sidebar {
+  overflow-y: auto;
   width: 226px;
   position: fixed;
   inset: 0 auto 0 0;
@@ -281,6 +282,9 @@ summary:focus-visible,
   background: var(--bg);
 }
 .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 15;
   min-height: 64px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
@@ -407,23 +411,21 @@ main:focus {
 }
 @media (max-width: 1100px) {
   .sidebar {
-    width: 78px;
+    width: 185px;
     padding-inline: 9px;
   }
   .brand {
     margin-left: 12px;
   }
-  .brand > span,
-  .sidebar nav a > span {
+  .brand > span {
     display: none;
   }
   .sidebar nav a {
-    justify-content: center;
-    padding: 0;
+    padding: 8px;
   }
   .workspace {
-    margin-left: 78px;
-    width: calc(100% - 78px);
+    margin-left: 185px;
+    width: calc(100% - 185px);
   }
   main {
     padding: 25px;
@@ -454,7 +456,7 @@ main:focus {
   }
   .sidebar nav {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 4px;
     padding-bottom: 10px;
   }
@@ -470,6 +472,9 @@ main:focus {
     flex-direction: column;
     gap: 4px;
     min-height: 53px;
+  }
+  .sidebar nav a > span {
+    display: none;
   }
   .sidebar nav a > .mobile-nav-label {
     display: block;
@@ -498,6 +503,19 @@ main:focus {
   .skip-link {
     left: 16px;
   }
+}
+
+#local-experiment,
+#physical-experiment,
+#parameter-study,
+#main-content {
+  scroll-margin-top: 95px;
+}
+.navigation-return {
+  flex-shrink: 0;
+  padding: 10px 0;
+  font-size: 13px;
+  color: var(--blue);
 }
 @media (prefers-reduced-motion: reduce) {
   *,

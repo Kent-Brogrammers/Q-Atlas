@@ -1,5 +1,9 @@
 # Q-Atlas: scientific question, implementation, comparison and reproducibility
 
+**Historical checkpoint:** this report describes an earlier state. The
+[final science report](FINAL_SCIENCE_REPORT.md) includes the completed physical IBM
+measurements, executed circuit resources, uncertainty, current app and conclusions.
+
 This report covers the **whole project**: Python compilation, materials dynamics,
 QAOA optimization, Grover search, the Neutrino Lab, and their shared frontend/backend.
 It answers the five project requirements below. Implementation descriptions refer to

@@ -1,5 +1,9 @@
 <script lang="ts">
+  import { duration } from '../presentation/format.ts';
   import { onDestroy } from 'svelte';
+  import StudyPanel from './StudyPanel.svelte';
+  import ExecutionChoice from './ExecutionChoice.svelte';
+  import { downloadJson } from '../studies/model.ts';
   import { api, ApiError } from '../../api/client.ts';
   import type { MaterialsRequest, MaterialsResult } from '../../types/index.ts';
   import Icon from './Icon.svelte';
@@ -18,6 +22,7 @@
   let seed = $state(42);
   let timeoutSeconds = $state(30);
   let running = $state(false);
+  let studying = $state(false);
   let result = $state<MaterialsResult | null>(null);
   let errorMessage = $state('');
   let requestController: AbortController | null = null;
@@ -87,10 +92,9 @@
     return error instanceof Error ? error.message : 'The materials request failed.';
   }
 
-  async function runSimulation() {
-    if (running || requestIssue) return;
-
-    const request: MaterialsRequest = {
+  let currentRequest = $derived.by(() => {
+    if (requestIssue) return null;
+    return {
       model: 'ising',
       num_spins: spins,
       coupling,
@@ -106,7 +110,19 @@
         seed,
         timeout_seconds: timeoutSeconds
       }
-    };
+    } satisfies MaterialsRequest;
+  });
+  $effect(() => {
+    currentRequest;
+    result = null;
+    errorMessage = '';
+  });
+
+  async function runSimulation() {
+    if (running || studying || requestIssue) return;
+
+    const request = currentRequest;
+    if (!request) return;
 
     result = null;
     errorMessage = '';
@@ -150,265 +166,284 @@
 
 <div class="provenance-note">
   <Icon name="info" size={15} />
-  <strong>Aer simulation only</strong>
-  <span>Both paths run locally in the backend; this is not a QPU measurement or speedup claim.</span
-  >
+  <strong>Local simulation or physical QPU</strong>
+  <span>Use the local controls below for Aer, or expand Physical QPU for IBM measurements.</span>
 </div>
 
-<div class="materials-grid">
-  <Panel
-    title="Model and run settings"
-    subtitle="Dimensionless units with ℏ = 1; open Ising chain."
-  >
-    <form
-      class="settings-form"
-      onsubmit={(event) => {
-        event.preventDefault();
-        void runSimulation();
-      }}
+<ExecutionChoice experiment="materials" request={currentRequest}>
+  <div class="materials-grid">
+    <Panel
+      title="Model and run settings"
+      subtitle="Dimensionless units with ℏ = 1; open Ising chain."
     >
-      <fieldset disabled={running}>
-        <div class="control-grid">
-          <label for="spin-count">Spins</label>
-          <select id="spin-count" bind:value={spins}>
-            <option value={2}>2 spins</option>
-            <option value={3}>3 spins</option>
-            <option value={4}>4 spins</option>
-          </select>
+      <form
+        class="settings-form"
+        onsubmit={(event) => {
+          event.preventDefault();
+          void runSimulation();
+        }}
+      >
+        <fieldset disabled={running || studying}>
+          <details>
+            <summary>Change model &amp; sampling settings</summary>
+            <div class="control-grid">
+              <label for="spin-count">Spins</label>
+              <select id="spin-count" bind:value={spins}>
+                <option value={2}>2 spins</option>
+                <option value={3}>3 spins</option>
+                <option value={4}>4 spins</option>
+              </select>
 
-          <label for="coupling">Coupling J</label>
-          <input
-            id="coupling"
-            type="number"
-            min="-10"
-            max="10"
-            step="0.1"
-            required
-            bind:value={coupling}
-          />
+              <label for="coupling">Coupling J</label>
+              <input
+                id="coupling"
+                type="number"
+                min="-10"
+                max="10"
+                step="0.1"
+                required
+                bind:value={coupling}
+              />
 
-          <label for="field">Transverse field h</label>
-          <input
-            id="field"
-            type="number"
-            min="-10"
-            max="10"
-            step="0.1"
-            required
-            bind:value={field}
-          />
+              <label for="field">Transverse field h</label>
+              <input
+                id="field"
+                type="number"
+                min="-10"
+                max="10"
+                step="0.1"
+                required
+                bind:value={field}
+              />
 
-          <label for="observable">Reported observable</label>
-          <select id="observable" bind:value={observable}>
-            <option value="magnetization">Mean Z magnetization</option>
-            <option value="energy">Total energy</option>
-          </select>
+              <label for="observable">Reported observable</label>
+              <select id="observable" bind:value={observable}>
+                <option value="magnetization">Mean Z magnetization</option>
+                <option value="energy">Total energy</option>
+              </select>
 
-          <label for="evolution-time">Terminal time</label>
-          <input
-            id="evolution-time"
-            type="number"
-            min="0"
-            max="10"
-            step="0.1"
-            required
-            bind:value={evolutionTime}
-          />
+              <label for="evolution-time">Terminal time</label>
+              <input
+                id="evolution-time"
+                type="number"
+                min="0"
+                max="10"
+                step="0.1"
+                required
+                bind:value={evolutionTime}
+              />
 
-          <label for="trotter-steps">Trotter steps</label>
-          <input
-            id="trotter-steps"
-            type="number"
-            min="1"
-            max="256"
-            step="1"
-            required
-            bind:value={trotterSteps}
-          />
+              <label for="trotter-steps">Trotter steps</label>
+              <input
+                id="trotter-steps"
+                type="number"
+                min="1"
+                max="256"
+                step="1"
+                required
+                bind:value={trotterSteps}
+              />
 
-          <label for="time-samples">Time samples</label>
-          <input
-            id="time-samples"
-            type="number"
-            min="1"
-            max="21"
-            step="1"
-            required
-            bind:value={timeSamples}
-          />
+              <label for="time-samples">Time samples</label>
+              <input
+                id="time-samples"
+                type="number"
+                min="1"
+                max="21"
+                step="1"
+                required
+                bind:value={timeSamples}
+              />
 
-          <label for="shot-count">Shots per basis and time</label>
-          <input
-            id="shot-count"
-            type="number"
-            min="1"
-            max="100000"
-            step="1"
-            required
-            bind:value={shots}
-          />
+              <label for="shot-count">Shots per basis and time</label>
+              <input
+                id="shot-count"
+                type="number"
+                min="1"
+                max="100000"
+                step="1"
+                required
+                bind:value={shots}
+              />
 
-          <label for="seed">Random seed</label>
-          <input
-            id="seed"
-            type="number"
-            min="0"
-            max="4294967295"
-            step="1"
-            required
-            bind:value={seed}
-          />
+              <label for="seed">Random seed</label>
+              <input
+                id="seed"
+                type="number"
+                min="0"
+                max="4294967295"
+                step="1"
+                required
+                bind:value={seed}
+              />
 
-          <label for="timeout">Timeout</label>
-          <input
-            id="timeout"
-            type="number"
-            min="1"
-            max="60"
-            step="1"
-            required
-            bind:value={timeoutSeconds}
-          />
-        </div>
-        <p class="field-help">
-          Each time point starts from |00…0⟩. A time sweep must have a positive terminal time. Work
-          is limited to 2,048 sample-step pairs and 1,000,000 total basis shots.
-        </p>
-        {#if requestIssue}
-          <p class="request-issue" role="status">{requestIssue}</p>
-        {/if}
-        <button
-          class="button primary run-button"
-          type="submit"
-          disabled={running || !!requestIssue}
-        >
-          {#if running}
-            <span>Running simulation…</span>
-          {:else}
-            <span>Run comparison</span><Icon name="arrow" size={16} />
+              <label for="timeout">Timeout</label>
+              <input
+                id="timeout"
+                type="number"
+                min="1"
+                max="60"
+                step="1"
+                required
+                bind:value={timeoutSeconds}
+              />
+            </div>
+            <p class="field-help">
+              Each time point starts from |00…0⟩. A time sweep must have a positive terminal time.
+              Work is limited to 2,048 sample-step pairs and 1,000,000 total basis shots.
+            </p>
+          </details>
+          {#if requestIssue}
+            <p class="request-issue" role="status">{requestIssue}</p>
           {/if}
-        </button>
-      </fieldset>
-      {#if running}
-        <button class="button quiet cancel-button" type="button" onclick={cancelRequest}>
-          Cancel request
-        </button>
-      {/if}
-    </form>
-  </Panel>
-
-  <Panel
-    title="Simulation results"
-    subtitle="Results appear only after a successful response from the live materials endpoint."
-  >
-    {#if running}
-      <p class="run-status" role="status" aria-live="polite">
-        The backend is calculating the exact reference and Aer circuit results. This may take a
-        moment.
-      </p>
-    {:else if errorMessage}
-      <div class="error-state" role="alert">
-        <strong>Simulation failed</strong>
-        <p>{errorMessage}</p>
-        <p>No example or cached result was substituted.</p>
-      </div>
-    {:else if result}
-      <div class="result-content">
-        <div class="result-provenance">
-          <span class="backend-badge">{result.backend}</span>
-          <span>Simulated · {result.metadata.simulation_method}</span>
-          <span>Timing: {result.metadata.timing_scope}</span>
-        </div>
-        <div class="metrics-grid">
-          <Metric
-            label={`Exact ${selectedLabel}`}
-            value={formatValue(result.metrics.classical_observable)}
-            unit={selectedUnit}
-            note={result.classical?.algorithm ?? 'Independent classical reference'}
-          />
-          <Metric
-            label={`Shot-based ${selectedLabel}`}
-            value={formatValue(result.metrics.quantum_observable)}
-            unit={selectedUnit}
-            note={result.quantum?.algorithm ?? 'Aer circuit simulation'}
-            tone="violet"
-          />
-          <Metric
-            label="Absolute error"
-            value={formatValue(result.metrics.absolute_error)}
-            note="Shot-based circuit vs. exact reference"
-            tone="cyan"
-          />
-          <Metric
-            label="Trotter error"
-            value={formatValue(result.metrics.trotter_absolute_error)}
-            note="Ideal circuit vs. exact evolution"
-          />
-          <Metric
-            label="Sampling error"
-            value={formatValue(result.metrics.sampling_absolute_error)}
-            note="Finite-shot output vs. ideal circuit"
-          />
-          <Metric
-            label="Total measurements"
-            value={result.metrics.total_shots ?? 'Not reported'}
-            note={`${result.metadata.parameters.config?.shots ?? 'Not reported'} shots per basis and time`}
-          />
-        </div>
-
-        {#if result.metrics.time_series?.length}
-          <MaterialsTimeSeriesChart
-            points={result.metrics.time_series}
-            observable={observable === 'energy' ? 'energy' : 'magnetization_z'}
-            unit={selectedUnit}
-          />
+          <button
+            class="button primary run-button"
+            type="submit"
+            disabled={running || !!requestIssue}
+          >
+            {#if running}
+              <span>Running simulation…</span>
+            {:else}
+              <span>Run comparison</span><Icon name="arrow" size={16} />
+            {/if}
+          </button>
+        </fieldset>
+        {#if running}
+          <button class="button quiet cancel-button" type="button" onclick={cancelRequest}>
+            Cancel request
+          </button>
         {/if}
+      </form>
+    </Panel>
 
-        <details class="run-details">
-          <summary>Timing and model provenance</summary>
-          <div class="details-grid">
-            <div>
-              <h3>Elapsed time</h3>
-              <p>
-                Classical: {formatValue(result.classical?.elapsed_ms, 2)} ms<br />
-                Circuit: {formatValue(result.quantum?.elapsed_ms, 2)} ms
-              </p>
-            </div>
-            <div>
-              <h3>Model</h3>
-              <p>
-                {result.metadata.hamiltonian_convention}<br />
-                Energy unit: {result.metadata.energy_unit}<br />
-                Observable unit: {result.metadata.observable_unit}
-              </p>
-            </div>
-            <div>
-              <h3>Measurement settings</h3>
-              <p>
-                {result.metadata.parameters.num_spins} spins ·
-                {result.metadata.parameters.trotter_steps} Trotter steps<br />
-                {result.metadata.parameters.time_samples} time samples ·
-                {result.metadata.parameters.config?.shots ?? 'Not reported'} shots per basis<br />
-                Seed: {result.metadata.seed ?? 'unseeded'}
-              </p>
-            </div>
+    <Panel
+      title="Simulation results"
+      subtitle="Results appear only after a successful response from the live materials endpoint."
+    >
+      {#if running}
+        <p class="run-status" role="status" aria-live="polite">
+          The backend is calculating the exact reference and Aer circuit results. This may take a
+          moment.
+        </p>
+      {:else if errorMessage}
+        <div class="error-state" role="alert">
+          <strong>Simulation failed</strong>
+          <p>{errorMessage}</p>
+          <p>No example or cached result was substituted.</p>
+        </div>
+      {:else if result}
+        <div class="result-content">
+          <div class="result-provenance">
+            <span class="backend-badge">{result.backend}</span>
+            <span>Simulated · {result.metadata.simulation_method}</span>
+            <span>Timing: {result.metadata.timing_scope}</span>
           </div>
-          <p class="timing-caveat">
-            Classical and circuit timings cover different workloads and are not a speedup
-            comparison. Circuit time includes simulator setup, circuit construction, transpilation,
-            ideal simulation, and sampling.
-          </p>
-        </details>
-      </div>
-    {:else}
-      <div class="empty-state">
-        <Icon name="atom" size={34} />
-        <h3>No simulation has run</h3>
-        <p>Adjust the small-chain parameters, then run a live comparison.</p>
-      </div>
-    {/if}
-  </Panel>
-</div>
+          <div class="metrics-grid">
+            <Metric
+              label={`Exact ${selectedLabel}`}
+              value={formatValue(result.metrics.classical_observable)}
+              unit={selectedUnit}
+              note={result.classical?.algorithm ?? 'Independent classical reference'}
+            />
+            <Metric
+              label={`Shot-based ${selectedLabel}`}
+              value={formatValue(result.metrics.quantum_observable)}
+              unit={selectedUnit}
+              note={result.quantum?.algorithm ?? 'Aer circuit simulation'}
+              tone="violet"
+            />
+            <Metric
+              label="Absolute error"
+              value={formatValue(result.metrics.absolute_error)}
+              note="Shot-based circuit vs. exact reference"
+              tone="cyan"
+            />
+            <Metric
+              label="Trotter error"
+              value={formatValue(result.metrics.trotter_absolute_error)}
+              note="Ideal circuit vs. exact evolution"
+            />
+            <Metric
+              label="Sampling error"
+              value={formatValue(result.metrics.sampling_absolute_error)}
+              note="Finite-shot output vs. ideal circuit"
+            />
+            <Metric
+              label="Total measurements"
+              value={result.metrics.total_shots ?? 'Not reported'}
+              note={`${result.metadata.parameters.config?.shots ?? 'Not reported'} shots per basis and time`}
+            />
+          </div>
+
+          {#if result.metrics.time_series?.length}
+            <MaterialsTimeSeriesChart
+              points={result.metrics.time_series}
+              observable={observable === 'energy' ? 'energy' : 'magnetization_z'}
+              unit={selectedUnit}
+            />
+          {/if}
+
+          <details class="run-details">
+            <summary>Timing and model provenance</summary>
+            <div class="details-grid">
+              <div>
+                <h3>Elapsed time</h3>
+                <p>
+                  Classical: {duration(result.classical?.elapsed_ms)}<br />
+                  Circuit: {duration(result.quantum?.elapsed_ms)}
+                </p>
+              </div>
+              <div>
+                <h3>Model</h3>
+                <p>
+                  {result.metadata.hamiltonian_convention}<br />
+                  Energy unit: {result.metadata.energy_unit}<br />
+                  Observable unit: {result.metadata.observable_unit}
+                </p>
+              </div>
+              <div>
+                <h3>Measurement settings</h3>
+                <p>
+                  {result.metadata.parameters.num_spins} spins ·
+                  {result.metadata.parameters.trotter_steps} Trotter steps<br />
+                  {result.metadata.parameters.time_samples} time samples ·
+                  {result.metadata.parameters.config?.shots ?? 'Not reported'} shots per basis<br />
+                  Seed: {result.metadata.seed ?? 'unseeded'}
+                </p>
+              </div>
+            </div>
+            <p class="timing-caveat">
+              Classical and circuit timings cover different workloads and are not a speedup
+              comparison. Circuit time includes simulator setup, circuit construction,
+              transpilation, ideal simulation, and sampling.
+            </p>
+          </details>
+        </div>
+      {:else}
+        <div class="empty-state">
+          <Icon name="atom" size={34} />
+          <h3>No simulation has run</h3>
+          <p>Adjust the small-chain parameters, then run a live comparison.</p>
+        </div>
+      {/if}
+    </Panel>
+  </div>
+</ExecutionChoice>
+
+<StudyPanel
+  experiment="materials"
+  request={currentRequest}
+  disabled={running}
+  bind:running={studying}
+/>
+{#if result}<button
+    class="button"
+    onclick={() =>
+      downloadJson(
+        { source: 'live_materials_api', request: currentRequest, result },
+        'q-atlas-materials.json'
+      )}>Download materials JSON</button
+  >{/if}
 
 <style>
   .page-heading {

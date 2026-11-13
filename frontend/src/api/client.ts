@@ -1,4 +1,7 @@
 import type {
+  HardwareRequest,
+  HardwareJob,
+  HardwareReadiness,
   CompilerHardwareRequest,
   CompilerHardwareJob,
   CompilerHardwareDevices,
@@ -53,15 +56,20 @@ export function createApiClient({
   baseUrl = import.meta.env?.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api',
   fetcher = globalThis.fetch
 }: { baseUrl?: string; fetcher?: typeof fetch } = {}) {
-  async function request<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
+  async function request<T>(
+    path: string,
+    body?: unknown,
+    signal?: AbortSignal,
+    timeoutMs = 65_000
+  ): Promise<T> {
     try {
       const response = await fetcher(`${baseUrl.replace(/\/$/, '')}${path}`, {
         method: body === undefined ? 'GET' : 'POST',
         headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
         body: body === undefined ? undefined : JSON.stringify(body),
         signal: signal
-          ? AbortSignal.any([signal, AbortSignal.timeout(65_000)])
-          : AbortSignal.timeout(65_000)
+          ? AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)])
+          : AbortSignal.timeout(timeoutMs)
       });
       const fallback: ErrorResponse = {
         status: 'error',
@@ -102,9 +110,29 @@ export function createApiClient({
     body: BenchmarkRequests[E],
     signal?: AbortSignal
   ) {
-    return request<BenchmarkResults[E]>(endpoint.slice('/api'.length), body, signal);
+    // Both optimization solvers have their own bounded interval and run sequentially.
+    const timeout =
+      endpoint === '/api/compiler/benchmark' || endpoint === '/api/optimization/run'
+        ? Math.min(
+            130_000,
+            10_000 + 2_000 * ((body as OptimizationRequest).config?.timeout_seconds ?? 30)
+          )
+        : 65_000;
+    return request<BenchmarkResults[E]>(endpoint.slice('/api'.length), body, signal, timeout);
   }
   return {
+    hardwareReadiness: () => request<HardwareReadiness>('/hardware/readiness'),
+    hardwareDevices: () => request<CompilerHardwareDevices>('/hardware/devices'),
+    hardwareDemo: () => request<HardwareRequest>('/hardware/demo'),
+    hardwareJobs: (experiment?: string) =>
+      request<HardwareJob[]>(
+        `/hardware/jobs${experiment ? '?experiment=' + encodeURIComponent(experiment) : ''}`
+      ),
+    submitHardware: (body: HardwareRequest) =>
+      request<HardwareJob>('/hardware/submit', body, undefined, 130_000),
+    hardwareJob: (id: string) => request<HardwareJob>(`/hardware/jobs/${encodeURIComponent(id)}`),
+    cancelHardwareJob: (id: string) =>
+      request<HardwareJob>(`/hardware/jobs/${encodeURIComponent(id)}/cancel`, {}),
     compilerHardwareDevices: () => request<CompilerHardwareDevices>('/compiler/hardware/devices'),
     submitCompilerHardware: (body: CompilerHardwareRequest) =>
       request<CompilerHardwareJob>('/compiler/hardware/submit', body),

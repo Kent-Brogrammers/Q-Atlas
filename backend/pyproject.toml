@@ -10,6 +10,7 @@ requires-python = ">=3.11"
 dependencies = ["fastapi", "pydantic>=2,<3", "uvicorn"]
 
 [project.optional-dependencies]
+benchmarks = ["matplotlib>=3.9,<4"]
 hardware = ["qiskit-ibm-runtime==0.47.0"]
 quantum = [
     "numpy>=2.2,<3",

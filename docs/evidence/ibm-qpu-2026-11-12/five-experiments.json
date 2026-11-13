@@ -1,0 +1,914 @@
+{
+  "request_id": "50078d84-5c09-46d6-afbc-a2d15ca4c61a",
+  "task": {
+    "kind": "suite",
+    "parameters": [
+      {
+        "kind": "compiler",
+        "parameters": {
+          "source": "@qatlas.objective\ndef select(red, blue):\n    return 5 - 2*red + blue + red*blue\n",
+          "config": {
+            "backend": "aer_simulator",
+            "shots": 128,
+            "seed": 42,
+            "timeout_seconds": 30.0,
+            "p": 1,
+            "optimizer": "COBYLA",
+            "max_iterations": 20
+          }
+        }
+      },
+      {
+        "kind": "optimization",
+        "parameters": {
+          "problem": {
+            "kind": "graph",
+            "num_vertices": 3,
+            "edges": [
+              {
+                "i": 0,
+                "j": 1,
+                "coefficient": 1.0
+              },
+              {
+                "i": 1,
+                "j": 2,
+                "coefficient": 1.0
+              },
+              {
+                "i": 0,
+                "j": 2,
+                "coefficient": 1.0
+              }
+            ]
+          },
+          "config": {
+            "backend": "aer_simulator",
+            "shots": 128,
+            "seed": 42,
+            "timeout_seconds": 30.0,
+            "p": 1,
+            "optimizer": "COBYLA",
+            "max_iterations": 20
+          }
+        }
+      },
+      {
+        "kind": "search",
+        "parameters": {
+          "num_qubits": 3,
+          "marked_states": [
+            "001"
+          ],
+          "iterations": 2,
+          "config": {
+            "backend": "aer_simulator",
+            "shots": 128,
+            "seed": 42,
+            "timeout_seconds": 30.0
+          }
+        }
+      },
+      {
+        "kind": "materials",
+        "parameters": {
+          "model": "ising",
+          "num_spins": 2,
+          "coupling": 1.0,
+          "field": 0.7,
+          "boundary": "open",
+          "observable": "magnetization",
+          "config": {
+            "backend": "aer_simulator",
+            "shots": 128,
+            "seed": 42,
+            "timeout_seconds": 30.0
+          },
+          "evolution_time": 1.0,
+          "trotter_steps": 4,
+          "time_samples": 1
+        }
+      },
+      {
+        "kind": "neutrinos",
+        "parameters": {
+          "experiment": {
+            "parameters": {
+              "theta": 0.2,
+              "delta_m2": 1.0,
+              "energy": 1.0,
+              "particle": "neutrino"
+            },
+            "layers": [
+              {
+                "distance": 4.0336988686318564,
+                "potential": 0.0
+              }
+            ],
+            "shots": 128,
+            "seed": 42
+          },
+          "axis": "potential",
+          "samples": 3,
+          "max_potential": 1.8421219880057702,
+          "timeout_seconds": 30.0
+        }
+      }
+    ]
+  },
+  "problem_id": "831509bdf31bb38e5f856b63",
+  "created_at_utc": "2026-11-12T19:07:27.709952+00:00",
+  "updated_at_utc": "2026-11-12T19:09:04.355453+00:00",
+  "status": "DONE",
+  "backend_name": "ibm_marrakesh",
+  "job_id": "dbr0sthabdes73fp2v60",
+  "simulated": false,
+  "shots": 128,
+  "max_execution_seconds": 10,
+  "circuit_depths": [
+    18,
+    49,
+    169,
+    62,
+    62,
+    6,
+    2,
+    6
+  ],
+  "num_qubits": 3,
+  "counts": [
+    {
+      "01": 116,
+      "10": 7,
+      "11": 3,
+      "00": 2
+    },
+    {
+      "101": 22,
+      "010": 24,
+      "100": 26,
+      "001": 21,
+      "011": 20,
+      "110": 14,
+      "000": 1
+    },
+    {
+      "000": 4,
+      "100": 109,
+      "011": 1,
+      "010": 4,
+      "111": 3,
+      "001": 2,
+      "110": 2,
+      "101": 3
+    },
+    {
+      "00": 73,
+      "10": 20,
+      "01": 22,
+      "11": 13
+    },
+    {
+      "00": 63,
+      "10": 31,
+      "01": 33,
+      "11": 1
+    },
+    {
+      "0": 113,
+      "1": 15
+    },
+    {
+      "1": 126,
+      "0": 2
+    },
+    {
+      "0": 113,
+      "1": 15
+    }
+  ],
+  "classical_reference": {
+    "scope": "One physical job; provider usage belongs to the entire suite."
+  },
+  "metrics": [],
+  "timings": {
+    "classical_ms": 8.690098000039463,
+    "local_training_ms": 1449.2937849999998,
+    "preparation_ms": 1662.300447000007,
+    "transpilation_ms": 53.798633999804224,
+    "submission_ms": 576.6321009998592,
+    "retrieval_ms": 145.46577300006902,
+    "observed_wall_ms": 96003.261,
+    "quantum_seconds": 2.0,
+    "provider_queue_ms": 1057.424,
+    "provider_execution_ms": 4218.872
+  },
+  "shared_job_timings": null,
+  "children": [
+    {
+      "request_id": "50078d84-5c09-46d6-afbc-a2d15ca4c61a",
+      "task": {
+        "kind": "compiler",
+        "parameters": {
+          "source": "@qatlas.objective\ndef select(red, blue):\n    return 5 - 2*red + blue + red*blue\n",
+          "config": {
+            "backend": "aer_simulator",
+            "shots": 128,
+            "seed": 42,
+            "timeout_seconds": 30.0,
+            "p": 1,
+            "optimizer": "COBYLA",
+            "max_iterations": 20
+          }
+        }
+      },
+      "problem_id": "b5ec0e2cfbd2f43e481d8958",
+      "created_at_utc": "2026-11-12T19:07:27.709952+00:00",
+      "updated_at_utc": "2026-11-12T19:09:04.355453+00:00",
+      "status": "DONE",
+      "backend_name": "ibm_marrakesh",
+      "job_id": "dbr0sthabdes73fp2v60",
+      "simulated": false,
+      "shots": 128,
+      "max_execution_seconds": 10,
+      "circuit_depths": [
+        18
+      ],
+      "num_qubits": 2,
+      "counts": [
+        {
+          "01": 116,
+          "10": 7,
+          "11": 3,
+          "00": 2
+        }
+      ],
+      "classical_reference": {
+        "qubo": {
+          "num_variables": 2,
+          "constant": 5.0,
+          "linear": [
+            -2.0,
+            1.0
+          ],
+          "quadratic": [
+            {
+              "i": 0,
+              "j": 1,
+              "coefficient": 1.0
+            }
+          ],
+          "sense": "minimize",
+          "original_sense": "minimize"
+        },
+        "solver": {
+          "algorithm": "brute_force",
+          "elapsed_ms": 0.043631,
+          "objective": 3.0,
+          "best_bitstring": "10",
+          "timing": {
+            "includes_queue": false,
+            "includes_transpilation": false,
+            "includes_optimizer": false,
+            "includes_sampling": false,
+            "queue_ms": null,
+            "transpilation_ms": null,
+            "optimizer_ms": null,
+            "sampling_ms": null
+          }
+        },
+        "config": {
+          "backend": "aer_simulator",
+          "shots": 128,
+          "seed": 42,
+          "timeout_seconds": 30.0,
+          "p": 1,
+          "optimizer": "COBYLA",
+          "max_iterations": 20
+        },
+        "angles": [
+          0.9496916005385101,
+          -0.768549414205923
+        ],
+        "qpu_best_bitstring": "10"
+      },
+      "metrics": [
+        {
+          "name": "Objective (minimize)",
+          "coordinate": null,
+          "classical": 3.0,
+          "quantum": 3.0,
+          "absolute_error": 0.0,
+          "unit": "cost"
+        }
+      ],
+      "timings": {
+        "classical_ms": 0.043631,
+        "local_training_ms": 720.69714,
+        "preparation_ms": 722.1305519999532,
+        "transpilation_ms": null,
+        "submission_ms": null,
+        "retrieval_ms": null,
+        "observed_wall_ms": null,
+        "quantum_seconds": null,
+        "provider_queue_ms": null,
+        "provider_execution_ms": null
+      },
+      "shared_job_timings": {
+        "classical_ms": 8.690098000039463,
+        "local_training_ms": 1449.2937849999998,
+        "preparation_ms": 1662.300447000007,
+        "transpilation_ms": 53.798633999804224,
+        "submission_ms": 576.6321009998592,
+        "retrieval_ms": 145.46577300006902,
+        "observed_wall_ms": 96003.261,
+        "quantum_seconds": 2.0,
+        "provider_queue_ms": 1057.424,
+        "provider_execution_ms": 4218.872
+      },
+      "children": [],
+      "versions": {
+        "qiskit": "2.6.2",
+        "qiskit-aer": "0.18.2",
+        "qiskit-ibm-runtime": "0.47.0",
+        "numpy": "2.5.4",
+        "scipy": "1.18.1"
+      },
+      "message": "Physical QPU measurements received; raw counts and classical comparisons are available.",
+      "measurement_complete": true,
+      "timing_note": "Physical counts and classical references are specific to this experiment. Provider usage, queue and observed total time belong to the entire five-experiment shared job, not this experiment alone. No per-experiment QPU runtime is inferred."
+    },
+    {
+      "request_id": "50078d84-5c09-46d6-afbc-a2d15ca4c61a",
+      "task": {
+        "kind": "optimization",
+        "parameters": {
+          "problem": {
+            "kind": "graph",
+            "num_vertices": 3,
+            "edges": [
+              {
+                "i": 0,
+                "j": 1,
+                "coefficient": 1.0
+              },
+              {
+                "i": 1,
+                "j": 2,
+                "coefficient": 1.0
+              },
+              {
+                "i": 0,
+                "j": 2,
+                "coefficient": 1.0
+              }
+            ]
+          },
+          "config": {
+            "backend": "aer_simulator",
+            "shots": 128,
+            "seed": 42,
+            "timeout_seconds": 30.0,
+            "p": 1,
+            "optimizer": "COBYLA",
+            "max_iterations": 20
+          }
+        }
+      },
+      "problem_id": "b649dd54eecddbf5442da5ab",
+      "created_at_utc": "2026-11-12T19:07:27.709952+00:00",
+      "updated_at_utc": "2026-11-12T19:09:04.355453+00:00",
+      "status": "DONE",
+      "backend_name": "ibm_marrakesh",
+      "job_id": "dbr0sthabdes73fp2v60",
+      "simulated": false,
+      "shots": 128,
+      "max_execution_seconds": 10,
+      "circuit_depths": [
+        49
+      ],
+      "num_qubits": 3,
+      "counts": [
+        {
+          "101": 22,
+          "010": 24,
+          "100": 26,
+          "001": 21,
+          "011": 20,
+          "110": 14,
+          "000": 1
+        }
+      ],
+      "classical_reference": {
+        "qubo": {
+          "num_variables": 3,
+          "constant": 0.0,
+          "linear": [
+            -2.0,
+            -2.0,
+            -2.0
+          ],
+          "quadratic": [
+            {
+              "i": 0,
+              "j": 1,
+              "coefficient": 2.0
+            },
+            {
+              "i": 0,
+              "j": 2,
+              "coefficient": 2.0
+            },
+            {
+              "i": 1,
+              "j": 2,
+              "coefficient": 2.0
+            }
+          ],
+          "sense": "minimize",
+          "original_sense": "maximize"
+        },
+        "solver": {
+          "algorithm": "brute_force",
+          "elapsed_ms": 0.046909,
+          "objective": -2.0,
+          "best_bitstring": "001",
+          "timing": {
+            "includes_queue": false,
+            "includes_transpilation": false,
+            "includes_optimizer": false,
+            "includes_sampling": false,
+            "queue_ms": null,
+            "transpilation_ms": null,
+            "optimizer_ms": null,
+            "sampling_ms": null
+          }
+        },
+        "config": {
+          "backend": "aer_simulator",
+          "shots": 128,
+          "seed": 42,
+          "timeout_seconds": 30.0,
+          "p": 1,
+          "optimizer": "COBYLA",
+          "max_iterations": 20
+        },
+        "angles": [
+          2.5303884427311916,
+          0.30886390500919897
+        ],
+        "qpu_best_bitstring": "001"
+      },
+      "metrics": [
+        {
+          "name": "Objective (minimize)",
+          "coordinate": null,
+          "classical": -2.0,
+          "quantum": -2.0,
+          "absolute_error": 0.0,
+          "unit": "cost"
+        }
+      ],
+      "timings": {
+        "classical_ms": 0.046909,
+        "local_training_ms": 728.596645,
+        "preparation_ms": 791.4193940000587,
+        "transpilation_ms": null,
+        "submission_ms": null,
+        "retrieval_ms": null,
+        "observed_wall_ms": null,
+        "quantum_seconds": null,
+        "provider_queue_ms": null,
+        "provider_execution_ms": null
+      },
+      "shared_job_timings": {
+        "classical_ms": 8.690098000039463,
+        "local_training_ms": 1449.2937849999998,
+        "preparation_ms": 1662.300447000007,
+        "transpilation_ms": 53.798633999804224,
+        "submission_ms": 576.6321009998592,
+        "retrieval_ms": 145.46577300006902,
+        "observed_wall_ms": 96003.261,
+        "quantum_seconds": 2.0,
+        "provider_queue_ms": 1057.424,
+        "provider_execution_ms": 4218.872
+      },
+      "children": [],
+      "versions": {
+        "qiskit": "2.6.2",
+        "qiskit-aer": "0.18.2",
+        "qiskit-ibm-runtime": "0.47.0",
+        "numpy": "2.5.4",
+        "scipy": "1.18.1"
+      },
+      "message": "Physical QPU measurements received; raw counts and classical comparisons are available.",
+      "measurement_complete": true,
+      "timing_note": "Physical counts and classical references are specific to this experiment. Provider usage, queue and observed total time belong to the entire five-experiment shared job, not this experiment alone. No per-experiment QPU runtime is inferred."
+    },
+    {
+      "request_id": "50078d84-5c09-46d6-afbc-a2d15ca4c61a",
+      "task": {
+        "kind": "search",
+        "parameters": {
+          "num_qubits": 3,
+          "marked_states": [
+            "001"
+          ],
+          "iterations": 2,
+          "config": {
+            "backend": "aer_simulator",
+            "shots": 128,
+            "seed": 42,
+            "timeout_seconds": 30.0
+          }
+        }
+      },
+      "problem_id": "f57038ab9d49e2af3cdaf65a",
+      "created_at_utc": "2026-11-12T19:07:27.709952+00:00",
+      "updated_at_utc": "2026-11-12T19:09:04.355453+00:00",
+      "status": "DONE",
+      "backend_name": "ibm_marrakesh",
+      "job_id": "dbr0sthabdes73fp2v60",
+      "simulated": false,
+      "shots": 128,
+      "max_execution_seconds": 10,
+      "circuit_depths": [
+        169
+      ],
+      "num_qubits": 3,
+      "counts": [
+        {
+          "000": 4,
+          "100": 109,
+          "011": 1,
+          "010": 4,
+          "111": 3,
+          "001": 2,
+          "110": 2,
+          "101": 3
+        }
+      ],
+      "classical_reference": {
+        "found_state": "001",
+        "oracle_queries": 2,
+        "elapsed_ms": 0.011892,
+        "expected_queries": 4.5,
+        "worst_case_queries": 8,
+        "iterations": 2,
+        "ideal_success": 0.9453124999999999,
+        "query_note": "Explicit known targets construct the oracle. Expected queries assume uniform marked positions; observed lexicographic checks are reported separately.",
+        "qpu_oracle_queries_per_attempt": 2,
+        "qpu_total_oracle_queries": 256
+      },
+      "metrics": [
+        {
+          "name": "Marked-state success probability",
+          "coordinate": null,
+          "classical": 1.0,
+          "quantum": 0.8515625,
+          "absolute_error": 0.1484375,
+          "unit": "probability"
+        }
+      ],
+      "timings": {
+        "classical_ms": 0.011892,
+        "local_training_ms": null,
+        "preparation_ms": 1.678712999819254,
+        "transpilation_ms": null,
+        "submission_ms": null,
+        "retrieval_ms": null,
+        "observed_wall_ms": null,
+        "quantum_seconds": null,
+        "provider_queue_ms": null,
+        "provider_execution_ms": null
+      },
+      "shared_job_timings": {
+        "classical_ms": 8.690098000039463,
+        "local_training_ms": 1449.2937849999998,
+        "preparation_ms": 1662.300447000007,
+        "transpilation_ms": 53.798633999804224,
+        "submission_ms": 576.6321009998592,
+        "retrieval_ms": 145.46577300006902,
+        "observed_wall_ms": 96003.261,
+        "quantum_seconds": 2.0,
+        "provider_queue_ms": 1057.424,
+        "provider_execution_ms": 4218.872
+      },
+      "children": [],
+      "versions": {
+        "qiskit": "2.6.2",
+        "qiskit-aer": "0.18.2",
+        "qiskit-ibm-runtime": "0.47.0",
+        "numpy": "2.5.4",
+        "scipy": "1.18.1"
+      },
+      "message": "Physical QPU measurements received; raw counts and classical comparisons are available.",
+      "measurement_complete": true,
+      "timing_note": "Physical counts and classical references are specific to this experiment. Provider usage, queue and observed total time belong to the entire five-experiment shared job, not this experiment alone. No per-experiment QPU runtime is inferred."
+    },
+    {
+      "request_id": "50078d84-5c09-46d6-afbc-a2d15ca4c61a",
+      "task": {
+        "kind": "materials",
+        "parameters": {
+          "model": "ising",
+          "num_spins": 2,
+          "coupling": 1.0,
+          "field": 0.7,
+          "boundary": "open",
+          "observable": "magnetization",
+          "config": {
+            "backend": "aer_simulator",
+            "shots": 128,
+            "seed": 42,
+            "timeout_seconds": 30.0
+          },
+          "evolution_time": 1.0,
+          "trotter_steps": 4,
+          "time_samples": 1
+        }
+      },
+      "problem_id": "a80d451325dda3600f3d8485",
+      "created_at_utc": "2026-11-12T19:07:27.709952+00:00",
+      "updated_at_utc": "2026-11-12T19:09:04.355453+00:00",
+      "status": "DONE",
+      "backend_name": "ibm_marrakesh",
+      "job_id": "dbr0sthabdes73fp2v60",
+      "simulated": false,
+      "shots": 128,
+      "max_execution_seconds": 10,
+      "circuit_depths": [
+        62,
+        62
+      ],
+      "num_qubits": 2,
+      "counts": [
+        {
+          "00": 73,
+          "10": 20,
+          "01": 22,
+          "11": 13
+        },
+        {
+          "00": 63,
+          "10": 31,
+          "01": 33,
+          "11": 1
+        }
+      ],
+      "classical_reference": {
+        "coordinates": [
+          1.0
+        ],
+        "observables": [
+          {
+            "per_spin_z": [
+              0.40306246565132464,
+              0.4030624656513244
+            ],
+            "per_spin_x": [
+              0.4624569097204453,
+              0.4624569097204455
+            ],
+            "magnetization_z": 0.40306246565132453,
+            "zz_correlations": [
+              0.35256032639137747
+            ],
+            "energy": -1.000000000000001,
+            "state_norm": 1.0000000000000002
+          }
+        ],
+        "unit": "dimensionless, hbar=1",
+        "shots_scope": "shots per basis per time; two measurement bases"
+      },
+      "metrics": [
+        {
+          "name": "magnetization_z",
+          "coordinate": 1.0,
+          "classical": 0.40306246565132453,
+          "quantum": 0.46875,
+          "absolute_error": 0.06568753434867547,
+          "unit": "dimensionless"
+        },
+        {
+          "name": "energy",
+          "coordinate": 1.0,
+          "classical": -1.000000000000001,
+          "quantum": -1.021875,
+          "absolute_error": 0.02187499999999898,
+          "unit": "dimensionless"
+        }
+      ],
+      "timings": {
+        "classical_ms": 8.451810999986265,
+        "local_training_ms": null,
+        "preparation_ms": 144.71568400017532,
+        "transpilation_ms": null,
+        "submission_ms": null,
+        "retrieval_ms": null,
+        "observed_wall_ms": null,
+        "quantum_seconds": null,
+        "provider_queue_ms": null,
+        "provider_execution_ms": null
+      },
+      "shared_job_timings": {
+        "classical_ms": 8.690098000039463,
+        "local_training_ms": 1449.2937849999998,
+        "preparation_ms": 1662.300447000007,
+        "transpilation_ms": 53.798633999804224,
+        "submission_ms": 576.6321009998592,
+        "retrieval_ms": 145.46577300006902,
+        "observed_wall_ms": 96003.261,
+        "quantum_seconds": 2.0,
+        "provider_queue_ms": 1057.424,
+        "provider_execution_ms": 4218.872
+      },
+      "children": [],
+      "versions": {
+        "qiskit": "2.6.2",
+        "qiskit-aer": "0.18.2",
+        "qiskit-ibm-runtime": "0.47.0",
+        "numpy": "2.5.4",
+        "scipy": "1.18.1"
+      },
+      "message": "Physical QPU measurements received; raw counts and classical comparisons are available.",
+      "measurement_complete": true,
+      "timing_note": "Physical counts and classical references are specific to this experiment. Provider usage, queue and observed total time belong to the entire five-experiment shared job, not this experiment alone. No per-experiment QPU runtime is inferred."
+    },
+    {
+      "request_id": "50078d84-5c09-46d6-afbc-a2d15ca4c61a",
+      "task": {
+        "kind": "neutrinos",
+        "parameters": {
+          "experiment": {
+            "parameters": {
+              "theta": 0.2,
+              "delta_m2": 1.0,
+              "energy": 1.0,
+              "particle": "neutrino"
+            },
+            "layers": [
+              {
+                "distance": 4.0336988686318564,
+                "potential": 0.0
+              }
+            ],
+            "shots": 128,
+            "seed": 42
+          },
+          "axis": "potential",
+          "samples": 3,
+          "max_potential": 1.8421219880057702,
+          "timeout_seconds": 30.0
+        }
+      },
+      "problem_id": "d458df312ae0569e0a1cdba8",
+      "created_at_utc": "2026-11-12T19:07:27.709952+00:00",
+      "updated_at_utc": "2026-11-12T19:09:04.355453+00:00",
+      "status": "DONE",
+      "backend_name": "ibm_marrakesh",
+      "job_id": "dbr0sthabdes73fp2v60",
+      "simulated": false,
+      "shots": 128,
+      "max_execution_seconds": 10,
+      "circuit_depths": [
+        6,
+        2,
+        6
+      ],
+      "num_qubits": 1,
+      "counts": [
+        {
+          "0": 113,
+          "1": 15
+        },
+        {
+          "1": 126,
+          "0": 2
+        },
+        {
+          "0": 113,
+          "1": 15
+        }
+      ],
+      "classical_reference": {
+        "coordinates": [
+          0.0,
+          0.9210609940028851,
+          1.8421219880057702
+        ],
+        "probabilities": [
+          {
+            "electron": 0.9081173179450382,
+            "other": 0.09188268205496158
+          },
+          {
+            "electron": 0.0,
+            "other": 1.0
+          },
+          {
+            "electron": 0.9081173179450382,
+            "other": 0.09188268205496158
+          }
+        ],
+        "axis": "potential",
+        "unit": "normalized"
+      },
+      "metrics": [
+        {
+          "name": "electron flavor probability",
+          "coordinate": 0.0,
+          "classical": 0.9081173179450382,
+          "quantum": 0.8828125,
+          "absolute_error": 0.02530481794503825,
+          "unit": "probability"
+        },
+        {
+          "name": "other flavor probability",
+          "coordinate": 0.0,
+          "classical": 0.09188268205496158,
+          "quantum": 0.1171875,
+          "absolute_error": 0.025304817945038416,
+          "unit": "probability"
+        },
+        {
+          "name": "electron flavor probability",
+          "coordinate": 0.9210609940028851,
+          "classical": 0.0,
+          "quantum": 0.015625,
+          "absolute_error": 0.015625,
+          "unit": "probability"
+        },
+        {
+          "name": "other flavor probability",
+          "coordinate": 0.9210609940028851,
+          "classical": 1.0,
+          "quantum": 0.984375,
+          "absolute_error": 0.015625,
+          "unit": "probability"
+        },
+        {
+          "name": "electron flavor probability",
+          "coordinate": 1.8421219880057702,
+          "classical": 0.9081173179450382,
+          "quantum": 0.8828125,
+          "absolute_error": 0.02530481794503825,
+          "unit": "probability"
+        },
+        {
+          "name": "other flavor probability",
+          "coordinate": 1.8421219880057702,
+          "classical": 0.09188268205496158,
+          "quantum": 0.1171875,
+          "absolute_error": 0.025304817945038416,
+          "unit": "probability"
+        }
+      ],
+      "timings": {
+        "classical_ms": 0.13585500005319773,
+        "local_training_ms": null,
+        "preparation_ms": 0.8755139999720996,
+        "transpilation_ms": null,
+        "submission_ms": null,
+        "retrieval_ms": null,
+        "observed_wall_ms": null,
+        "quantum_seconds": null,
+        "provider_queue_ms": null,
+        "provider_execution_ms": null
+      },
+      "shared_job_timings": {
+        "classical_ms": 8.690098000039463,
+        "local_training_ms": 1449.2937849999998,
+        "preparation_ms": 1662.300447000007,
+        "transpilation_ms": 53.798633999804224,
+        "submission_ms": 576.6321009998592,
+        "retrieval_ms": 145.46577300006902,
+        "observed_wall_ms": 96003.261,
+        "quantum_seconds": 2.0,
+        "provider_queue_ms": 1057.424,
+        "provider_execution_ms": 4218.872
+      },
+      "children": [],
+      "versions": {
+        "qiskit": "2.6.2",
+        "qiskit-aer": "0.18.2",
+        "qiskit-ibm-runtime": "0.47.0",
+        "numpy": "2.5.4",
+        "scipy": "1.18.1"
+      },
+      "message": "Physical QPU measurements received; raw counts and classical comparisons are available.",
+      "measurement_complete": true,
+      "timing_note": "Physical counts and classical references are specific to this experiment. Provider usage, queue and observed total time belong to the entire five-experiment shared job, not this experiment alone. No per-experiment QPU runtime is inferred."
+    }
+  ],
+  "versions": {
+    "qiskit": "2.6.2",
+    "qiskit-aer": "0.18.2",
+    "qiskit-ibm-runtime": "0.47.0",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1"
+  },
+  "message": "Physical QPU measurements received; raw counts and classical comparisons are available.",
+  "measurement_complete": true,
+  "timing_note": "Classical and hardware timers describe different intervals. Provider usage is not end-to-end runtime. Observed wall time includes polling delay. Queue and execution use provider timestamps where available. No speedup is inferred."
+}

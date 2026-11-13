@@ -1,0 +1,168 @@
+{
+  "job_id": "dbr0sthabdes73fp2v60",
+  "source": "Recorded Runtime job inputs; circuits only, no account settings",
+  "circuits": [
+    {
+      "index": 0,
+      "physical_width": 156,
+      "classical_bits": 2,
+      "depth": 18,
+      "operations": {
+        "rz": 14,
+        "sx": 9,
+        "cz": 2,
+        "measure": 2
+      },
+      "initial_mapping": [
+        0,
+        1
+      ],
+      "final_mapping": [
+        0,
+        1
+      ]
+    },
+    {
+      "index": 1,
+      "physical_width": 156,
+      "classical_bits": 3,
+      "depth": 49,
+      "operations": {
+        "rz": 34,
+        "sx": 26,
+        "cz": 9,
+        "measure": 3
+      },
+      "initial_mapping": [
+        107,
+        97,
+        87
+      ],
+      "final_mapping": [
+        107,
+        87,
+        97
+      ]
+    },
+    {
+      "index": 2,
+      "physical_width": 156,
+      "classical_bits": 3,
+      "depth": 169,
+      "operations": {
+        "rz": 85,
+        "sx": 81,
+        "cz": 45,
+        "x": 3,
+        "measure": 3,
+        "barrier": 1
+      },
+      "initial_mapping": [
+        7,
+        5,
+        6
+      ],
+      "final_mapping": [
+        7,
+        6,
+        5
+      ]
+    },
+    {
+      "index": 3,
+      "physical_width": 156,
+      "classical_bits": 2,
+      "depth": 62,
+      "operations": {
+        "rz": 35,
+        "sx": 20,
+        "cz": 10,
+        "measure": 2,
+        "barrier": 1
+      },
+      "initial_mapping": [
+        0,
+        1
+      ],
+      "final_mapping": [
+        0,
+        1
+      ]
+    },
+    {
+      "index": 4,
+      "physical_width": 156,
+      "classical_bits": 2,
+      "depth": 62,
+      "operations": {
+        "rz": 35,
+        "sx": 20,
+        "cz": 10,
+        "measure": 2,
+        "barrier": 1
+      },
+      "initial_mapping": [
+        0,
+        1
+      ],
+      "final_mapping": [
+        0,
+        1
+      ]
+    },
+    {
+      "index": 5,
+      "physical_width": 156,
+      "classical_bits": 1,
+      "depth": 6,
+      "operations": {
+        "rz": 3,
+        "sx": 2,
+        "barrier": 1,
+        "measure": 1
+      },
+      "initial_mapping": [
+        0
+      ],
+      "final_mapping": [
+        0
+      ]
+    },
+    {
+      "index": 6,
+      "physical_width": 156,
+      "classical_bits": 1,
+      "depth": 2,
+      "operations": {
+        "x": 1,
+        "barrier": 1,
+        "measure": 1
+      },
+      "initial_mapping": [
+        0
+      ],
+      "final_mapping": [
+        0
+      ]
+    },
+    {
+      "index": 7,
+      "physical_width": 156,
+      "classical_bits": 1,
+      "depth": 6,
+      "operations": {
+        "rz": 3,
+        "sx": 2,
+        "barrier": 1,
+        "measure": 1
+      },
+      "initial_mapping": [
+        0
+      ],
+      "final_mapping": [
+        0
+      ]
+    }
+  ],
+  "qpy_sha256": "dd23b60b5edd5a38b0ff5e1bb6bab849ec5344cfbf88a97fbf837b8b2e02c5a3"
+}

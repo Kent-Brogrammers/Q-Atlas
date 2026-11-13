@@ -1,5 +1,6 @@
 """Synthetic IBM responses only. Never authenticate, train, transpile or submit jobs."""
 
+import json
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock
@@ -7,6 +8,7 @@ from uuid import uuid4
 
 import pytest
 
+from app.api import compiler_hardware
 from app.compiler import hardware
 from app.compiler.pipeline import CompilationError
 from app.schemas.compiler_hardware import CompilerHardwareRequest
@@ -86,7 +88,7 @@ def test_physical_result_and_durable_duplicate_prevention(mocked):
     assert completed.angles == [0.2, 0.3] and completed.local_training_ms == 25
     assert hardware.refresh(request.request_id) == completed
     job.result.assert_called_once()
-    assert hardware.devices().reserved_seconds == 10
+    assert hardware.devices().reserved_seconds == 2
 
 
 def test_lost_acknowledgement_retains_reservation_and_never_retries(mocked):
@@ -145,6 +147,126 @@ def test_width_limit_rejects_before_provider_contact(mocked):
     service.backends.assert_not_called()
 
 
+@pytest.mark.parametrize(
+    "change",
+    [{"source": SOURCE.replace("+ blue", "+ 2*blue")}, {"backend_name": "ibm_other"}],
+)
+def test_reusing_id_for_a_different_test_has_actionable_error_and_never_resubmits(
+    mocked, change, caplog
+):
+    request, submit, train, _, _ = mocked
+    hardware.submit(request)
+    response = compiler_hardware.submit(request.model_copy(update=change))
+    assert response.status_code == 422
+    error = json.loads(response.body)["error"]
+    assert error["diagnostics"][0]["code"] == "HARDWARE_REQUEST_CONFLICT"
+    assert "Check hardware job" in error["message"]
+    assert "Start a new hardware test" in error["message"]
+    assert "Compiler hardware request rejected: HARDWARE_REQUEST_CONFLICT" in caplog.text
+    submit.assert_called_once()
+    train.assert_called_once()
+    assert hardware.devices().reserved_seconds == 10
+    assert hardware.refresh(request.request_id).status == "DONE"
+
+
+def test_reservation_rejection_is_distinct_from_request_conflict(mocked):
+    request, submit, _, _, _ = mocked
+    hardware.submit(request)
+    hardware.submit(request.model_copy(update={"request_id": uuid4()}))
+    response = compiler_hardware.submit(request.model_copy(update={"request_id": uuid4()}))
+    assert response.status_code == 422
+    error = json.loads(response.body)["error"]
+    assert error["diagnostics"][0]["code"] == "HARDWARE_RESERVATION_LIMIT"
+    assert "local compiler cap" in error["message"]
+    assert submit.call_count == 2
+
+
+def test_unexpected_value_errors_do_not_expose_exception_details():
+    def rejected():
+        raise ValueError("fake-private-token")
+
+    response = compiler_hardware._call(rejected)
+    assert response.status_code == 422
+    assert "fake-private-token" not in response.body.decode()
+
+
+def test_missing_request_is_actionable_and_never_contacts_provider(mocked):
+    request, submit, train, service, _ = mocked
+    response = compiler_hardware.status(request.request_id)
+    assert response.status_code == 422
+    assert (
+        json.loads(response.body)["error"]["diagnostics"][0]["code"] == "HARDWARE_REQUEST_NOT_FOUND"
+    )
+    submit.assert_not_called()
+    train.assert_not_called()
+    service.job.assert_not_called()
+
+
+@pytest.mark.parametrize("stage", ["authentication", "backends"])
+def test_device_lookup_failure_is_sanitized_and_distinct_from_source_validation(
+    mocked, stage, caplog
+):
+    _, submit, _, service, _ = mocked
+    target = hardware._service if stage == "authentication" else service.backends
+    target.side_effect = ValueError("fake-private-token fake-instance")
+    response = compiler_hardware.devices()
+    assert response.status_code == 503
+    error = json.loads(response.body)["error"]
+    assert error["diagnostics"][0]["code"] == "HARDWARE_DEVICE_LOOKUP_FAILED"
+    assert "fake-private-token" not in response.body.decode() + caplog.text
+    assert "fake-instance" not in response.body.decode() + caplog.text
+    submit.assert_not_called()
+
+
+def test_unreadable_record_blocks_accounting_without_contacting_provider(mocked):
+    _, submit, _, service, _ = mocked
+    _, _, folder, _ = hardware._settings()
+    path = folder / "invalid.json"
+    path.write_text("{}")
+    response = compiler_hardware.devices()
+    assert response.status_code == 503
+    assert (
+        json.loads(response.body)["error"]["diagnostics"][0]["code"] == "HARDWARE_RECORD_UNREADABLE"
+    )
+    assert path.read_text() == "{}"
+    service.backends.assert_not_called()
+    submit.assert_not_called()
+
+
+def test_invalid_budget_is_identified_before_authentication(mocked, monkeypatch):
+    _, submit, _, service, _ = mocked
+    monkeypatch.setenv("QATLAS_COMPILER_QPU_BUDGET_SECONDS", "invalid")
+    response = compiler_hardware.devices()
+    assert response.status_code == 422
+    assert json.loads(response.body)["error"]["diagnostics"][0]["code"] == "HARDWARE_BUDGET_INVALID"
+    service.backends.assert_not_called()
+    submit.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "name,optimum,bits",
+    [("maxcut", -57, "000111"), ("partition", 4, "010110"), ("conflicts", -10, "010100")],
+)
+def test_stress_examples_pass_hardware_preparation_and_decode_mocked_samples(
+    mocked, name, optimum, bits
+):
+    request, submit, _, _, job = mocked
+    source = (
+        Path(__file__).resolve().parents[3] / f"examples/compiler/programs/stress_{name}_6.py"
+    ).read_text()
+    hardware.run_classical.return_value = hardware.run_classical.return_value.model_copy(
+        update={"objective": optimum, "best_bitstring": bits}
+    )
+    job.result.return_value[0].data.meas.get_counts = lambda: {bits[::-1]: 128}
+    result = hardware.submit(request.model_copy(update={"source": source}))
+    assert result.status == "SUBMITTED" and result.qubo.num_variables == 6
+    completed = hardware.refresh(request.request_id)
+    assert completed.measurement.best_bitstring == bits
+    assert completed.measurement.objective == optimum
+    assert completed.measurement.optimality_gap == 0
+    submit.assert_called_once()
+
+
 def test_six_qubit_portfolio_can_submit_and_decode_without_changing_job_caps(mocked):
     request, submit, _, _, job = mocked
     source = (
@@ -160,7 +282,7 @@ def test_six_qubit_portfolio_can_submit_and_decode_without_changing_job_caps(moc
     completed = hardware.refresh(request.request_id)
     assert completed.measurement.best_bitstring == "110100"
     assert completed.measurement.optimality_gap == 0
-    assert hardware.devices().reserved_seconds == 10
+    assert hardware.devices().reserved_seconds == 2
     submit.assert_called_once()
 
 

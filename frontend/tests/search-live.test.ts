@@ -210,7 +210,8 @@ test('display preserves measured zero and missing probabilities separately', () 
   assert.deepEqual(curvePoints([result]), [{ iteration: 0, measured: 0, theoretical: null }]);
   assert.equal(percentage(0), '0.0%');
   assert.equal(percentage(null), 'Not available');
-  assert.equal(milliseconds(0), '0.000 ms');
+  assert.equal(milliseconds(0), '0 ms');
+  assert.equal(milliseconds(0.043631), '43.631 µs');
   assert.equal(milliseconds(undefined), 'Not measured');
   assert.deepEqual(curvePoints([]), []);
 });
